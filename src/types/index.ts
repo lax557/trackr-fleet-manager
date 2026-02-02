@@ -29,6 +29,8 @@ export type PurchaseMode =
 
 export type PaymentStatus = 'QUITADO' | 'EM_PAGAMENTO' | 'NAO_INICIADO';
 
+export type FineStatus = 'ABERTA' | 'PAGA' | 'CONTESTADA' | 'CANCELADA';
+
 export type UserRole = 'admin' | 'operations' | 'finance' | 'maintenance' | 'readonly';
 
 // Entities
@@ -103,6 +105,17 @@ export interface VehicleFinanceBasic {
   paymentStatus: PaymentStatus;
 }
 
+export interface Fine {
+  id: string;
+  driverId: string;
+  vehicleId: string;
+  rentalId: string;
+  infraction: string;
+  date: Date;
+  value: number;
+  status: FineStatus;
+}
+
 export interface AuditLog {
   id: string;
   entity: string;
@@ -121,6 +134,13 @@ export interface VehicleWithDetails extends Vehicle {
   currentDriver: Driver | null;
   acquisition: AcquisitionPipeline | null;
   finance: VehicleFinanceBasic | null;
+  openFinesCount: number;
+}
+
+export interface DriverWithDetails extends Driver {
+  activeRental: Rental | null;
+  currentVehicle: Vehicle | null;
+  openFinesCount: number;
 }
 
 // Stats
