@@ -28,18 +28,18 @@ export const mockDrivers: Driver[] = [
   { id: 'd10', fullName: 'Camila Ribeiro Gomes', phone: '(11) 89876-5432', status: 'active', cpf: null, cnh: null, birthDate: null, fatherName: null, motherName: null },
 ];
 
-// Vehicles
+// Vehicles - Updated with yearMfg/yearModel, renavam
 export const mockVehicles: Vehicle[] = [
-  { id: 'TRK-001', plate: 'ABC1D23', make: 'Chevrolet', model: 'Onix', version: '1.0 LT', year: 2023, category: 'A', vin: '9BGKS48B0NG123456', createdAt: new Date('2023-01-15'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-002', plate: 'DEF4E56', make: 'Fiat', model: 'Mobi', version: '1.0 Like', year: 2023, category: 'A', vin: '9BD195167P0123456', createdAt: new Date('2023-02-20'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-003', plate: 'GHI7F89', make: 'Hyundai', model: 'HB20', version: '1.0 Sense', year: 2024, category: 'B', vin: '9BHBG41DBPP123456', createdAt: new Date('2023-03-10'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-004', plate: 'JKL0G12', make: 'Volkswagen', model: 'Polo', version: '1.0 TSI', year: 2024, category: 'B', vin: '9BWAA05U1PP123456', createdAt: new Date('2023-04-05'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-005', plate: 'MNO3H45', make: 'Toyota', model: 'Corolla', version: '2.0 XEi', year: 2024, category: 'C', vin: '9BR53ZEC1P0123456', createdAt: new Date('2023-05-12'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-006', plate: 'PQR6I78', make: 'Chevrolet', model: 'Spin', version: '1.8 LTZ', year: 2023, category: 'B', vin: '9BGJE752XPG123456', createdAt: new Date('2023-06-18'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-007', plate: 'STU9J01', make: 'Fiat', model: 'Argo', version: '1.3 Drive', year: 2024, category: 'A', vin: '9BD358227P5123456', createdAt: new Date('2023-07-22'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-008', plate: null, make: 'Chevrolet', model: 'Onix Plus', version: '1.0 Premier', year: 2025, category: 'B', vin: null, createdAt: new Date('2024-01-05'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-009', plate: null, make: 'Hyundai', model: 'Creta', version: '1.6 Action', year: 2025, category: 'C', vin: null, createdAt: new Date('2024-01-08'), updatedAt: new Date('2024-01-10') },
-  { id: 'TRK-010', plate: null, make: 'Toyota', model: 'Yaris', version: '1.5 XL', year: 2025, category: 'B', vin: null, createdAt: new Date('2024-01-10'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-001', plate: 'ABC1D23', make: 'Chevrolet', model: 'Onix', version: '1.0 LT', yearMfg: 2023, yearModel: 2023, category: 'A', vin: '9BGKS48B0NG123456', renavam: '12345678901', createdAt: new Date('2023-01-15'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-002', plate: 'DEF4E56', make: 'Fiat', model: 'Mobi', version: '1.0 Like', yearMfg: 2023, yearModel: 2024, category: 'A', vin: '9BD195167P0123456', renavam: '23456789012', createdAt: new Date('2023-02-20'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-003', plate: 'GHI7F89', make: 'Hyundai', model: 'HB20', version: '1.0 Sense', yearMfg: 2024, yearModel: 2024, category: 'B', vin: '9BHBG41DBPP123456', renavam: '34567890123', createdAt: new Date('2023-03-10'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-004', plate: 'JKL0G12', make: 'Volkswagen', model: 'Polo', version: '1.0 TSI', yearMfg: 2024, yearModel: 2025, category: 'B', vin: '9BWAA05U1PP123456', renavam: '45678901234', createdAt: new Date('2023-04-05'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-005', plate: 'MNO3H45', make: 'Toyota', model: 'Corolla', version: '2.0 XEi', yearMfg: 2024, yearModel: 2024, category: 'C', vin: '9BR53ZEC1P0123456', renavam: '56789012345', createdAt: new Date('2023-05-12'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-006', plate: 'PQR6I78', make: 'Chevrolet', model: 'Spin', version: '1.8 LTZ', yearMfg: 2023, yearModel: 2023, category: 'B', vin: '9BGJE752XPG123456', renavam: '67890123456', createdAt: new Date('2023-06-18'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-007', plate: 'STU9J01', make: 'Fiat', model: 'Argo', version: '1.3 Drive', yearMfg: 2024, yearModel: 2024, category: 'A', vin: '9BD358227P5123456', renavam: '78901234567', createdAt: new Date('2023-07-22'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-008', plate: null, make: 'Chevrolet', model: 'Onix Plus', version: '1.0 Premier', yearMfg: 2024, yearModel: 2025, category: 'B', vin: null, renavam: null, createdAt: new Date('2024-01-05'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-009', plate: null, make: 'Hyundai', model: 'Creta', version: '1.6 Action', yearMfg: 2024, yearModel: 2025, category: 'C', vin: null, renavam: null, createdAt: new Date('2024-01-08'), updatedAt: new Date('2024-01-10') },
+  { id: 'TRK-010', plate: null, make: 'Toyota', model: 'Yaris', version: '1.5 XL', yearMfg: 2025, yearModel: 2025, category: 'B', vin: null, renavam: null, createdAt: new Date('2024-01-10'), updatedAt: new Date('2024-01-10') },
 ];
 
 // Rentals
@@ -65,11 +65,11 @@ export const mockStatusHistory: VehicleStatusHistory[] = [
   { id: 'sh10', vehicleId: 'TRK-010', status: 'EM_LIBERACAO', statusSince: new Date('2024-01-10'), note: 'Aguardando aprovação financiamento', changedBy: 'admin', changedAt: new Date('2024-01-10') },
 ];
 
-// Acquisition Pipeline (for backlog vehicles)
+// Acquisition Pipeline (for backlog vehicles) - with group and quota
 export const mockAcquisitions: AcquisitionPipeline[] = [
-  { id: 'acq1', vehicleId: 'TRK-008', stage: 'FATURADO', purchaseMode: 'FINANCIAMENTO', supplierOrGroup: 'Santander', expectedDate: new Date('2024-02-15'), notes: 'Aguardando emplacamento' },
-  { id: 'acq2', vehicleId: 'TRK-009', stage: 'APROVADO', purchaseMode: 'CONSORCIO', supplierOrGroup: 'Rodobens', expectedDate: new Date('2024-03-01'), notes: 'Carta contemplada mês anterior' },
-  { id: 'acq3', vehicleId: 'TRK-010', stage: 'EM_LIBERACAO', purchaseMode: 'FINANCIAMENTO', supplierOrGroup: 'BV Financeira', expectedDate: new Date('2024-02-28'), notes: 'Em análise de crédito' },
+  { id: 'acq1', vehicleId: 'TRK-008', stage: 'FATURADO', purchaseMode: 'FINANCIAMENTO', supplierOrGroup: 'Santander', group: null, quota: null, expectedDate: new Date('2024-02-15'), notes: 'Aguardando emplacamento' },
+  { id: 'acq2', vehicleId: 'TRK-009', stage: 'APROVADO', purchaseMode: 'CONSORCIO', supplierOrGroup: 'Rodobens', group: 'Grupo 1234', quota: 'Cota 567', expectedDate: new Date('2024-03-01'), notes: 'Carta contemplada mês anterior' },
+  { id: 'acq3', vehicleId: 'TRK-010', stage: 'EM_LIBERACAO', purchaseMode: 'FINANCIAMENTO', supplierOrGroup: 'BV Financeira', group: null, quota: null, expectedDate: new Date('2024-02-28'), notes: 'Em análise de crédito' },
 ];
 
 // Finance Basic - Updated with new fields
@@ -223,6 +223,61 @@ export const categoryLabels: Record<string, string> = {
   A: 'Categoria A',
   B: 'Categoria B',
   C: 'Categoria C',
+  D: 'Categoria D',
+  EV: 'Elétricos',
+};
+
+export const categoryDescriptions: Record<string, string> = {
+  A: 'Uber X',
+  B: 'Comfort',
+  C: 'Comfort +',
+  D: 'Black',
+  EV: 'Elétricos',
+};
+
+// Fleet management stats helper
+export const getFleetManagementStats = () => {
+  const vehicles = getVehiclesWithDetails();
+  const stats = getVehicleStats();
+  
+  // Operational fleet = total - backlog - paraVenda
+  const operationalCount = stats.total - stats.emLiberacao - stats.paraVenda;
+  
+  // Average price from finance data
+  const financeData = mockFinance.filter(f => f.purchasePrice);
+  const avgPrice = financeData.length > 0 
+    ? financeData.reduce((sum, f) => sum + (f.purchasePrice || 0), 0) / financeData.length 
+    : 0;
+  
+  // Average odometer (mock data - would come from API)
+  const avgOdometer = 45000; // Placeholder
+  
+  // Average year from operational vehicles
+  const operationalVehicles = vehicles.filter(v => 
+    v.currentStatus !== 'EM_LIBERACAO' && v.currentStatus !== 'PARA_VENDA'
+  );
+  const yearsSum = operationalVehicles.reduce((sum, v) => sum + (v.yearModel || 2024), 0);
+  const avgYear = operationalVehicles.length > 0 ? Math.round(yearsSum / operationalVehicles.length) : 2024;
+  
+  // Occupancy rate = alugados / operacional
+  const occupancyRate = operationalCount > 0 ? (stats.alugado / operationalCount) * 100 : 0;
+  
+  // Unproductive rate = (sinistro + manutenção) / operacional
+  const unproductiveRate = operationalCount > 0 
+    ? ((stats.sinistro + stats.manutencao) / operationalCount) * 100 
+    : 0;
+  
+  // Average ticket (mock - would come from billing)
+  const avgTicket = 2850; // Placeholder monthly revenue per vehicle
+  
+  return {
+    avgPrice,
+    avgOdometer,
+    avgYear,
+    occupancyRate,
+    unproductiveRate,
+    avgTicket,
+  };
 };
 
 export const vehicleDocTypeLabels: Record<VehicleDocType, string> = {

@@ -52,6 +52,8 @@ export function MoveStageModal({ vehicle, open, onOpenChange, onConfirm }: MoveS
   const [purchaseMode, setPurchaseMode] = useState<PurchaseMode | ''>('');
   const [expectedDate, setExpectedDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [group, setGroup] = useState('');
+  const [quota, setQuota] = useState('');
 
   const handleConfirm = () => {
     if (!vehicle || !stage || !purchaseMode) {
@@ -59,6 +61,8 @@ export function MoveStageModal({ vehicle, open, onOpenChange, onConfirm }: MoveS
       return;
     }
 
+    // In a real app, group and quota would be saved too
+    console.log('Saving acquisition with group/quota:', { group, quota });
     onConfirm(vehicle.id, stage, purchaseMode, expectedDate, notes);
     handleClose();
     toast.success(`Etapa atualizada para ${stageLabels[stage]}`);
@@ -69,6 +73,8 @@ export function MoveStageModal({ vehicle, open, onOpenChange, onConfirm }: MoveS
     setPurchaseMode('');
     setExpectedDate('');
     setNotes('');
+    setGroup('');
+    setQuota('');
     onOpenChange(false);
   };
 
@@ -138,6 +144,30 @@ export function MoveStageModal({ vehicle, open, onOpenChange, onConfirm }: MoveS
               </SelectContent>
             </Select>
           </div>
+
+          {/* Group and Quota fields for Consórcio */}
+          {(purchaseMode === 'CONSORCIO' || vehicle.acquisition?.purchaseMode === 'CONSORCIO') && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="group">Grupo</Label>
+                <Input
+                  id="group"
+                  placeholder="Ex: Grupo 1234"
+                  value={group || vehicle.acquisition?.group || ''}
+                  onChange={(e) => setGroup(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quota">Cota</Label>
+                <Input
+                  id="quota"
+                  placeholder="Ex: Cota 567"
+                  value={quota || vehicle.acquisition?.quota || ''}
+                  onChange={(e) => setQuota(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="expected-date" className="flex items-center gap-2">

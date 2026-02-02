@@ -1,5 +1,5 @@
 // Enums
-export type VehicleCategory = 'A' | 'B' | 'C';
+export type VehicleCategory = 'A' | 'B' | 'C' | 'D' | 'EV';
 
 export type VehicleStatus = 
   | 'DISPONIVEL' 
@@ -58,9 +58,11 @@ export interface Vehicle {
   make: string;
   model: string;
   version: string;
-  year: number | null;
+  yearMfg: number | null;
+  yearModel: number | null;
   category: VehicleCategory;
   vin: string | null;
+  renavam: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -113,6 +115,8 @@ export interface AcquisitionPipeline {
   stage: AcquisitionStage;
   purchaseMode: PurchaseMode;
   supplierOrGroup: string | null;
+  group: string | null;
+  quota: string | null;
   expectedDate: Date | null;
   notes: string | null;
 }
@@ -192,4 +196,14 @@ export interface VehicleStats {
   sinistro: number;
   paraVenda: number;
   emLiberacao: number;
+}
+
+// Fleet Management Stats
+export interface FleetManagementStats {
+  avgPrice: number;
+  avgOdometer: number;
+  avgYear: number;
+  occupancyRate: number;
+  unproductiveRate: number;
+  avgTicket: number;
 }

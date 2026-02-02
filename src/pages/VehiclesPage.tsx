@@ -6,10 +6,12 @@ import { VehicleStatsCards } from '@/components/VehicleStatsCards';
 import { VehicleSearch } from '@/components/VehicleSearch';
 import { VehicleFilters } from '@/components/VehicleFilters';
 import { VehiclesTable } from '@/components/VehiclesTable';
+import { AcquisitionKanban } from '@/components/AcquisitionKanban';
 import { ChangeStatusModal } from '@/components/ChangeStatusModal';
 import { MoveStageModal } from '@/components/MoveStageModal';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, List, LayoutGrid } from 'lucide-react';
 
 export function VehiclesPage() {
   const navigate = useNavigate();
@@ -23,9 +25,10 @@ export function VehiclesPage() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [stageModalOpen, setStageModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleWithDetails | null>(null);
-
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
   const allVehicles = useMemo(() => getVehiclesWithDetails(), []);
   const stats = useMemo(() => getVehicleStats(), []);
+  const backlogVehicles = useMemo(() => allVehicles.filter(v => v.currentStatus === 'EM_LIBERACAO'), [allVehicles]);
 
   const filteredVehicles = useMemo(() => {
     return allVehicles.filter(v => {
@@ -140,18 +143,40 @@ export function VehiclesPage() {
         />
       </div>
 
-      {/* Results count */}
-      <div className="text-sm text-muted-foreground">
-        Exibindo {filteredVehicles.length} de {allVehicles.length} veículos
+      {/* View Toggle and Results */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Exibindo {filteredVehicles.length} de {allVehicles.length} veículos
+        </div>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'kanban')}>
+          <TabsList>
+            <TabsTrigger value="list" className="gap-2">
+              <List className="h-4 w-4" />
+              Lista
+            </TabsTrigger>
+            <TabsTrigger value="kanban" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Pipeline
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {/* Table */}
-      <VehiclesTable
-        vehicles={filteredVehicles}
-        onViewDetails={handleViewDetails}
-        onChangeStatus={handleChangeStatus}
-        onMoveStage={handleMoveStage}
-      />
+      {/* Table or Kanban View */}
+      {viewMode === 'list' ? (
+        <VehiclesTable
+          vehicles={filteredVehicles}
+          onViewDetails={handleViewDetails}
+          onChangeStatus={handleChangeStatus}
+          onMoveStage={handleMoveStage}
+        />
+      ) : (
+        <AcquisitionKanban
+          vehicles={backlogVehicles}
+          onMoveStage={handleMoveStage}
+          onViewDetails={handleViewDetails}
+        />
+      )}
 
       {/* Modals */}
       <ChangeStatusModal

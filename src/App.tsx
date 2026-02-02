@@ -10,6 +10,7 @@ import VehiclesPage from "./pages/VehiclesPage";
 import VehicleDetailPage from "./pages/VehicleDetailPage";
 import DriversPage from "./pages/DriversPage";
 import DriverDetailPage from "./pages/DriverDetailPage";
+import NewDriverPage from "./pages/NewDriverPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
                 <Route path="/vehicles" element={<VehiclesPage />} />
                 <Route path="/vehicles/:id" element={<VehicleDetailPage />} />
                 <Route path="/drivers" element={<DriversPage />} />
+                <Route path="/drivers/new" element={<NewDriverPage />} />
                 <Route path="/drivers/:id" element={<DriverDetailPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

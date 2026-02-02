@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { statusLabels, categoryLabels } from '@/data/mockData';
+import { statusLabels, categoryLabels, categoryDescriptions } from '@/data/mockData';
 import { Filter, X } from 'lucide-react';
 
 interface VehicleFiltersProps {
@@ -61,13 +61,15 @@ export function VehicleFilters({
         value={categoryFilter || 'all'}
         onValueChange={(v) => onCategoryChange(v === 'all' ? null : v as VehicleCategory)}
       >
-        <SelectTrigger className="w-[140px]">
+        <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Categoria" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todas</SelectItem>
           {Object.entries(categoryLabels).map(([value, label]) => (
-            <SelectItem key={value} value={value}>{label}</SelectItem>
+            <SelectItem key={value} value={value}>
+              {value} - {categoryDescriptions[value]}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

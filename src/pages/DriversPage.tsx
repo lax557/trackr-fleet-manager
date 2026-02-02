@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Phone, User, Car } from 'lucide-react';
+import { Plus, Phone, User } from 'lucide-react';
 
 export function DriversPage() {
   const navigate = useNavigate();
@@ -19,7 +19,6 @@ export function DriversPage() {
 
   // Use computed status based on business rule (active only if has rental)
   const activeCount = driversWithDetails.filter(d => d.computedStatus === 'active').length;
-  const rentedCount = driversWithDetails.filter(d => d.activeRental !== null).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -31,14 +30,14 @@ export function DriversPage() {
             Gerencie seus locatários
           </p>
         </div>
-        <Button className="self-start sm:self-auto">
+        <Button className="self-start sm:self-auto" onClick={() => navigate('/drivers/new')}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Motorista
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Stats - Removed "Com locação" card as it's duplicate of "Ativos" */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -58,17 +57,6 @@ export function DriversPage() {
                 <p className="text-2xl font-bold text-green-600">{activeCount}</p>
               </div>
               <User className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Com Locação</p>
-                <p className="text-2xl font-bold text-blue-600">{rentedCount}</p>
-              </div>
-              <Car className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
