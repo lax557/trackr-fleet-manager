@@ -2,95 +2,114 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Trackr Design System - Clean operational interface with purple accents */
 
 @layer base {
   :root {
+    /* Base colors - Clean white foundation */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 260 10% 15%;
 
+    /* Card surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 260 10% 15%;
 
+    /* Popover */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 260 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Trackr Purple #7b29e8 */
+    --primary: 267 80% 54%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Subtle purple tint */
+    --secondary: 267 30% 96%;
+    --secondary-foreground: 267 80% 35%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted - Neutral gray */
+    --muted: 260 10% 96%;
+    --muted-foreground: 260 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Light purple */
+    --accent: 267 50% 95%;
+    --accent-foreground: 267 80% 40%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Borders and inputs */
+    --border: 260 10% 90%;
+    --input: 260 10% 90%;
+    --ring: 267 80% 54%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Status colors */
+    --status-disponivel: 142 71% 45%;
+    --status-alugado: 217 91% 60%;
+    --status-manutencao: 38 92% 50%;
+    --status-sinistro: 0 72% 51%;
+    --status-para-venda: 280 60% 50%;
+    --status-em-liberacao: 260 10% 55%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Sidebar */
+    --sidebar-background: 267 30% 98%;
+    --sidebar-foreground: 260 10% 25%;
+    --sidebar-primary: 267 80% 54%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 267 40% 94%;
+    --sidebar-accent-foreground: 267 80% 40%;
+    --sidebar-border: 260 10% 90%;
+    --sidebar-ring: 267 80% 54%;
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Chart colors */
+    --chart-1: 267 80% 54%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 72% 51%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 260 15% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 260 15% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 260 15% 10%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 267 80% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 260 15% 15%;
+    --secondary-foreground: 267 60% 80%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 260 15% 15%;
+    --muted-foreground: 260 10% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 267 40% 20%;
+    --accent-foreground: 267 60% 80%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 260 15% 18%;
+    --input: 260 15% 18%;
+    --ring: 267 80% 60%;
+
+    --sidebar-background: 260 15% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 267 80% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 267 30% 15%;
+    --sidebar-accent-foreground: 267 60% 80%;
+    --sidebar-border: 260 15% 15%;
+    --sidebar-ring: 267 80% 60%;
   }
 }
 
@@ -100,6 +119,28 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .status-badge-disponivel {
+    @apply bg-green-100 text-green-800 border-green-200;
+  }
+  .status-badge-alugado {
+    @apply bg-blue-100 text-blue-800 border-blue-200;
+  }
+  .status-badge-manutencao {
+    @apply bg-amber-100 text-amber-800 border-amber-200;
+  }
+  .status-badge-sinistro {
+    @apply bg-red-100 text-red-800 border-red-200;
+  }
+  .status-badge-para-venda {
+    @apply bg-purple-100 text-purple-800 border-purple-200;
+  }
+  .status-badge-em-liberacao {
+    @apply bg-gray-100 text-gray-700 border-gray-200;
   }
 }
