@@ -1,6 +1,7 @@
 import { VehicleWithDetails } from '@/types';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -19,6 +20,34 @@ import {
 import { MoreHorizontal, Eye, RefreshCcw, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+function OpenFinesBadge({ count, hasDriver }: { count: number; hasDriver: boolean }) {
+  if (!hasDriver) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  if (count === 0) {
+    return (
+      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
+        Nenhuma
+      </Badge>
+    );
+  }
+
+  if (count === 1) {
+    return (
+      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800">
+        1 aberta
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
+      {count}+ abertas
+    </Badge>
+  );
+}
 
 interface VehiclesTableProps {
   vehicles: VehicleWithDetails[];
@@ -44,6 +73,7 @@ export function VehiclesTable({
             <TableHead className="font-semibold">Cat.</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
             <TableHead className="font-semibold">Locatário</TableHead>
+            <TableHead className="font-semibold">Multas Abertas</TableHead>
             <TableHead className="font-semibold">Desde</TableHead>
             <TableHead className="font-semibold">Etapa</TableHead>
             <TableHead className="font-semibold">Prev. Entrega</TableHead>
@@ -53,7 +83,7 @@ export function VehiclesTable({
         <TableBody>
           {vehicles.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
                 Nenhum veículo encontrado.
               </TableCell>
             </TableRow>
@@ -94,6 +124,12 @@ export function VehiclesTable({
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
+                </TableCell>
+                <TableCell>
+                  <OpenFinesBadge 
+                    count={vehicle.openFinesCount} 
+                    hasDriver={!!vehicle.currentDriver} 
+                  />
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {format(vehicle.statusSince, 'dd/MM/yyyy', { locale: ptBR })}

@@ -6,7 +6,9 @@ import {
   AcquisitionPipeline, 
   VehicleFinanceBasic,
   VehicleWithDetails,
-  VehicleStats
+  VehicleStats,
+  Fine,
+  DriverWithDetails
 } from '@/types';
 
 // Drivers
@@ -76,6 +78,15 @@ export const mockFinance: VehicleFinanceBasic[] = [
   { id: 'fin5', vehicleId: 'TRK-005', purchaseDate: new Date('2023-05-12'), purchasePrice: 145000, fipeValue: 140000, downPayment: 50000, installmentValue: 3200, installmentsTotal: 36, paymentStatus: 'EM_PAGAMENTO' },
 ];
 
+// Fines (multas)
+export const mockFines: Fine[] = [
+  { id: 'f1', driverId: 'd1', vehicleId: 'TRK-001', rentalId: 'r1', infraction: 'Excesso de velocidade', date: new Date('2024-01-20'), value: 293.47, status: 'ABERTA' },
+  { id: 'f2', driverId: 'd1', vehicleId: 'TRK-001', rentalId: 'r1', infraction: 'Estacionamento irregular', date: new Date('2024-01-22'), value: 195.23, status: 'ABERTA' },
+  { id: 'f3', driverId: 'd2', vehicleId: 'TRK-003', rentalId: 'r2', infraction: 'Avanço de sinal vermelho', date: new Date('2024-01-18'), value: 293.47, status: 'ABERTA' },
+  { id: 'f4', driverId: 'd3', vehicleId: 'TRK-004', rentalId: 'r3', infraction: 'Excesso de velocidade', date: new Date('2024-01-10'), value: 130.16, status: 'PAGA' },
+  { id: 'f5', driverId: 'd4', vehicleId: 'TRK-005', rentalId: 'r4', infraction: 'Estacionamento em local proibido', date: new Date('2024-01-25'), value: 195.23, status: 'CONTESTADA' },
+];
+
 // Helper to get current status for a vehicle
 export const getCurrentStatus = (vehicleId: string): VehicleStatusHistory | undefined => {
   return mockStatusHistory
@@ -90,6 +101,11 @@ export const getCurrentDriver = (vehicleId: string): Driver | null => {
   return mockDrivers.find(d => d.id === activeRental.driverId) || null;
 };
 
+// Helper to get open fines count for a driver
+export const getOpenFinesCountForDriver = (driverId: string): number => {
+  return mockFines.filter(f => f.driverId === driverId && f.status === 'ABERTA').length;
+};
+
 // Get vehicles with all details
 export const getVehiclesWithDetails = (): VehicleWithDetails[] => {
   return mockVehicles.map(vehicle => {
@@ -97,6 +113,9 @@ export const getVehiclesWithDetails = (): VehicleWithDetails[] => {
     const currentDriver = getCurrentDriver(vehicle.id);
     const acquisition = mockAcquisitions.find(a => a.vehicleId === vehicle.id) || null;
     const finance = mockFinance.find(f => f.vehicleId === vehicle.id) || null;
+    
+    // Count open fines for the driver renting this vehicle
+    const openFinesCount = currentDriver ? getOpenFinesCountForDriver(currentDriver.id) : 0;
 
     return {
       ...vehicle,
@@ -105,6 +124,25 @@ export const getVehiclesWithDetails = (): VehicleWithDetails[] => {
       currentDriver,
       acquisition,
       finance,
+      openFinesCount,
+    };
+  });
+};
+
+// Get drivers with all details
+export const getDriversWithDetails = (): DriverWithDetails[] => {
+  return mockDrivers.map(driver => {
+    const activeRental = mockRentals.find(r => r.driverId === driver.id && r.status === 'ACTIVE') || null;
+    const currentVehicle = activeRental 
+      ? mockVehicles.find(v => v.id === activeRental.vehicleId) || null 
+      : null;
+    const openFinesCount = getOpenFinesCountForDriver(driver.id);
+
+    return {
+      ...driver,
+      activeRental,
+      currentVehicle,
+      openFinesCount,
     };
   });
 };

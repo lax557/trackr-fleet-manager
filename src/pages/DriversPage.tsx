@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { mockDrivers, mockRentals } from '@/data/mockData';
+import { useNavigate } from 'react-router-dom';
+import { getDriversWithDetails } from '@/data/mockData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,17 +14,11 @@ import {
 import { Plus, Phone, User, Car } from 'lucide-react';
 
 export function DriversPage() {
-  const drivers = mockDrivers;
-  
-  const driversWithRentals = useMemo(() => {
-    return drivers.map(driver => {
-      const activeRental = mockRentals.find(r => r.driverId === driver.id && r.status === 'ACTIVE');
-      return { ...driver, hasActiveRental: !!activeRental };
-    });
-  }, [drivers]);
+  const navigate = useNavigate();
+  const driversWithDetails = getDriversWithDetails();
 
-  const activeCount = drivers.filter(d => d.status === 'active').length;
-  const rentedCount = driversWithRentals.filter(d => d.hasActiveRental).length;
+  const activeCount = driversWithDetails.filter(d => d.status === 'active').length;
+  const rentedCount = driversWithDetails.filter(d => d.activeRental !== null).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -49,7 +43,7 @@ export function DriversPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{drivers.length}</p>
+                <p className="text-2xl font-bold">{driversWithDetails.length}</p>
               </div>
               <User className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -92,12 +86,17 @@ export function DriversPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Locação</TableHead>
+                <TableHead>Placa</TableHead>
+                <TableHead>VehicleID</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {driversWithRentals.map((driver) => (
-                <TableRow key={driver.id} className="cursor-pointer hover:bg-muted/50">
+              {driversWithDetails.map((driver) => (
+                <TableRow 
+                  key={driver.id} 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => navigate(`/drivers/${driver.id}`)}
+                >
                   <TableCell className="font-medium">{driver.fullName}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -115,14 +114,11 @@ export function DriversPage() {
                       {driver.status === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {driver.hasActiveRental ? (
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                        Com veículo
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
+                  <TableCell className="font-mono">
+                    {driver.currentVehicle?.plate || <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="font-mono text-primary">
+                    {driver.currentVehicle?.id || <span className="text-muted-foreground">—</span>}
                   </TableCell>
                 </TableRow>
               ))}
