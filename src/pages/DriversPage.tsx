@@ -17,7 +17,8 @@ export function DriversPage() {
   const navigate = useNavigate();
   const driversWithDetails = getDriversWithDetails();
 
-  const activeCount = driversWithDetails.filter(d => d.status === 'active').length;
+  // Use computed status based on business rule (active only if has rental)
+  const activeCount = driversWithDetails.filter(d => d.computedStatus === 'active').length;
   const rentedCount = driversWithDetails.filter(d => d.activeRental !== null).length;
 
   return (
@@ -107,11 +108,11 @@ export function DriversPage() {
                   <TableCell>
                     <Badge 
                       variant="outline" 
-                      className={driver.status === 'active' 
-                        ? 'bg-green-100 text-green-800 border-green-200' 
-                        : 'bg-gray-100 text-gray-600 border-gray-200'}
+                      className={driver.computedStatus === 'active' 
+                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
+                        : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'}
                     >
-                      {driver.status === 'active' ? 'Ativo' : 'Inativo'}
+                      {driver.computedStatus === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono">
