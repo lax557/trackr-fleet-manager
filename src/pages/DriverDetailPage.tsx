@@ -1,12 +1,31 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDriversWithDetails, mockVehicles, mockFines } from '@/data/mockData';
+import { useMemo } from 'react';
+import { DriverDocType } from '@/types';
+import { 
+  getDriversWithDetails, 
+  mockVehicles, 
+  mockFines,
+  getFilesForScope,
+  driverDocTypeLabels 
+} from '@/data/mockData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, User, Phone, Car, AlertTriangle, FileText, Wallet } from 'lucide-react';
+import { DocumentsCard } from '@/components/DocumentsCard';
+import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getCurrentStatus } from '@/data/mockData';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+const driverDocTypes: DriverDocType[] = [
+  'CONTRATO',
+  'CNH',
+  'CPF_DOC',
+  'COMPROVANTE_RESIDENCIA',
+  'PERFIL_APP'
+];
 
 export function DriverDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +33,20 @@ export function DriverDetailPage() {
 
   const driversWithDetails = getDriversWithDetails();
   const driver = driversWithDetails.find(d => d.id === id);
+
+  const documents = useMemo(() => {
+    return id ? getFilesForScope('DRIVER', id) : [];
+  }, [id]);
+
+  const handleDocumentUpload = (docType: string, file: File) => {
+    console.log('Upload document:', { docType, file, driverId: id });
+    // In a real app, this would upload to storage and save metadata
+  };
+
+  const handleDocumentDelete = (fileId: string) => {
+    console.log('Delete document:', { fileId });
+    // In a real app, this would delete from storage
+  };
 
   if (!driver) {
     return (
@@ -31,6 +64,9 @@ export function DriverDetailPage() {
   const vehicleStatus = currentVehicle ? getCurrentStatus(currentVehicle.id) : null;
   const openFinesCount = mockFines.filter(f => f.driverId === driver.id && f.status === 'ABERTA').length;
 
+  // Use computed status based on business rules
+  const displayStatus = driver.computedStatus;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -44,11 +80,11 @@ export function DriverDetailPage() {
               <h1 className="text-2xl font-bold text-foreground">{driver.fullName}</h1>
               <Badge 
                 variant="outline" 
-                className={driver.status === 'active' 
-                  ? 'bg-green-100 text-green-800 border-green-200' 
-                  : 'bg-gray-100 text-gray-600 border-gray-200'}
+                className={displayStatus === 'active' 
+                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
+                  : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'}
               >
-                {driver.status === 'active' ? 'Ativo' : 'Inativo'}
+                {displayStatus === 'active' ? 'Ativo' : 'Inativo'}
               </Badge>
             </div>
             <p className="text-muted-foreground text-sm">Central do Motorista</p>
@@ -57,7 +93,7 @@ export function DriverDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Seção 1: Dados do Motorista */}
+        {/* Seção 1: Dados do Motorista - Extended */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -82,12 +118,56 @@ export function DriverDetailPage() {
                 <p className="text-sm text-muted-foreground">Status</p>
                 <Badge 
                   variant="outline" 
-                  className={driver.status === 'active' 
-                    ? 'bg-green-100 text-green-800 border-green-200' 
-                    : 'bg-gray-100 text-gray-600 border-gray-200'}
+                  className={displayStatus === 'active' 
+                    ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' 
+                    : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'}
                 >
-                  {driver.status === 'active' ? 'Ativo' : 'Inativo'}
+                  {displayStatus === 'active' ? 'Ativo' : 'Inativo'}
                 </Badge>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">CPF</p>
+                <p className="font-mono font-medium">{driver.cpf || '—'}</p>
+              </div>
+            </div>
+            <Separator />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">CNH</p>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <p className="font-mono font-medium">{driver.cnh || '—'}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Data de Nascimento</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <p className="font-medium">
+                    {driver.birthDate 
+                      ? format(driver.birthDate, 'dd/MM/yyyy', { locale: ptBR })
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Separator />
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Filiação
+                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">Pai: </span>
+                    <span className="font-medium">{driver.fatherName || '—'}</span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">Mãe: </span>
+                    <span className="font-medium">{driver.motherName || '—'}</span>
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -140,6 +220,9 @@ export function DriverDetailPage() {
               <div className="text-center py-8 text-muted-foreground">
                 <Car className="h-12 w-12 mx-auto mb-2 opacity-30" />
                 <p>Nenhum veículo vinculado</p>
+                <p className="text-xs mt-1 text-orange-600">
+                  Para ativar o motorista, vincule um veículo (crie uma locação).
+                </p>
               </div>
             )}
           </CardContent>
@@ -161,11 +244,11 @@ export function DriverDetailPage() {
                 <p className="text-2xl font-bold">{openFinesCount}</p>
               </div>
               {openFinesCount > 0 ? (
-                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
                   Pendente
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
                   Regular
                 </Badge>
               )}
@@ -177,23 +260,18 @@ export function DriverDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Seção 4: Contrato */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Contrato
-            </CardTitle>
-            <CardDescription>Informações contratuais do motorista</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-              <FileText className="h-12 w-12 mb-2 opacity-30" />
-              <p className="text-sm">Módulo de contratos em desenvolvimento</p>
-              <p className="text-xs mt-1">Em breve você poderá gerenciar contratos aqui.</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Seção 4: Documentos (antigo Contrato) */}
+        <DocumentsCard
+          title="Documentos"
+          description="Documentos do motorista"
+          scope="DRIVER"
+          scopeId={driver.id}
+          documents={documents}
+          docTypes={driverDocTypes}
+          docTypeLabels={driverDocTypeLabels}
+          onUpload={handleDocumentUpload}
+          onDelete={handleDocumentDelete}
+        />
 
         {/* Seção 5: Financeiro */}
         <Card className="lg:col-span-2">

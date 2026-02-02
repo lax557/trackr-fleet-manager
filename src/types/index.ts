@@ -33,6 +33,24 @@ export type FineStatus = 'ABERTA' | 'PAGA' | 'CONTESTADA' | 'CANCELADA';
 
 export type UserRole = 'admin' | 'operations' | 'finance' | 'maintenance' | 'readonly';
 
+export type FileScope = 'VEHICLE' | 'DRIVER';
+
+export type VehicleDocType = 
+  | 'CRLV'
+  | 'CONTRATO_COMPRA'
+  | 'ATPV'
+  | 'VISTORIA'
+  | 'BOLETO_TRANSFERENCIA'
+  | 'NOVO_CRLV'
+  | 'OUTROS';
+
+export type DriverDocType = 
+  | 'CONTRATO'
+  | 'CNH'
+  | 'CPF_DOC'
+  | 'COMPROVANTE_RESIDENCIA'
+  | 'PERFIL_APP';
+
 // Entities
 export interface Vehicle {
   id: string;
@@ -52,6 +70,12 @@ export interface Driver {
   fullName: string;
   phone: string;
   status: DriverStatus;
+  // Extended fields
+  cpf?: string | null;
+  cnh?: string | null;
+  birthDate?: Date | null;
+  fatherName?: string | null;
+  motherName?: string | null;
 }
 
 export interface Rental {
@@ -102,6 +126,8 @@ export interface VehicleFinanceBasic {
   downPayment: number | null;
   installmentValue: number | null;
   installmentsTotal: number | null;
+  installmentsPaid: number | null;
+  purchaseMode: PurchaseMode | null;
   paymentStatus: PaymentStatus;
 }
 
@@ -114,6 +140,18 @@ export interface Fine {
   date: Date;
   value: number;
   status: FineStatus;
+}
+
+export interface FileRecord {
+  id: string;
+  scope: FileScope;
+  scopeId: string;
+  docType: VehicleDocType | DriverDocType;
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  uploadedAt: Date;
+  uploadedBy: string;
 }
 
 export interface AuditLog {
@@ -141,6 +179,8 @@ export interface DriverWithDetails extends Driver {
   activeRental: Rental | null;
   currentVehicle: Vehicle | null;
   openFinesCount: number;
+  // Computed status based on business rule
+  computedStatus: DriverStatus;
 }
 
 // Stats

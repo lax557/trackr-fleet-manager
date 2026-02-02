@@ -1,29 +1,44 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
-import { getVehiclesWithDetails, mockStatusHistory, mockDrivers, purchaseModeLabels, stageLabels, paymentStatusLabels } from '@/data/mockData';
-import { StatusBadge, StageBadge, PaymentBadge } from '@/components/StatusBadge';
+import { useMemo, useState } from 'react';
+import { VehicleDocType } from '@/types';
+import { 
+  getVehiclesWithDetails, 
+  mockStatusHistory, 
+  getFilesForScope,
+  vehicleDocTypeLabels 
+} from '@/data/mockData';
+import { StatusBadge, StageBadge } from '@/components/StatusBadge';
+import { DocumentsCard } from '@/components/DocumentsCard';
+import { FinanceCard } from '@/components/FinanceCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
   RefreshCcw, 
   UserPlus, 
   ArrowRight, 
-  Calendar, 
   Car, 
-  FileText, 
   Wrench, 
   AlertTriangle, 
   Gauge,
-  DollarSign,
   Package,
   Clock,
   Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { purchaseModeLabels } from '@/data/mockData';
+
+const vehicleDocTypes: VehicleDocType[] = [
+  'CRLV',
+  'CONTRATO_COMPRA',
+  'ATPV',
+  'VISTORIA',
+  'BOLETO_TRANSFERENCIA',
+  'NOVO_CRLV',
+  'OUTROS'
+];
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +53,20 @@ export function VehicleDetailPage() {
       .filter(sh => sh.vehicleId === id)
       .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime());
   }, [id]);
+
+  const documents = useMemo(() => {
+    return id ? getFilesForScope('VEHICLE', id) : [];
+  }, [id]);
+
+  const handleDocumentUpload = (docType: string, file: File) => {
+    console.log('Upload document:', { docType, file, vehicleId: id });
+    // In a real app, this would upload to storage and save metadata
+  };
+
+  const handleDocumentDelete = (fileId: string) => {
+    console.log('Delete document:', { fileId });
+    // In a real app, this would delete from storage
+  };
 
   if (!vehicle) {
     return (
@@ -188,62 +217,12 @@ export function VehicleDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Finance info (MVP) */}
+          {/* Finance info with new component */}
           {vehicle.finance && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-primary" />
-                    <CardTitle>Financeiro</CardTitle>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Valor de Compra</p>
-                    <p className="font-medium">
-                      {vehicle.finance.purchasePrice?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Valor FIPE</p>
-                    <p className="font-medium">
-                      {vehicle.finance.fipeValue?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Entrada</p>
-                    <p className="font-medium">
-                      {vehicle.finance.downPayment?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
-                    <PaymentBadge status={vehicle.finance.paymentStatus} />
-                  </div>
-                  {vehicle.finance.installmentValue && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Parcela</p>
-                        <p className="font-medium">
-                          {vehicle.finance.installmentValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total de Parcelas</p>
-                        <p className="font-medium">{vehicle.finance.installmentsTotal}x</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <FinanceCard 
+              finance={vehicle.finance} 
+              onEdit={() => console.log('Edit finance')} 
+            />
           )}
 
           {/* Acquisition info (if backlog) */}
@@ -317,19 +296,20 @@ export function VehicleDetailPage() {
             </Card>
           )}
 
-          {/* Future modules placeholders */}
-          <Card className="opacity-60">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base text-muted-foreground">Documentação</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Em breve: CRLV, IPVA, licenciamento...</p>
-            </CardContent>
-          </Card>
+          {/* Documentation - Functional now! */}
+          <DocumentsCard
+            title="Documentação"
+            description="Documentos do veículo"
+            scope="VEHICLE"
+            scopeId={vehicle.id}
+            documents={documents}
+            docTypes={vehicleDocTypes}
+            docTypeLabels={vehicleDocTypeLabels}
+            onUpload={handleDocumentUpload}
+            onDelete={handleDocumentDelete}
+          />
 
+          {/* Future modules placeholders */}
           <Card className="opacity-60">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
