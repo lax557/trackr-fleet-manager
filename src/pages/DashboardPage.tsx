@@ -1,16 +1,13 @@
 import { useMemo } from 'react';
-import { getVehicleStats, getVehiclesWithDetails, mockDrivers, mockRentals } from '@/data/mockData';
+import { getVehicleStats, getVehiclesWithDetails, mockDrivers, mockRentals, getFleetManagementStats } from '@/data/mockData';
 import { VehicleStatsCards } from '@/components/VehicleStatsCards';
+import { FleetManagementCards } from '@/components/FleetManagementCards';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Car, 
-  Users, 
   ArrowRight, 
-  TrendingUp, 
   Clock,
   AlertCircle
 } from 'lucide-react';
@@ -21,17 +18,11 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const stats = useMemo(() => getVehicleStats(), []);
   const vehicles = useMemo(() => getVehiclesWithDetails(), []);
-  
-  const activeDrivers = mockDrivers.filter(d => d.status === 'active');
-  const activeRentals = mockRentals.filter(r => r.status === 'ACTIVE');
+  const fleetStats = useMemo(() => getFleetManagementStats(), []);
   
   const vehiclesInMaintenance = vehicles.filter(v => v.currentStatus === 'MANUTENCAO');
   const backlogVehicles = vehicles.filter(v => v.currentStatus === 'EM_LIBERACAO');
   const availableVehicles = vehicles.filter(v => v.currentStatus === 'DISPONIVEL');
-
-  const utilizationRate = stats.total > 0 
-    ? Math.round((stats.alugado / stats.total) * 100) 
-    : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -43,56 +34,21 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - First Row (unchanged) */}
       <VehicleStatsCards 
         stats={stats} 
         onFilterClick={() => navigate('/vehicles')}
       />
 
-      {/* Quick metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Taxa de Utilização</p>
-                <p className="text-3xl font-bold text-primary">{utilizationRate}%</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Motoristas Ativos</p>
-                <p className="text-3xl font-bold text-foreground">{activeDrivers.length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Locações Ativas</p>
-                <p className="text-3xl font-bold text-foreground">{activeRentals.length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <Car className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Fleet Management Stats - Second Row (new) */}
+      <FleetManagementCards
+        avgPrice={fleetStats.avgPrice}
+        avgOdometer={fleetStats.avgOdometer}
+        avgYear={fleetStats.avgYear}
+        occupancyRate={fleetStats.occupancyRate}
+        unproductiveRate={fleetStats.unproductiveRate}
+        avgTicket={fleetStats.avgTicket}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Vehicles requiring attention */}

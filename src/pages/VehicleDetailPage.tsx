@@ -99,7 +99,11 @@ export function VehicleDetailPage() {
               <StatusBadge status={vehicle.currentStatus} />
             </div>
             <p className="text-muted-foreground mt-1">
-              {vehicle.make} {vehicle.model} {vehicle.version} • {vehicle.year || 'Ano não informado'}
+              {vehicle.make} {vehicle.model} {vehicle.version} • {
+                vehicle.yearMfg && vehicle.yearModel 
+                  ? `${vehicle.yearMfg}/${vehicle.yearModel}` 
+                  : 'Ano não informado'
+              }
             </p>
           </div>
         </div>
@@ -141,7 +145,7 @@ export function VehicleDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Marca</p>
                   <p className="font-medium">{vehicle.make}</p>
@@ -155,14 +159,22 @@ export function VehicleDetailPage() {
                   <p className="font-medium">{vehicle.version}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Ano</p>
-                  <p className="font-medium">{vehicle.year || '—'}</p>
+                  <p className="text-sm text-muted-foreground">Ano (Fab/Mod)</p>
+                  <p className="font-medium">
+                    {vehicle.yearMfg && vehicle.yearModel 
+                      ? `${vehicle.yearMfg} / ${vehicle.yearModel}` 
+                      : '—'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Categoria</p>
-                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-sm font-bold">
+                  <span className="inline-flex items-center justify-center h-6 px-2 rounded-full bg-primary/10 text-primary text-sm font-bold">
                     {vehicle.category}
                   </span>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">RENAVAM</p>
+                  <p className="font-mono text-sm">{vehicle.renavam || '—'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Chassi (VIN)</p>

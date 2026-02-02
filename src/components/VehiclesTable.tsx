@@ -1,5 +1,6 @@
 import { VehicleWithDetails } from '@/types';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
+import { CategoryBadge } from '@/components/CategoryBadge';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -108,9 +109,7 @@ export function VehiclesTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
-                    {vehicle.category}
-                  </span>
+                  <CategoryBadge category={vehicle.category} />
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={vehicle.currentStatus} size="sm" />
