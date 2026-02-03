@@ -6,18 +6,24 @@ import {
   mockVehicles, 
   mockFines,
   getFilesForScope,
-  driverDocTypeLabels 
+  driverDocTypeLabels,
+  mockRentals
 } from '@/data/mockData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { DocumentsCard } from '@/components/DocumentsCard';
-import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users } from 'lucide-react';
+import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users, Plus } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getCurrentStatus } from '@/data/mockData';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const driverDocTypes: DriverDocType[] = [
   'CONTRATO',
@@ -66,6 +72,15 @@ export function DriverDetailPage() {
 
   // Use computed status based on business rules
   const displayStatus = driver.computedStatus;
+  
+  // Check if driver has an active rental
+  const hasActiveRental = mockRentals.some(
+    r => r.driverId === driver.id && r.status === 'ACTIVE'
+  );
+  
+  const handleStartRental = () => {
+    navigate(`/rentals/new?driverId=${driver.id}`);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -90,6 +105,26 @@ export function DriverDetailPage() {
             <p className="text-muted-foreground text-sm">Central do Motorista</p>
           </div>
         </div>
+        
+        {/* CTA: Iniciar locação */}
+        {!hasActiveRental ? (
+          <Button onClick={handleStartRental} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Iniciar locação
+          </Button>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button disabled variant="outline" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Iniciar locação
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Motorista já possui locação ativa. Para trocar de veículo, use a locação atual.</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
