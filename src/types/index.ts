@@ -15,6 +15,8 @@ export type RentalStatus = 'DRAFT' | 'AWAITING_SIGNATURE' | 'ACTIVE' | 'ENDED' |
 
 export type PriceFrequency = 'WEEKLY' | 'MONTHLY';
 
+export type BillingWeekday = 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT';
+
 export type ContractTemplateStatus = 'ACTIVE' | 'ARCHIVED';
 
 export type SignatureStatus = 'DRAFT' | 'SENT' | 'SIGNED';
@@ -96,6 +98,7 @@ export interface Rental {
   priceAmount: number;
   priceFrequency: PriceFrequency;
   dueDay: number | null;
+  billingWeekday: BillingWeekday | null;
   depositAmount: number | null;
   notes: string | null;
 }

@@ -5,9 +5,10 @@ import {
   getAvailableVehicles, 
   getActiveContractTemplates,
   mockDrivers,
-  priceFrequencyLabels
+  priceFrequencyLabels,
+  billingWeekdayLabels
 } from '@/data/mockData';
-import { Driver, Vehicle, ContractTemplate, PriceFrequency } from '@/types';
+import { Driver, Vehicle, ContractTemplate, PriceFrequency, BillingWeekday } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -48,6 +49,7 @@ interface RentalFormData {
   startDate: string;
   priceAmount: string;
   priceFrequency: PriceFrequency;
+  billingWeekday: BillingWeekday;
   dueDay: string;
   depositAmount: string;
   notes: string;
@@ -80,7 +82,8 @@ export function NewRentalPage() {
     startDate: format(new Date(), 'yyyy-MM-dd'),
     priceAmount: '600',
     priceFrequency: 'WEEKLY',
-    dueDay: '1',
+    billingWeekday: 'MON',
+    dueDay: '10',
     depositAmount: '1200',
     notes: '',
     templateId: null,
@@ -157,7 +160,7 @@ export function NewRentalPage() {
     content = content.replace(/{{start_date}}/g, format(new Date(formData.startDate), 'dd/MM/yyyy'));
     content = content.replace(/{{price_amount}}/g, formData.priceAmount);
     content = content.replace(/{{price_frequency}}/g, priceFrequencyLabels[formData.priceFrequency]);
-    content = content.replace(/{{due_day}}/g, formData.dueDay || 'N/A');
+    content = content.replace(/{{due_day}}/g, formData.priceFrequency === 'MONTHLY' ? formData.dueDay : billingWeekdayLabels[formData.billingWeekday]);
     content = content.replace(/{{deposit_amount}}/g, formData.depositAmount || '0');
 
     return content;
@@ -403,18 +406,39 @@ export function NewRentalPage() {
                   </RadioGroup>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dueDay">Dia de Vencimento</Label>
-                  <Input
-                    id="dueDay"
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={formData.dueDay}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dueDay: e.target.value }))}
-                    placeholder="1"
-                  />
-                </div>
+                {formData.priceFrequency === 'WEEKLY' ? (
+                  <div className="space-y-2">
+                    <Label>Dia de Cobrança (semana) *</Label>
+                    <Select
+                      value={formData.billingWeekday}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, billingWeekday: value as BillingWeekday }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o dia..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(billingWeekdayLabels).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="dueDay">Dia de Vencimento (mês)</Label>
+                    <Input
+                      id="dueDay"
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={formData.dueDay}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dueDay: e.target.value }))}
+                      placeholder="10"
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="depositAmount">Caução (R$)</Label>
@@ -439,14 +463,23 @@ export function NewRentalPage() {
                 />
               </div>
 
-              {/* Summary */}
               <Card className="bg-muted/50">
                 <CardContent className="p-4">
                   <p className="text-sm font-medium mb-2">Resumo</p>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <p>Motorista: <span className="text-foreground font-medium">{selectedDriver?.fullName}</span></p>
                     <p>Veículo: <span className="text-foreground font-medium">{selectedVehicle?.plate || selectedVehicle?.id}</span></p>
-                    <p>Valor: <span className="text-foreground font-medium">R$ {formData.priceAmount} / {priceFrequencyLabels[formData.priceFrequency]}</span></p>
+                    <p>
+                      Valor: <span className="text-foreground font-medium">
+                        R$ {formData.priceAmount} / {priceFrequencyLabels[formData.priceFrequency]}
+                        {formData.priceFrequency === 'WEEKLY' && (
+                          <> — toda {billingWeekdayLabels[formData.billingWeekday]}</>
+                        )}
+                        {formData.priceFrequency === 'MONTHLY' && formData.dueDay && (
+                          <> — dia {formData.dueDay}</>
+                        )}
+                      </span>
+                    </p>
                   </div>
                 </CardContent>
               </Card>

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { getVehicleStats, getVehiclesWithDetails, mockDrivers, mockRentals, getFleetManagementStats } from '@/data/mockData';
 import { VehicleStatsCards } from '@/components/VehicleStatsCards';
 import { FleetManagementCards } from '@/components/FleetManagementCards';
+import { FleetStatusChart } from '@/components/FleetStatusChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
@@ -50,7 +51,10 @@ export function DashboardPage() {
         avgTicket={fleetStats.avgTicket}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Fleet Status Chart */}
+        <FleetStatusChart stats={stats} />
+
         {/* Vehicles requiring attention */}
         <Card>
           <CardHeader className="pb-3">
