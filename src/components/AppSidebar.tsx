@@ -20,13 +20,15 @@ import {
   Gauge, 
   Settings,
   LayoutDashboard,
-  ChevronRight
+  ChevronRight,
+  FileSignature
 } from 'lucide-react';
 
 const mainNavItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Veículos', url: '/vehicles', icon: Car },
   { title: 'Motoristas', url: '/drivers', icon: Users },
+  { title: 'Locações', url: '/rentals', icon: FileSignature },
 ];
 
 const operationalItems = [

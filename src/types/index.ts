@@ -11,7 +11,13 @@ export type VehicleStatus =
 
 export type DriverStatus = 'active' | 'inactive';
 
-export type RentalStatus = 'ACTIVE' | 'ENDED';
+export type RentalStatus = 'DRAFT' | 'AWAITING_SIGNATURE' | 'ACTIVE' | 'ENDED' | 'CANCELED';
+
+export type PriceFrequency = 'WEEKLY' | 'MONTHLY';
+
+export type ContractTemplateStatus = 'ACTIVE' | 'ARCHIVED';
+
+export type SignatureStatus = 'DRAFT' | 'SENT' | 'SIGNED';
 
 export type AcquisitionStage = 
   | 'EM_LIBERACAO' 
@@ -87,6 +93,33 @@ export interface Rental {
   startDate: Date;
   endDate: Date | null;
   status: RentalStatus;
+  priceAmount: number;
+  priceFrequency: PriceFrequency;
+  dueDay: number | null;
+  depositAmount: number | null;
+  notes: string | null;
+}
+
+// Contract Templates (versioned)
+export interface ContractTemplate {
+  id: string;
+  name: string;
+  version: string;
+  status: ContractTemplateStatus;
+  templateBody: string;
+  createdAt: Date;
+}
+
+// Contract Instance (generated from template)
+export interface Contract {
+  id: string;
+  rentalId: string;
+  templateId: string;
+  renderedContent: string;
+  pdfUrl: string | null;
+  signatureStatus: SignatureStatus;
+  signedAt: Date | null;
+  createdAt: Date;
 }
 
 export interface RentalSwapHistory {
@@ -185,6 +218,14 @@ export interface DriverWithDetails extends Driver {
   openFinesCount: number;
   // Computed status based on business rule
   computedStatus: DriverStatus;
+}
+
+// Rental with all details for UI
+export interface RentalWithDetails extends Rental {
+  driver: Driver;
+  vehicle: Vehicle;
+  contract: Contract | null;
+  template: ContractTemplate | null;
 }
 
 // Stats
