@@ -11,6 +11,8 @@ import VehicleDetailPage from "./pages/VehicleDetailPage";
 import DriversPage from "./pages/DriversPage";
 import DriverDetailPage from "./pages/DriverDetailPage";
 import NewDriverPage from "./pages/NewDriverPage";
+import RentalsPage from "./pages/RentalsPage";
+import NewRentalPage from "./pages/NewRentalPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
                 <Route path="/drivers" element={<DriversPage />} />
                 <Route path="/drivers/new" element={<NewDriverPage />} />
                 <Route path="/drivers/:id" element={<DriverDetailPage />} />
+                <Route path="/rentals" element={<RentalsPage />} />
+                <Route path="/rentals/new" element={<NewRentalPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

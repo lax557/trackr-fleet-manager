@@ -11,7 +11,10 @@ import {
   DriverWithDetails,
   FileRecord,
   VehicleDocType,
-  DriverDocType
+  DriverDocType,
+  ContractTemplate,
+  Contract,
+  RentalWithDetails
 } from '@/types';
 
 // Drivers - Extended with new fields
@@ -42,13 +45,14 @@ export const mockVehicles: Vehicle[] = [
   { id: 'TRK-010', plate: null, make: 'Toyota', model: 'Yaris', version: '1.5 XL', yearMfg: 2025, yearModel: 2025, category: 'B', vin: null, renavam: null, createdAt: new Date('2024-01-10'), updatedAt: new Date('2024-01-10') },
 ];
 
-// Rentals
+// Rentals - Updated with new fields
 export const mockRentals: Rental[] = [
-  { id: 'r1', driverId: 'd1', vehicleId: 'TRK-001', startDate: new Date('2024-01-01'), endDate: null, status: 'ACTIVE' },
-  { id: 'r2', driverId: 'd2', vehicleId: 'TRK-003', startDate: new Date('2024-01-05'), endDate: null, status: 'ACTIVE' },
-  { id: 'r3', driverId: 'd3', vehicleId: 'TRK-004', startDate: new Date('2024-01-10'), endDate: null, status: 'ACTIVE' },
-  { id: 'r4', driverId: 'd4', vehicleId: 'TRK-005', startDate: new Date('2024-01-12'), endDate: null, status: 'ACTIVE' },
-  { id: 'r5', driverId: 'd5', vehicleId: 'TRK-007', startDate: new Date('2024-01-15'), endDate: null, status: 'ACTIVE' },
+  { id: 'r1', driverId: 'd1', vehicleId: 'TRK-001', startDate: new Date('2024-01-01'), endDate: null, status: 'ACTIVE', priceAmount: 600, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1200, notes: null },
+  { id: 'r2', driverId: 'd2', vehicleId: 'TRK-003', startDate: new Date('2024-01-05'), endDate: null, status: 'ACTIVE', priceAmount: 700, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1400, notes: null },
+  { id: 'r3', driverId: 'd3', vehicleId: 'TRK-004', startDate: new Date('2024-01-10'), endDate: null, status: 'ACTIVE', priceAmount: 750, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1500, notes: null },
+  { id: 'r4', driverId: 'd4', vehicleId: 'TRK-005', startDate: new Date('2024-01-12'), endDate: null, status: 'ACTIVE', priceAmount: 2800, priceFrequency: 'MONTHLY', dueDay: 10, depositAmount: 2800, notes: 'Contrato mensal' },
+  { id: 'r5', driverId: 'd5', vehicleId: 'TRK-007', startDate: new Date('2024-01-15'), endDate: null, status: 'ACTIVE', priceAmount: 650, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1300, notes: null },
+  { id: 'r6', driverId: 'd6', vehicleId: 'TRK-002', startDate: new Date('2023-06-01'), endDate: new Date('2023-12-15'), status: 'ENDED', priceAmount: 550, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1100, notes: 'Locação encerrada' },
 ];
 
 // Vehicle Status History (current status is the most recent)
@@ -97,6 +101,100 @@ export const mockFiles: FileRecord[] = [
   { id: 'file3', scope: 'DRIVER', scopeId: 'd1', docType: 'CONTRATO', fileName: 'Contrato_Locacao_Carlos.pdf', fileUrl: '/docs/contrato_d1.pdf', mimeType: 'application/pdf', uploadedAt: new Date('2024-01-01'), uploadedBy: 'admin' },
   { id: 'file4', scope: 'DRIVER', scopeId: 'd1', docType: 'CNH', fileName: 'CNH_Carlos.jpg', fileUrl: '/docs/cnh_d1.jpg', mimeType: 'image/jpeg', uploadedAt: new Date('2024-01-01'), uploadedBy: 'admin' },
   { id: 'file5', scope: 'DRIVER', scopeId: 'd2', docType: 'CONTRATO', fileName: 'Contrato_Locacao_Maria.pdf', fileUrl: '/docs/contrato_d2.pdf', mimeType: 'application/pdf', uploadedAt: new Date('2024-01-05'), uploadedBy: 'admin' },
+];
+
+// Contract Templates - Versioned
+export const mockContractTemplates: ContractTemplate[] = [
+  {
+    id: 'tpl1',
+    name: 'Locação Motorista App',
+    version: 'v1.0',
+    status: 'ACTIVE',
+    templateBody: `<h1>CONTRATO DE LOCAÇÃO DE VEÍCULO</h1>
+<p><strong>LOCADOR:</strong> Trackr Gestão de Frotas LTDA</p>
+<p><strong>LOCATÁRIO:</strong> {{driver_name}}</p>
+<p><strong>CPF:</strong> {{driver_cpf}}</p>
+<p><strong>CNH:</strong> {{driver_cnh}}</p>
+
+<h2>CLÁUSULA 1 - DO OBJETO</h2>
+<p>O presente contrato tem como objeto a locação do veículo identificado como <strong>{{vehicle_id}}</strong>, placa <strong>{{vehicle_plate}}</strong>, para uso exclusivo em aplicativos de transporte.</p>
+
+<h2>CLÁUSULA 2 - DO VALOR E PAGAMENTO</h2>
+<p>O valor da locação é de <strong>R$ {{price_amount}}</strong> por <strong>{{price_frequency}}</strong>.</p>
+<p>O vencimento será no dia <strong>{{due_day}}</strong> de cada período.</p>
+<p>Caução: <strong>R$ {{deposit_amount}}</strong></p>
+
+<h2>CLÁUSULA 3 - DO PRAZO</h2>
+<p>A locação tem início em <strong>{{start_date}}</strong> por prazo indeterminado.</p>
+
+<h2>CLÁUSULA 4 - DAS OBRIGAÇÕES</h2>
+<p>O LOCATÁRIO se compromete a manter o veículo em bom estado de conservação e limpeza.</p>
+
+<p style="margin-top: 40px;">Local e Data: São Paulo, {{start_date}}</p>
+<p>_____________________________</p>
+<p>Assinatura do Locatário</p>`,
+    createdAt: new Date('2023-06-01'),
+  },
+  {
+    id: 'tpl2',
+    name: 'Locação Motorista App',
+    version: 'v1.1',
+    status: 'ACTIVE',
+    templateBody: `<h1>CONTRATO DE LOCAÇÃO DE VEÍCULO - VERSÃO ATUALIZADA</h1>
+<p><strong>LOCADOR:</strong> Trackr Gestão de Frotas LTDA</p>
+<p><strong>LOCATÁRIO:</strong> {{driver_name}}</p>
+<p><strong>CPF:</strong> {{driver_cpf}}</p>
+<p><strong>CNH:</strong> {{driver_cnh}}</p>
+
+<h2>CLÁUSULA 1 - DO OBJETO</h2>
+<p>O presente contrato tem como objeto a locação do veículo <strong>{{vehicle_id}}</strong>, placa <strong>{{vehicle_plate}}</strong>.</p>
+
+<h2>CLÁUSULA 2 - DO VALOR</h2>
+<p>Valor: <strong>R$ {{price_amount}}</strong> ({{price_frequency}})</p>
+<p>Vencimento: dia <strong>{{due_day}}</strong></p>
+<p>Caução: <strong>R$ {{deposit_amount}}</strong></p>
+
+<h2>CLÁUSULA 3 - VIGÊNCIA</h2>
+<p>Início: <strong>{{start_date}}</strong> - Prazo indeterminado</p>
+
+<h2>CLÁUSULA 4 - MULTAS E INFRAÇÕES</h2>
+<p>O LOCATÁRIO é responsável por todas as multas de trânsito durante o período de locação.</p>
+
+<h2>CLÁUSULA 5 - RESCISÃO</h2>
+<p>Qualquer parte pode rescindir com aviso prévio de 7 dias.</p>
+
+<p style="margin-top: 40px;">São Paulo, {{start_date}}</p>
+<p>_____________________________</p>
+<p>{{driver_name}}</p>`,
+    createdAt: new Date('2024-01-01'),
+  },
+  {
+    id: 'tpl3',
+    name: 'Locação Veículo Elétrico',
+    version: 'v1.0',
+    status: 'ACTIVE',
+    templateBody: `<h1>CONTRATO DE LOCAÇÃO - VEÍCULO ELÉTRICO</h1>
+<p><strong>LOCATÁRIO:</strong> {{driver_name}} (CPF: {{driver_cpf}})</p>
+<p><strong>VEÍCULO:</strong> {{vehicle_id}} - Placa: {{vehicle_plate}}</p>
+
+<h2>CONDIÇÕES ESPECIAIS</h2>
+<p>Por se tratar de veículo elétrico, aplicam-se condições especiais de uso.</p>
+<p>Valor: R$ {{price_amount}} ({{price_frequency}})</p>
+<p>Caução: R$ {{deposit_amount}}</p>
+<p>Início: {{start_date}}</p>
+
+<p style="margin-top: 40px;">Assinatura: _____________________________</p>`,
+    createdAt: new Date('2024-01-15'),
+  },
+];
+
+// Contracts (instances) - Generated from templates
+export const mockContracts: Contract[] = [
+  { id: 'ct1', rentalId: 'r1', templateId: 'tpl1', renderedContent: '<h1>Contrato Carlos</h1>', pdfUrl: '/contracts/ct1.pdf', signatureStatus: 'SIGNED', signedAt: new Date('2024-01-01'), createdAt: new Date('2024-01-01') },
+  { id: 'ct2', rentalId: 'r2', templateId: 'tpl2', renderedContent: '<h1>Contrato Maria</h1>', pdfUrl: '/contracts/ct2.pdf', signatureStatus: 'SIGNED', signedAt: new Date('2024-01-05'), createdAt: new Date('2024-01-05') },
+  { id: 'ct3', rentalId: 'r3', templateId: 'tpl2', renderedContent: '<h1>Contrato João</h1>', pdfUrl: '/contracts/ct3.pdf', signatureStatus: 'SIGNED', signedAt: new Date('2024-01-10'), createdAt: new Date('2024-01-10') },
+  { id: 'ct4', rentalId: 'r4', templateId: 'tpl1', renderedContent: '<h1>Contrato Ana</h1>', pdfUrl: '/contracts/ct4.pdf', signatureStatus: 'SIGNED', signedAt: new Date('2024-01-12'), createdAt: new Date('2024-01-12') },
+  { id: 'ct5', rentalId: 'r5', templateId: 'tpl2', renderedContent: '<h1>Contrato Lucas</h1>', pdfUrl: null, signatureStatus: 'SENT', signedAt: null, createdAt: new Date('2024-01-15') },
 ];
 
 // Helper to get current status for a vehicle
@@ -278,6 +376,59 @@ export const getFleetManagementStats = () => {
     unproductiveRate,
     avgTicket,
   };
+};
+
+// Rentals with details helper
+export const getRentalsWithDetails = (): RentalWithDetails[] => {
+  return mockRentals.map(rental => {
+    const driver = mockDrivers.find(d => d.id === rental.driverId)!;
+    const vehicle = mockVehicles.find(v => v.id === rental.vehicleId)!;
+    const contract = mockContracts.find(c => c.rentalId === rental.id) || null;
+    const template = contract ? mockContractTemplates.find(t => t.id === contract.templateId) || null : null;
+
+    return {
+      ...rental,
+      driver,
+      vehicle,
+      contract,
+      template,
+    };
+  });
+};
+
+// Get available vehicles (status DISPONIVEL)
+export const getAvailableVehicles = () => {
+  return getVehiclesWithDetails().filter(v => v.currentStatus === 'DISPONIVEL');
+};
+
+// Get available drivers (no active rental)
+export const getAvailableDrivers = () => {
+  return getDriversWithDetails().filter(d => !d.activeRental);
+};
+
+// Get active contract templates
+export const getActiveContractTemplates = () => {
+  return mockContractTemplates.filter(t => t.status === 'ACTIVE');
+};
+
+// Rental status labels
+export const rentalStatusLabels: Record<string, string> = {
+  DRAFT: 'Rascunho',
+  AWAITING_SIGNATURE: 'Aguardando Assinatura',
+  ACTIVE: 'Ativa',
+  ENDED: 'Encerrada',
+  CANCELED: 'Cancelada',
+};
+
+export const priceFrequencyLabels: Record<string, string> = {
+  WEEKLY: 'Semanal',
+  MONTHLY: 'Mensal',
+};
+
+export const signatureStatusLabels: Record<string, string> = {
+  DRAFT: 'Rascunho',
+  SENT: 'Enviado',
+  SIGNED: 'Assinado',
 };
 
 export const vehicleDocTypeLabels: Record<VehicleDocType, string> = {
