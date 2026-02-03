@@ -11,6 +11,7 @@ import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { DocumentsCard } from '@/components/DocumentsCard';
 import { FinanceCard } from '@/components/FinanceCard';
 import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
+import { VehicleFinesCard } from '@/components/VehicleFinesCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -324,17 +325,8 @@ export function VehicleDetailPage() {
           {/* Maintenance Card - Now functional! */}
           <VehicleMaintenanceCard vehicleId={vehicle.id} />
 
-          <Card className="opacity-60">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base text-muted-foreground">Multas</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Em breve: integração com infrações...</p>
-            </CardContent>
-          </Card>
+          {/* Fines Card - Now functional! */}
+          <VehicleFinesCard vehicleId={vehicle.id} />
 
           <Card className="opacity-60">
             <CardHeader className="pb-3">
