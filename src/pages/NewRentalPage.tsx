@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   getAvailableDrivers, 
   getAvailableVehicles, 
@@ -64,11 +64,18 @@ const stepLabels = {
 
 export function NewRentalPage() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const [searchParams] = useSearchParams();
+  const preSelectedDriverId = searchParams.get('driverId');
+  
+  // If driver is pre-selected, start at step 2
+  const [currentStep, setCurrentStep] = useState<WizardStep>(() => 
+    preSelectedDriverId ? 2 : 1
+  );
   const [driverSearch, setDriverSearch] = useState('');
+  const [isDriverPreSelected, setIsDriverPreSelected] = useState(!!preSelectedDriverId);
   
   const [formData, setFormData] = useState<RentalFormData>({
-    driverId: null,
+    driverId: preSelectedDriverId,
     vehicleId: null,
     startDate: format(new Date(), 'yyyy-MM-dd'),
     priceAmount: '600',
@@ -129,6 +136,11 @@ export function NewRentalPage() {
 
   const handleBack = () => {
     if (currentStep > 1) {
+      // If driver was pre-selected, don't go back to step 1
+      if (isDriverPreSelected && currentStep === 2) {
+        navigate(-1);
+        return;
+      }
       setCurrentStep((prev) => (prev - 1) as WizardStep);
     }
   };
@@ -181,25 +193,34 @@ export function NewRentalPage() {
       <div className="space-y-2">
         <Progress value={progressValue} className="h-2" />
         <div className="flex justify-between text-sm text-muted-foreground">
-          {Object.entries(stepLabels).map(([step, label]) => (
-            <div 
-              key={step} 
-              className={`flex items-center gap-1 ${Number(step) <= currentStep ? 'text-primary font-medium' : ''}`}
-            >
-              {Number(step) < currentStep ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : Number(step) === currentStep ? (
-                <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground">
-                  {step}
-                </div>
-              ) : (
-                <div className="h-4 w-4 rounded-full border flex items-center justify-center text-[10px]">
-                  {step}
-                </div>
-              )}
-              <span className="hidden sm:inline">{label}</span>
-            </div>
-          ))}
+          {Object.entries(stepLabels).map(([step, label]) => {
+            const stepNum = Number(step);
+            // If driver is pre-selected, step 1 is always "done"
+            const isCompleted = isDriverPreSelected 
+              ? (stepNum === 1 || stepNum < currentStep) 
+              : stepNum < currentStep;
+            const isCurrent = stepNum === currentStep;
+            
+            return (
+              <div 
+                key={step} 
+                className={`flex items-center gap-1 ${isCompleted || isCurrent ? 'text-primary font-medium' : ''}`}
+              >
+                {isCompleted ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : isCurrent ? (
+                  <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground">
+                    {step}
+                  </div>
+                ) : (
+                  <div className="h-4 w-4 rounded-full border flex items-center justify-center text-[10px]">
+                    {step}
+                  </div>
+                )}
+                <span className="hidden sm:inline">{label}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -497,7 +518,7 @@ export function NewRentalPage() {
                       </Badge>
                     </div>
                     <div 
-                      className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-white prose prose-sm"
+                      className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-card text-card-foreground prose prose-sm dark:prose-invert"
                       dangerouslySetInnerHTML={{ __html: renderContractPreview() || '' }}
                     />
                   </div>
