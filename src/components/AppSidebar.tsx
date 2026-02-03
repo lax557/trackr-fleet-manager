@@ -14,28 +14,20 @@ import {
 import { 
   Car, 
   Users, 
-  FileText, 
   Wrench, 
   AlertTriangle, 
-  Gauge, 
   Settings,
   LayoutDashboard,
-  ChevronRight,
   FileSignature
 } from 'lucide-react';
 
-const mainNavItems = [
+const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Veículos', url: '/vehicles', icon: Car },
   { title: 'Motoristas', url: '/drivers', icon: Users },
   { title: 'Locações', url: '/rentals', icon: FileSignature },
-];
-
-const operationalItems = [
-  { title: 'Documentação', url: '/documents', icon: FileText, disabled: true },
-  { title: 'Manutenções', url: '/maintenance', icon: Wrench, disabled: false },
-  { title: 'Multas', url: '/fines', icon: AlertTriangle, disabled: true },
-  { title: 'Odômetro', url: '/odometer', icon: Gauge, disabled: true },
+  { title: 'Manutenções', url: '/maintenance', icon: Wrench },
+  { title: 'Multas', url: '/fines', icon: AlertTriangle },
 ];
 
 export function AppSidebar() {
@@ -57,52 +49,24 @@ export function AppSidebar() {
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
-                    isActive={location.pathname === item.url}
+                    isActive={
+                      item.url === '/' 
+                        ? location.pathname === '/' 
+                        : location.pathname.startsWith(item.url)
+                    }
                   >
                     <NavLink to={item.url}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Operacional</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {operationalItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.disabled ? (
-                    <SidebarMenuButton 
-                      disabled
-                      className="opacity-50 cursor-not-allowed"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">Em breve</span>
-                    </SidebarMenuButton>
-                  ) : (
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={location.pathname.startsWith(item.url)}
-                    >
-                      <NavLink to={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

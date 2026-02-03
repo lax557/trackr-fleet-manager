@@ -18,6 +18,8 @@ import NewRentalPage from "./pages/NewRentalPage";
 import MaintenancesPage from "./pages/MaintenancesPage";
 import NewMaintenancePage from "./pages/NewMaintenancePage";
 import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
+import FinesPage from "./pages/FinesPage";
+import FineDetailPage from "./pages/FineDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -52,6 +54,8 @@ const App = () => (
                   <Route path="/maintenance/new" element={<NewMaintenancePage />} />
                   <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
                   <Route path="/maintenance/:id/edit" element={<NewMaintenancePage />} />
+                  <Route path="/fines" element={<FinesPage />} />
+                  <Route path="/fines/:id" element={<FineDetailPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

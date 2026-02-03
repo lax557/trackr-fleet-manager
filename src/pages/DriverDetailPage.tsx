@@ -4,17 +4,17 @@ import { DriverDocType } from '@/types';
 import { 
   getDriversWithDetails, 
   mockVehicles, 
-  mockFines,
   getFilesForScope,
   driverDocTypeLabels,
   mockRentals
 } from '@/data/mockData';
+import { getFinesForDriver } from '@/data/finesData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { DocumentsCard } from '@/components/DocumentsCard';
-import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users, Plus } from 'lucide-react';
+import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users, Plus, ArrowRight } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getCurrentStatus } from '@/data/mockData';
 import { format } from 'date-fns';
@@ -24,6 +24,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { fineStatusColors, fineStatusLabels } from '@/types/fines';
 
 const driverDocTypes: DriverDocType[] = [
   'CONTRATO',
@@ -68,7 +69,11 @@ export function DriverDetailPage() {
 
   const currentVehicle = driver.currentVehicle;
   const vehicleStatus = currentVehicle ? getCurrentStatus(currentVehicle.id) : null;
-  const openFinesCount = mockFines.filter(f => f.driverId === driver.id && f.status === 'ABERTA').length;
+  
+  // Get driver fines from the fines data
+  const driverFines = useMemo(() => getFinesForDriver(driver.id), [driver.id]);
+  const openFines = driverFines.filter(f => ['OPEN', 'DUE_SOON', 'OVERDUE'].includes(f.status));
+  const openFinesCount = openFines.length;
 
   // Use computed status based on business rules
   const displayStatus = driver.computedStatus;
@@ -266,10 +271,20 @@ export function DriverDetailPage() {
         {/* Seção 3: Multas */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-primary" />
-              Multas
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-primary" />
+                Multas
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate(`/fines?driverId=${driver.id}`)}
+              >
+                Ver todas
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
             <CardDescription>Multas vinculadas a este motorista</CardDescription>
           </CardHeader>
           <CardContent>
@@ -288,10 +303,33 @@ export function DriverDetailPage() {
                 </Badge>
               )}
             </div>
-            <Separator className="my-4" />
-            <p className="text-sm text-muted-foreground text-center">
-              Detalhamento de multas será implementado em versão futura.
-            </p>
+            
+            {openFines.length > 0 && (
+              <>
+                <Separator className="my-4" />
+                <div className="space-y-2">
+                  {openFines.slice(0, 3).map(fine => (
+                    <div 
+                      key={fine.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted cursor-pointer transition-colors"
+                      onClick={() => navigate(`/fines/${fine.id}`)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {fine.infractionDescription}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Vence: {format(fine.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
+                        </p>
+                      </div>
+                      <Badge className={fineStatusColors[fine.status]} variant="secondary">
+                        {fineStatusLabels[fine.status]}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

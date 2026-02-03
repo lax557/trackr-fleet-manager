@@ -677,9 +677,15 @@ mockMaintenances.forEach(m => {
   m.items = mockMaintenanceItems.filter(item => item.maintenanceId === m.id);
 });
 
+// Import seed data and merge
+import { seedMaintenances } from './maintenanceSeed';
+
+// Combine original mock maintenances with seed data
+const allMaintenances: Maintenance[] = [...mockMaintenances, ...seedMaintenances];
+
 // Get maintenances with vehicle details
 export const getMaintenancesWithDetails = (): MaintenanceWithVehicle[] => {
-  return mockMaintenances.map(m => {
+  return allMaintenances.map(m => {
     const vehicle = mockVehicles.find(v => v.id === m.vehicleId)!;
     return {
       ...m,
@@ -693,4 +699,43 @@ export const getMaintenancesForVehicle = (vehicleId: string): MaintenanceWithVeh
   return getMaintenancesWithDetails()
     .filter(m => m.vehicleId === vehicleId)
     .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
+};
+
+// Helper for fleet average calculations
+export const getOperationalFleetForDate = (date: Date): number => {
+  // Check status history for each vehicle on the given date
+  const operationalStatuses = ['DISPONIVEL', 'ALUGADO', 'MANUTENCAO', 'SINISTRO'];
+  
+  return mockVehicles.filter(vehicle => {
+    // Get the status that was active on that date
+    const relevantHistory = mockStatusHistory
+      .filter(sh => sh.vehicleId === vehicle.id && sh.statusSince <= date)
+      .sort((a, b) => b.statusSince.getTime() - a.statusSince.getTime());
+    
+    if (relevantHistory.length === 0) {
+      // If no history, check if vehicle was created before the date
+      if (vehicle.createdAt <= date) {
+        // Assume operational by default if no history
+        return true;
+      }
+      return false;
+    }
+    
+    return operationalStatuses.includes(relevantHistory[0].status);
+  }).length;
+};
+
+// Calculate average fleet size for a date range
+export const getAverageFleetForPeriod = (startDate: Date, endDate: Date): number => {
+  const daysCounts: number[] = [];
+  const currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    daysCounts.push(getOperationalFleetForDate(new Date(currentDate)));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return daysCounts.length > 0 
+    ? daysCounts.reduce((a, b) => a + b, 0) / daysCounts.length 
+    : 0;
 };

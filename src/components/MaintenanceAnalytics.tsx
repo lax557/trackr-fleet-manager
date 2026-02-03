@@ -1,14 +1,13 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   getMaintenancesWithDetails, 
   mockVehicles,
   maintenanceTypeLabels,
-  serviceAreaLabels
+  serviceAreaLabels,
+  getAverageFleetForPeriod
 } from '@/data/mockData';
 import { MaintenanceType, ServiceArea } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -28,22 +27,28 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  Legend
 } from 'recharts';
 import { 
   DollarSign, 
   TrendingUp, 
   Car,
   Filter,
-  X
+  X,
+  Users,
+  HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { format, subMonths, isWithinInterval, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const chartConfig = {
   total: {
@@ -70,8 +75,6 @@ const COLORS = [
 ];
 
 export function MaintenanceAnalytics() {
-  const navigate = useNavigate();
-
   // Filters
   const [dateFrom, setDateFrom] = useState(format(subMonths(new Date(), 12), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -159,7 +162,7 @@ export function MaintenanceAnalytics() {
     return Object.values(areas).sort((a, b) => b.cost - a.cost);
   }, [filteredData]);
 
-  // KPIs
+  // KPIs including fleet average cost
   const kpis = useMemo(() => {
     const totalSpent = filteredData.reduce((sum, m) => sum + m.totalCost, 0);
     const monthCount = monthlyData.length || 1;
@@ -180,13 +183,26 @@ export function MaintenanceAnalytics() {
     });
     const topVehicle = Object.values(vehicleCosts).sort((a, b) => b.cost - a.cost)[0];
 
+    // Calculate average fleet for the period
+    let avgFleet = 0;
+    let avgCostPerCar = 0;
+    
+    if (dateFrom && dateTo) {
+      const from = new Date(dateFrom);
+      const to = new Date(dateTo);
+      avgFleet = getAverageFleetForPeriod(from, to);
+      avgCostPerCar = avgFleet > 0 ? totalSpent / avgFleet : 0;
+    }
+
     return {
       totalSpent,
       avgMonthly,
       preventiveRate,
       topVehicle,
+      avgFleet,
+      avgCostPerCar,
     };
-  }, [filteredData, monthlyData]);
+  }, [filteredData, monthlyData, dateFrom, dateTo]);
 
   const clearFilters = () => {
     setDateFrom(format(subMonths(new Date(), 12), 'yyyy-MM-dd'));
@@ -273,8 +289,8 @@ export function MaintenanceAnalytics() {
         </CardContent>
       </Card>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* KPIs - Updated with fleet average cost */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
@@ -309,6 +325,50 @@ export function MaintenanceAnalytics() {
                 {(100 - kpis.preventiveRate).toFixed(0)}%
               </span>
             </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-emerald-600" />
+              <p className="text-sm text-muted-foreground">Frota média</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Média diária de veículos operacionais no período.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Exclui: Em Liberação, Para Venda
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <p className="text-2xl font-bold mt-1">
+              {kpis.avgFleet.toFixed(1)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Car className="h-5 w-5 text-primary" />
+              <p className="text-sm text-muted-foreground">Custo médio/carro</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Custo total de manutenção ÷ Frota média no período.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Considera apenas veículos operacionais (Disponível, Alugado, Manutenção, Sinistro).
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-primary">
+              R$ {kpis.avgCostPerCar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
           </CardContent>
         </Card>
         <Card>
