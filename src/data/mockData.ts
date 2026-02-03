@@ -47,12 +47,12 @@ export const mockVehicles: Vehicle[] = [
 
 // Rentals - Updated with new fields
 export const mockRentals: Rental[] = [
-  { id: 'r1', driverId: 'd1', vehicleId: 'TRK-001', startDate: new Date('2024-01-01'), endDate: null, status: 'ACTIVE', priceAmount: 600, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1200, notes: null },
-  { id: 'r2', driverId: 'd2', vehicleId: 'TRK-003', startDate: new Date('2024-01-05'), endDate: null, status: 'ACTIVE', priceAmount: 700, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1400, notes: null },
-  { id: 'r3', driverId: 'd3', vehicleId: 'TRK-004', startDate: new Date('2024-01-10'), endDate: null, status: 'ACTIVE', priceAmount: 750, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1500, notes: null },
-  { id: 'r4', driverId: 'd4', vehicleId: 'TRK-005', startDate: new Date('2024-01-12'), endDate: null, status: 'ACTIVE', priceAmount: 2800, priceFrequency: 'MONTHLY', dueDay: 10, depositAmount: 2800, notes: 'Contrato mensal' },
-  { id: 'r5', driverId: 'd5', vehicleId: 'TRK-007', startDate: new Date('2024-01-15'), endDate: null, status: 'ACTIVE', priceAmount: 650, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1300, notes: null },
-  { id: 'r6', driverId: 'd6', vehicleId: 'TRK-002', startDate: new Date('2023-06-01'), endDate: new Date('2023-12-15'), status: 'ENDED', priceAmount: 550, priceFrequency: 'WEEKLY', dueDay: 1, depositAmount: 1100, notes: 'Locação encerrada' },
+  { id: 'r1', driverId: 'd1', vehicleId: 'TRK-001', startDate: new Date('2024-01-01'), endDate: null, status: 'ACTIVE', priceAmount: 600, priceFrequency: 'WEEKLY', dueDay: null, billingWeekday: 'MON', depositAmount: 1200, notes: null },
+  { id: 'r2', driverId: 'd2', vehicleId: 'TRK-003', startDate: new Date('2024-01-05'), endDate: null, status: 'ACTIVE', priceAmount: 700, priceFrequency: 'WEEKLY', dueDay: null, billingWeekday: 'MON', depositAmount: 1400, notes: null },
+  { id: 'r3', driverId: 'd3', vehicleId: 'TRK-004', startDate: new Date('2024-01-10'), endDate: null, status: 'ACTIVE', priceAmount: 750, priceFrequency: 'WEEKLY', dueDay: null, billingWeekday: 'TUE', depositAmount: 1500, notes: null },
+  { id: 'r4', driverId: 'd4', vehicleId: 'TRK-005', startDate: new Date('2024-01-12'), endDate: null, status: 'ACTIVE', priceAmount: 2800, priceFrequency: 'MONTHLY', dueDay: 10, billingWeekday: null, depositAmount: 2800, notes: 'Contrato mensal' },
+  { id: 'r5', driverId: 'd5', vehicleId: 'TRK-007', startDate: new Date('2024-01-15'), endDate: null, status: 'ACTIVE', priceAmount: 650, priceFrequency: 'WEEKLY', dueDay: null, billingWeekday: 'FRI', depositAmount: 1300, notes: null },
+  { id: 'r6', driverId: 'd6', vehicleId: 'TRK-002', startDate: new Date('2023-06-01'), endDate: new Date('2023-12-15'), status: 'ENDED', priceAmount: 550, priceFrequency: 'WEEKLY', dueDay: null, billingWeekday: 'MON', depositAmount: 1100, notes: 'Locação encerrada' },
 ];
 
 // Vehicle Status History (current status is the most recent)
@@ -423,6 +423,16 @@ export const rentalStatusLabels: Record<string, string> = {
 export const priceFrequencyLabels: Record<string, string> = {
   WEEKLY: 'Semanal',
   MONTHLY: 'Mensal',
+};
+
+export const billingWeekdayLabels: Record<string, string> = {
+  SUN: 'Domingo',
+  MON: 'Segunda-feira',
+  TUE: 'Terça-feira',
+  WED: 'Quarta-feira',
+  THU: 'Quinta-feira',
+  FRI: 'Sexta-feira',
+  SAT: 'Sábado',
 };
 
 export const signatureStatusLabels: Record<string, string> = {
