@@ -33,7 +33,7 @@ const mainNavItems = [
 
 const operationalItems = [
   { title: 'Documentação', url: '/documents', icon: FileText, disabled: true },
-  { title: 'Manutenções', url: '/maintenance', icon: Wrench, disabled: true },
+  { title: 'Manutenções', url: '/maintenance', icon: Wrench, disabled: false },
   { title: 'Multas', url: '/fines', icon: AlertTriangle, disabled: true },
   { title: 'Odômetro', url: '/odometer', icon: Gauge, disabled: true },
 ];
@@ -83,16 +83,26 @@ export function AppSidebar() {
             <SidebarMenu>
               {operationalItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    disabled={item.disabled}
-                    className={item.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                    {item.disabled && (
+                  {item.disabled ? (
+                    <SidebarMenuButton 
+                      disabled
+                      className="opacity-50 cursor-not-allowed"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
                       <span className="ml-auto text-xs text-muted-foreground">Em breve</span>
-                    )}
-                  </SidebarMenuButton>
+                    </SidebarMenuButton>
+                  ) : (
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={location.pathname.startsWith(item.url)}
+                    >
+                      <NavLink to={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

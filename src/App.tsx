@@ -15,6 +15,9 @@ import DriverDetailPage from "./pages/DriverDetailPage";
 import NewDriverPage from "./pages/NewDriverPage";
 import RentalsPage from "./pages/RentalsPage";
 import NewRentalPage from "./pages/NewRentalPage";
+import MaintenancesPage from "./pages/MaintenancesPage";
+import NewMaintenancePage from "./pages/NewMaintenancePage";
+import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -45,6 +48,10 @@ const App = () => (
                   <Route path="/drivers/:id" element={<DriverDetailPage />} />
                   <Route path="/rentals" element={<RentalsPage />} />
                   <Route path="/rentals/new" element={<NewRentalPage />} />
+                  <Route path="/maintenance" element={<MaintenancesPage />} />
+                  <Route path="/maintenance/new" element={<NewMaintenancePage />} />
+                  <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
+                  <Route path="/maintenance/:id/edit" element={<NewMaintenancePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
