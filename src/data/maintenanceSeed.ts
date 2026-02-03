@@ -1,5 +1,5 @@
 import { Maintenance, MaintenanceItem, MaintenanceStatus, MaintenanceType, ServiceArea } from '@/types';
-import { mockVehicles } from './mockData';
+import { vehiclesData } from './vehiclesData';
 import { subMonths, addDays, subDays } from 'date-fns';
 
 // Generate 30 realistic maintenance records
@@ -67,7 +67,7 @@ const generateMaintenanceSeed = (): { maintenances: Maintenance[], items: Mainte
   ];
 
   // Get operational vehicles (with plates)
-  const operationalVehicles = mockVehicles.filter(v => v.plate);
+  const operationalVehicles = vehiclesData.filter(v => v.plate);
   
   // Create 30 maintenances distributed over 12 months
   for (let i = 0; i < 30; i++) {
