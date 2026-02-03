@@ -10,6 +10,7 @@ import {
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { DocumentsCard } from '@/components/DocumentsCard';
 import { FinanceCard } from '@/components/FinanceCard';
+import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,6 @@ import {
   UserPlus, 
   ArrowRight, 
   Car, 
-  Wrench, 
   AlertTriangle, 
   Gauge,
   Package,
@@ -321,18 +321,8 @@ export function VehicleDetailPage() {
             onDelete={handleDocumentDelete}
           />
 
-          {/* Future modules placeholders */}
-          <Card className="opacity-60">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Wrench className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base text-muted-foreground">Manutenções</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Em breve: histórico de serviços...</p>
-            </CardContent>
-          </Card>
+          {/* Maintenance Card - Now functional! */}
+          <VehicleMaintenanceCard vehicleId={vehicle.id} />
 
           <Card className="opacity-60">
             <CardHeader className="pb-3">

@@ -43,6 +43,11 @@ export type UserRole = 'admin' | 'operations' | 'finance' | 'maintenance' | 'rea
 
 export type FileScope = 'VEHICLE' | 'DRIVER';
 
+// Maintenance types
+export type MaintenanceStatus = 'OPEN' | 'IN_PROGRESS' | 'DONE';
+export type MaintenanceType = 'PREVENTIVE' | 'CORRECTIVE';
+export type ServiceArea = 'MECHANICAL' | 'ELECTRICAL' | 'BODYSHOP' | 'TIRES' | 'INSPECTION' | 'OTHER';
+
 export type VehicleDocType = 
   | 'CRLV'
   | 'CONTRATO_COMPRA'
@@ -192,6 +197,51 @@ export interface FileRecord {
   mimeType: string;
   uploadedAt: Date;
   uploadedBy: string;
+}
+
+// Maintenance entities
+export interface MaintenanceItem {
+  id: string;
+  maintenanceId: string;
+  itemName: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  hasWarranty: boolean;
+  warrantyUntil: Date | null;
+  warrantyNotes: string | null;
+}
+
+export interface Maintenance {
+  id: string;
+  vehicleId: string;
+  vehiclePlate: string | null;
+  occurredAt: Date;
+  completedAt: Date | null;
+  status: MaintenanceStatus;
+  maintenanceType: MaintenanceType;
+  serviceArea: ServiceArea;
+  supplierName: string | null;
+  odometerKm: number | null;
+  notes: string | null;
+  laborCost: number;
+  partsCost: number;
+  totalCost: number;
+  hasWarranty: boolean;
+  warrantyUntil: Date | null;
+  warrantyNotes: string | null;
+  items: MaintenanceItem[];
+}
+
+export interface MaintenanceWithVehicle extends Maintenance {
+  vehicle: Vehicle;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string | null;
+  notes: string | null;
 }
 
 export interface AuditLog {

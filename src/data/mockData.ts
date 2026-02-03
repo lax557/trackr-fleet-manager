@@ -14,7 +14,14 @@ import {
   DriverDocType,
   ContractTemplate,
   Contract,
-  RentalWithDetails
+  RentalWithDetails,
+  Maintenance,
+  MaintenanceItem,
+  MaintenanceWithVehicle,
+  MaintenanceStatus,
+  MaintenanceType,
+  ServiceArea,
+  Supplier
 } from '@/types';
 
 // Drivers - Extended with new fields
@@ -457,4 +464,233 @@ export const driverDocTypeLabels: Record<DriverDocType, string> = {
   CPF_DOC: 'CPF (documento)',
   COMPROVANTE_RESIDENCIA: 'Comprovante de Residência',
   PERFIL_APP: 'Perfil Uber/99',
+};
+
+// Maintenance status labels
+export const maintenanceStatusLabels: Record<MaintenanceStatus, string> = {
+  OPEN: 'Aberta',
+  IN_PROGRESS: 'Em Execução',
+  DONE: 'Finalizada',
+};
+
+export const maintenanceTypeLabels: Record<MaintenanceType, string> = {
+  PREVENTIVE: 'Preventiva',
+  CORRECTIVE: 'Corretiva',
+};
+
+export const serviceAreaLabels: Record<ServiceArea, string> = {
+  MECHANICAL: 'Mecânica',
+  ELECTRICAL: 'Elétrica',
+  BODYSHOP: 'Funilaria',
+  TIRES: 'Pneus',
+  INSPECTION: 'Revisão',
+  OTHER: 'Outros',
+};
+
+// Suppliers (optional for MVP)
+export const mockSuppliers: Supplier[] = [
+  { id: 'sup1', name: 'Auto Center São Paulo', phone: '(11) 3456-7890', notes: 'Mecânica geral e revisões' },
+  { id: 'sup2', name: 'Pneus Express', phone: '(11) 2345-6789', notes: 'Pneus e alinhamento' },
+  { id: 'sup3', name: 'Elétrica Automotiva Zona Sul', phone: '(11) 4567-8901', notes: 'Serviços elétricos' },
+  { id: 'sup4', name: 'Funilaria & Pintura Premium', phone: '(11) 5678-9012', notes: 'Funilaria e pintura' },
+];
+
+// Maintenance Items (sample)
+export const mockMaintenanceItems: MaintenanceItem[] = [
+  { id: 'mi1', maintenanceId: 'mnt1', itemName: 'Óleo do motor 5W30', quantity: 4, unitCost: 45, totalCost: 180, hasWarranty: false, warrantyUntil: null, warrantyNotes: null },
+  { id: 'mi2', maintenanceId: 'mnt1', itemName: 'Filtro de óleo', quantity: 1, unitCost: 35, totalCost: 35, hasWarranty: true, warrantyUntil: new Date('2025-01-15'), warrantyNotes: '6 meses' },
+  { id: 'mi3', maintenanceId: 'mnt1', itemName: 'Filtro de ar', quantity: 1, unitCost: 55, totalCost: 55, hasWarranty: false, warrantyUntil: null, warrantyNotes: null },
+  { id: 'mi4', maintenanceId: 'mnt2', itemName: 'Pastilha de freio dianteira', quantity: 1, unitCost: 180, totalCost: 180, hasWarranty: true, warrantyUntil: new Date('2025-06-10'), warrantyNotes: '12 meses ou 20.000 km' },
+  { id: 'mi5', maintenanceId: 'mnt2', itemName: 'Disco de freio dianteiro', quantity: 2, unitCost: 220, totalCost: 440, hasWarranty: true, warrantyUntil: new Date('2025-06-10'), warrantyNotes: '12 meses ou 20.000 km' },
+  { id: 'mi6', maintenanceId: 'mnt3', itemName: 'Pneu 185/65 R15', quantity: 4, unitCost: 350, totalCost: 1400, hasWarranty: true, warrantyUntil: new Date('2026-01-20'), warrantyNotes: '5 anos de fabricação' },
+  { id: 'mi7', maintenanceId: 'mnt4', itemName: 'Bateria 60Ah', quantity: 1, unitCost: 450, totalCost: 450, hasWarranty: true, warrantyUntil: new Date('2025-12-01'), warrantyNotes: '18 meses' },
+  { id: 'mi8', maintenanceId: 'mnt5', itemName: 'Para-lama dianteiro esquerdo', quantity: 1, unitCost: 320, totalCost: 320, hasWarranty: false, warrantyUntil: null, warrantyNotes: null },
+  { id: 'mi9', maintenanceId: 'mnt5', itemName: 'Pintura metalizada', quantity: 1, unitCost: 850, totalCost: 850, hasWarranty: true, warrantyUntil: new Date('2025-02-15'), warrantyNotes: '3 meses' },
+];
+
+// Maintenances
+export const mockMaintenances: Maintenance[] = [
+  {
+    id: 'mnt1',
+    vehicleId: 'TRK-001',
+    vehiclePlate: 'ABC1D23',
+    occurredAt: new Date('2024-01-15T09:00:00'),
+    completedAt: new Date('2024-01-15T11:30:00'),
+    status: 'DONE',
+    maintenanceType: 'PREVENTIVE',
+    serviceArea: 'INSPECTION',
+    supplierName: 'Auto Center São Paulo',
+    odometerKm: 35000,
+    notes: 'Troca de óleo e filtros - revisão 30.000 km',
+    laborCost: 150,
+    partsCost: 270,
+    totalCost: 420,
+    hasWarranty: true,
+    warrantyUntil: new Date('2025-01-15'),
+    warrantyNotes: '6 meses ou 10.000 km',
+    items: [],
+  },
+  {
+    id: 'mnt2',
+    vehicleId: 'TRK-003',
+    vehiclePlate: 'GHI7F89',
+    occurredAt: new Date('2024-01-10T14:00:00'),
+    completedAt: new Date('2024-01-10T17:00:00'),
+    status: 'DONE',
+    maintenanceType: 'CORRECTIVE',
+    serviceArea: 'MECHANICAL',
+    supplierName: 'Auto Center São Paulo',
+    odometerKm: 42000,
+    notes: 'Troca de pastilhas e discos de freio - desgaste',
+    laborCost: 200,
+    partsCost: 620,
+    totalCost: 820,
+    hasWarranty: true,
+    warrantyUntil: new Date('2025-06-10'),
+    warrantyNotes: '12 meses ou 20.000 km',
+    items: [],
+  },
+  {
+    id: 'mnt3',
+    vehicleId: 'TRK-002',
+    vehiclePlate: 'DEF4E56',
+    occurredAt: new Date('2024-01-20T10:00:00'),
+    completedAt: new Date('2024-01-20T12:00:00'),
+    status: 'DONE',
+    maintenanceType: 'CORRECTIVE',
+    serviceArea: 'TIRES',
+    supplierName: 'Pneus Express',
+    odometerKm: 55000,
+    notes: 'Troca dos 4 pneus + alinhamento e balanceamento',
+    laborCost: 120,
+    partsCost: 1400,
+    totalCost: 1520,
+    hasWarranty: true,
+    warrantyUntil: new Date('2026-01-20'),
+    warrantyNotes: '5 anos de fabricação',
+    items: [],
+  },
+  {
+    id: 'mnt4',
+    vehicleId: 'TRK-004',
+    vehiclePlate: 'JKL0G12',
+    occurredAt: new Date('2024-01-01T08:00:00'),
+    completedAt: new Date('2024-01-01T09:30:00'),
+    status: 'DONE',
+    maintenanceType: 'CORRECTIVE',
+    serviceArea: 'ELECTRICAL',
+    supplierName: 'Elétrica Automotiva Zona Sul',
+    odometerKm: 28000,
+    notes: 'Bateria descarregada - substituição',
+    laborCost: 50,
+    partsCost: 450,
+    totalCost: 500,
+    hasWarranty: true,
+    warrantyUntil: new Date('2025-12-01'),
+    warrantyNotes: '18 meses',
+    items: [],
+  },
+  {
+    id: 'mnt5',
+    vehicleId: 'TRK-005',
+    vehiclePlate: 'MNO3H45',
+    occurredAt: new Date('2023-12-15T09:00:00'),
+    completedAt: new Date('2023-12-18T18:00:00'),
+    status: 'DONE',
+    maintenanceType: 'CORRECTIVE',
+    serviceArea: 'BODYSHOP',
+    supplierName: 'Funilaria & Pintura Premium',
+    odometerKm: 48000,
+    notes: 'Reparo de amassado no para-lama dianteiro esquerdo - colisão leve',
+    laborCost: 600,
+    partsCost: 1170,
+    totalCost: 1770,
+    hasWarranty: true,
+    warrantyUntil: new Date('2025-02-15'),
+    warrantyNotes: '3 meses de garantia na pintura',
+    items: [],
+  },
+  {
+    id: 'mnt6',
+    vehicleId: 'TRK-006',
+    vehiclePlate: 'PQR6I78',
+    occurredAt: new Date('2024-01-18T08:00:00'),
+    completedAt: null,
+    status: 'OPEN',
+    maintenanceType: 'PREVENTIVE',
+    serviceArea: 'INSPECTION',
+    supplierName: 'Auto Center São Paulo',
+    odometerKm: 30000,
+    notes: 'Revisão programada 30.000 km - aguardando peças',
+    laborCost: 0,
+    partsCost: 0,
+    totalCost: 0,
+    hasWarranty: false,
+    warrantyUntil: null,
+    warrantyNotes: null,
+    items: [],
+  },
+  {
+    id: 'mnt7',
+    vehicleId: 'TRK-001',
+    vehiclePlate: 'ABC1D23',
+    occurredAt: new Date('2023-10-20T10:00:00'),
+    completedAt: new Date('2023-10-20T12:00:00'),
+    status: 'DONE',
+    maintenanceType: 'PREVENTIVE',
+    serviceArea: 'INSPECTION',
+    supplierName: 'Auto Center São Paulo',
+    odometerKm: 25000,
+    notes: 'Troca de óleo e filtros - revisão 25.000 km',
+    laborCost: 150,
+    partsCost: 250,
+    totalCost: 400,
+    hasWarranty: false,
+    warrantyUntil: null,
+    warrantyNotes: null,
+    items: [],
+  },
+  {
+    id: 'mnt8',
+    vehicleId: 'TRK-001',
+    vehiclePlate: 'ABC1D23',
+    occurredAt: new Date('2023-07-10T09:00:00'),
+    completedAt: new Date('2023-07-10T11:00:00'),
+    status: 'DONE',
+    maintenanceType: 'PREVENTIVE',
+    serviceArea: 'INSPECTION',
+    supplierName: 'Auto Center São Paulo',
+    odometerKm: 15000,
+    notes: 'Troca de óleo - revisão 15.000 km',
+    laborCost: 100,
+    partsCost: 200,
+    totalCost: 300,
+    hasWarranty: false,
+    warrantyUntil: null,
+    warrantyNotes: null,
+    items: [],
+  },
+];
+
+// Initialize items for maintenances
+mockMaintenances.forEach(m => {
+  m.items = mockMaintenanceItems.filter(item => item.maintenanceId === m.id);
+});
+
+// Get maintenances with vehicle details
+export const getMaintenancesWithDetails = (): MaintenanceWithVehicle[] => {
+  return mockMaintenances.map(m => {
+    const vehicle = mockVehicles.find(v => v.id === m.vehicleId)!;
+    return {
+      ...m,
+      vehicle,
+    };
+  });
+};
+
+// Get maintenances for a specific vehicle
+export const getMaintenancesForVehicle = (vehicleId: string): MaintenanceWithVehicle[] => {
+  return getMaintenancesWithDetails()
+    .filter(m => m.vehicleId === vehicleId)
+    .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
 };
