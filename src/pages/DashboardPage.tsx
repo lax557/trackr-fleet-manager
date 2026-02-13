@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getVehicleStats, getVehiclesWithDetails, mockDrivers, mockRentals, getFleetManagementStats } from '@/data/mockData';
+import { getVehicleStats, getVehiclesWithDetails, getFleetManagementStats } from '@/data/mockData';
 import { VehicleStatsCards } from '@/components/VehicleStatsCards';
 import { FleetManagementCards } from '@/components/FleetManagementCards';
 import { FleetStatusChart } from '@/components/FleetStatusChart';
@@ -7,11 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  Clock,
-  AlertCircle
-} from 'lucide-react';
+import { ArrowRight, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -27,21 +23,13 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Visão geral da sua frota
-        </p>
+        <p className="text-muted-foreground text-sm">Visão geral da sua frota</p>
       </div>
 
-      {/* Stats Cards - First Row */}
-      <VehicleStatsCards 
-        stats={stats} 
-        onFilterClick={() => navigate('/vehicles')}
-      />
+      <VehicleStatsCards stats={stats} onFilterClick={() => navigate('/vehicles')} />
 
-      {/* Fleet Management Stats - Second Row (removed avgYear) */}
       <FleetManagementCards
         avgPrice={fleetStats.avgPrice}
         avgOdometer={fleetStats.avgOdometer}
@@ -50,12 +38,12 @@ export function DashboardPage() {
         avgTicket={fleetStats.avgTicket}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Fleet Status Chart */}
-        <FleetStatusChart stats={stats} />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-5">
+          <FleetStatusChart stats={stats} />
+        </div>
 
-        {/* Vehicles requiring attention */}
-        <Card>
+        <Card className="lg:col-span-3">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -110,8 +98,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Backlog / Acquisition pipeline */}
-        <Card>
+        <Card className="lg:col-span-4">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -160,35 +147,6 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick instructions */}
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="text-base">💡 Dicas para Configuração</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="space-y-2">
-              <p className="font-medium">Adicionar novos status</p>
-              <p className="text-muted-foreground">
-                Edite o tipo <code className="bg-muted px-1 rounded">VehicleStatus</code> em <code className="bg-muted px-1 rounded">src/types/index.ts</code>
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="font-medium">Adicionar categorias</p>
-              <p className="text-muted-foreground">
-                Edite o tipo <code className="bg-muted px-1 rounded">VehicleCategory</code> e <code className="bg-muted px-1 rounded">categoryLabels</code>
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="font-medium">Adicionar etapas de aquisição</p>
-              <p className="text-muted-foreground">
-                Edite o tipo <code className="bg-muted px-1 rounded">AcquisitionStage</code> e <code className="bg-muted px-1 rounded">stageLabels</code>
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
