@@ -103,18 +103,20 @@ export function DashboardPage() {
       {/* ══════ MODO OPERACIONAL ══════ */}
       {mode === 'operational' && (
         <>
-          {/* BLOCO 2 — Gráfico + Ações operacionais */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Distribuição da Frota — 7 colunas */}
-            <div className="lg:col-span-7">
-              <FleetStatusChart stats={stats} />
+          {/* BLOCO 2 — Gráfico + Ações operacionais (alturas alinhadas) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Distribuição da Frota — 8 colunas, stretch para alinhar com coluna direita */}
+            <div className="lg:col-span-8 flex">
+              <div className="w-full">
+                <FleetStatusChart stats={stats} stretch />
+              </div>
             </div>
 
-            {/* Ações operacionais — 5 colunas */}
-            <div className="lg:col-span-5 flex flex-col gap-4">
-              {/* Requer Atenção */}
-              <Card className="flex-1 flex flex-col min-h-0">
-                <CardHeader className="pb-2 pt-4 px-4">
+            {/* Ações operacionais — 4 colunas, stack com alturas fixas */}
+            <div className="lg:col-span-4 flex flex-col gap-4">
+              {/* Requer Atenção — card maior */}
+              <Card className="overflow-hidden flex flex-col" style={{ height: '280px' }}>
+                <CardHeader className="pb-2 pt-3 px-4 shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-500" />
@@ -126,10 +128,10 @@ export function DashboardPage() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 flex-1 min-h-0">
-                  <ScrollArea className="h-[120px]">
+                <CardContent className="px-4 pb-3 flex-1 min-h-0 overflow-hidden">
+                  <ScrollArea className="h-full">
                     <div className="space-y-1.5 pr-2">
-                      {vehiclesNeedAttention.slice(0, 15).map(vehicle => (
+                      {vehiclesNeedAttention.slice(0, 20).map(vehicle => (
                         <div 
                           key={vehicle.id}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
@@ -150,9 +152,9 @@ export function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Contratos vencendo */}
-              <Card className="flex-1 flex flex-col min-h-0">
-                <CardHeader className="pb-2 pt-4 px-4">
+              {/* Contratos vencendo — card médio */}
+              <Card className="overflow-hidden flex flex-col" style={{ height: '200px' }}>
+                <CardHeader className="pb-2 pt-3 px-4 shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarClock className="h-4 w-4 text-primary" />
@@ -164,10 +166,10 @@ export function DashboardPage() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 flex-1 min-h-0">
-                  <ScrollArea className="h-[120px]">
+                <CardContent className="px-4 pb-3 flex-1 min-h-0 overflow-hidden">
+                  <ScrollArea className="h-full">
                     <div className="space-y-1.5 pr-2">
-                      {expiringContracts.length > 0 ? expiringContracts.slice(0, 10).map(c => (
+                      {expiringContracts.length > 0 ? expiringContracts.slice(0, 15).map(c => (
                         <div 
                           key={c.rentalId}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
@@ -189,9 +191,9 @@ export function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Multas pendentes */}
-              <Card className="flex-1 flex flex-col min-h-0">
-                <CardHeader className="pb-2 pt-4 px-4">
+              {/* Multas pendentes — card compacto com grid interno alinhado */}
+              <Card className="overflow-hidden flex flex-col shrink-0">
+                <CardHeader className="pb-2 pt-3 px-4 shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileWarning className="h-4 w-4 text-red-500" />
@@ -202,19 +204,19 @@ export function DashboardPage() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 flex-1">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-foreground">{fineStats.open + fineStats.dueSoon + fineStats.overdue}</p>
-                      <p className="text-[11px] text-muted-foreground">Em aberto</p>
+                <CardContent className="px-4 pb-4">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-xl font-bold text-foreground leading-tight">{fineStats.open + fineStats.dueSoon + fineStats.overdue}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Em aberto</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-red-600">{fineStats.overdue}</p>
-                      <p className="text-[11px] text-muted-foreground">Vencidas</p>
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-xl font-bold text-red-600 leading-tight">{fineStats.overdue}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Vencidas</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-amber-600">{formatCurrencyBRL(fineStats.totalOpenAmount)}</p>
-                      <p className="text-[11px] text-muted-foreground">Valor total</p>
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-base font-bold text-amber-600 leading-tight truncate max-w-full">{formatCurrencyBRL(fineStats.totalOpenAmount)}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Valor total</p>
                     </div>
                   </div>
                 </CardContent>

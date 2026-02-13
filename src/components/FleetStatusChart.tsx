@@ -5,6 +5,7 @@ import { VehicleStats } from '@/types';
 
 interface FleetStatusChartProps {
   stats: VehicleStats;
+  stretch?: boolean;
 }
 
 // Status colors matching the design system
@@ -33,7 +34,7 @@ interface ChartDataItem {
   key: string;
 }
 
-export function FleetStatusChart({ stats }: FleetStatusChartProps) {
+export function FleetStatusChart({ stats, stretch }: FleetStatusChartProps) {
   const chartData = useMemo<ChartDataItem[]>(() => {
     const data: ChartDataItem[] = [
       { name: statusLabels.disponivel, value: stats.disponivel, color: statusColors.disponivel, key: 'disponivel' },
@@ -72,12 +73,12 @@ export function FleetStatusChart({ stats }: FleetStatusChartProps) {
   };
 
   return (
-    <Card>
+    <Card className={stretch ? 'h-full flex flex-col' : ''}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Distribuição da Frota</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-[280px]">
+      <CardContent className={stretch ? 'flex-1 min-h-0' : ''}>
+        <div className={stretch ? 'h-full min-h-[280px]' : 'h-[280px]'}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
