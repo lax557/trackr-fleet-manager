@@ -15,14 +15,8 @@ import {
   SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { 
-  Car, 
-  Users, 
-  Wrench, 
-  AlertTriangle, 
-  Settings,
-  LayoutDashboard,
-  FileSignature,
-  FileText,
+  Car, Users, Wrench, AlertTriangle, Settings,
+  LayoutDashboard, FileSignature, DollarSign,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronRight } from 'lucide-react';
@@ -42,6 +36,23 @@ const menuItems = [
   },
   { title: 'Manutenções', url: '/maintenance', icon: Wrench },
   { title: 'Multas', url: '/fines', icon: AlertTriangle },
+  {
+    title: 'Financeiro',
+    url: '/financial',
+    icon: DollarSign,
+    children: [
+      { title: 'Visão Geral', url: '/financial' },
+      { title: 'Transações', url: '/financial/transactions' },
+      { title: 'Contas Bancárias', url: '/financial/accounts' },
+      { title: 'Contas a Pagar', url: '/financial/payables' },
+      { title: 'Contas a Receber', url: '/financial/receivables' },
+      { title: 'Parceiros', url: '/financial/partners' },
+      { title: 'Plano de Contas', url: '/financial/chart-of-accounts' },
+      { title: 'Relatórios', url: '/financial/reports' },
+      { title: 'Conciliação', url: '/financial/reconciliation' },
+      { title: 'Consultor IA', url: '/financial/ai' },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -67,7 +78,9 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => {
                 if (item.children) {
-                  const isParentActive = location.pathname.startsWith(item.url);
+                  const isParentActive = item.url === '/financial' 
+                    ? location.pathname.startsWith('/financial')
+                    : location.pathname.startsWith(item.url);
                   return (
                     <Collapsible key={item.title} defaultOpen={isParentActive}>
                       <SidebarMenuItem>
