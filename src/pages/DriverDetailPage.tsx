@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DocumentsCard } from '@/components/DocumentsCard';
-import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users, Plus, ArrowRight, Trash2, StickyNote, MapPin } from 'lucide-react';
+import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users, Plus, ArrowRight, Trash2, StickyNote, MapPin, MoreVertical, Pencil } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getCurrentStatus } from '@/data/mockData';
 import { format } from 'date-fns';
@@ -38,6 +38,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { fineStatusColors, fineStatusLabels } from '@/types/fines';
 import { toast } from 'sonner';
 
@@ -58,11 +64,18 @@ export function DriverDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  // Mock: in a real app this would come from auth context
+  const currentUserRole: 'admin' | 'operations' | 'finance' | 'maintenance' | 'readonly' = 'admin';
+  const isAdmin = currentUserRole === 'admin';
+
   const driversWithDetails = getDriversWithDetails();
   const driver = driversWithDetails.find(d => d.id === id);
 
   const [notes, setNotes] = useState<DriverNote[]>(driver?.notes || []);
   const [newNote, setNewNote] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteContent, setEditingNoteContent] = useState('');
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
   // Address state
   const [address, setAddress] = useState(driver?.address || {
@@ -125,7 +138,6 @@ export function DriverDetailPage() {
   };
 
   const handleDeleteDriver = () => {
-    // Soft delete / archive
     console.log('Archiving driver:', driver.id);
     toast.success('Motorista arquivado com sucesso.');
     navigate('/drivers');
@@ -134,6 +146,32 @@ export function DriverDetailPage() {
   const handleSaveAddress = () => {
     console.log('Saving address:', address);
     toast.success('Endereço salvo.');
+  };
+
+  const handleEditNote = (note: DriverNote) => {
+    setEditingNoteId(note.id);
+    setEditingNoteContent(note.content);
+  };
+
+  const handleSaveEditNote = () => {
+    if (!editingNoteId || !editingNoteContent.trim()) return;
+    setNotes(prev => prev.map(n => 
+      n.id === editingNoteId 
+        ? { ...n, content: editingNoteContent.trim() } 
+        : n
+    ));
+    console.log('AuditLog: Note edited', { noteId: editingNoteId, by: currentUserRole });
+    setEditingNoteId(null);
+    setEditingNoteContent('');
+    toast.success('Nota editada.');
+  };
+
+  const handleDeleteNote = () => {
+    if (!deletingNoteId) return;
+    setNotes(prev => prev.filter(n => n.id !== deletingNoteId));
+    console.log('AuditLog: Note deleted', { noteId: deletingNoteId, by: currentUserRole });
+    setDeletingNoteId(null);
+    toast.success('Nota excluída.');
   };
 
   return (
@@ -416,10 +454,50 @@ export function DriverDetailPage() {
               <div className="space-y-3 mt-4">
                 {notes.map(note => (
                   <div key={note.id} className="p-3 rounded-lg bg-muted/50 border">
-                    <p className="text-sm whitespace-pre-wrap">{note.content}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {note.author} • {format(note.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </p>
+                    {editingNoteId === note.id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editingNoteContent}
+                          onChange={(e) => setEditingNoteContent(e.target.value)}
+                          className="min-h-[60px]"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleSaveEditNote}>Salvar</Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingNoteId(null)}>Cancelar</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between">
+                          <p className="text-sm whitespace-pre-wrap flex-1">{note.content}</p>
+                          {isAdmin && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditNote(note)}>
+                                  <Pencil className="h-3.5 w-3.5 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => setDeletingNoteId(note.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {note.author} • {format(note.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -428,6 +506,22 @@ export function DriverDetailPage() {
             {notes.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-2">Nenhuma nota registrada.</p>
             )}
+
+            {/* Delete note confirmation */}
+            <AlertDialog open={!!deletingNoteId} onOpenChange={(open) => !open && setDeletingNoteId(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir nota?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteNote}>Excluir</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
 

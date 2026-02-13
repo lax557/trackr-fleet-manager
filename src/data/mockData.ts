@@ -295,10 +295,8 @@ export const stageLabels: Record<string, string> = {
   EM_LIBERACAO: 'Em Liberação',
   APROVADO: 'Aprovado',
   FATURADO: 'Faturado',
-  LIBERADO_LOJA: 'Liberado da Loja',
-  INSTALACAO_EQUIPAMENTOS: 'Instalação Equip.',
-  EMPLACADO: 'Emplacado',
   RECEBIDO: 'Recebido',
+  INSTALACAO_EQUIPAMENTOS: 'Instalação Equip.',
   PRONTO_PARA_ALUGAR: 'Pronto p/ Alugar',
 };
 

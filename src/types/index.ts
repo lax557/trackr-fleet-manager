@@ -25,10 +25,8 @@ export type AcquisitionStage =
   | 'EM_LIBERACAO' 
   | 'APROVADO' 
   | 'FATURADO' 
-  | 'LIBERADO_LOJA'
+  | 'RECEBIDO'
   | 'INSTALACAO_EQUIPAMENTOS'
-  | 'EMPLACADO' 
-  | 'RECEBIDO' 
   | 'PRONTO_PARA_ALUGAR';
 
 export type PurchaseMode = 

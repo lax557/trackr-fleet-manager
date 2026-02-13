@@ -22,10 +22,8 @@ const pipelineStages: AcquisitionStage[] = [
   'EM_LIBERACAO',
   'APROVADO',
   'FATURADO',
-  'LIBERADO_LOJA',
-  'INSTALACAO_EQUIPAMENTOS',
-  'EMPLACADO',
   'RECEBIDO',
+  'INSTALACAO_EQUIPAMENTOS',
   'PRONTO_PARA_ALUGAR',
 ];
 
