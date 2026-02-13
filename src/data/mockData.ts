@@ -374,6 +374,61 @@ export const getFleetManagementStats = () => {
   };
 };
 
+// Dashboard financial stats
+export const getDashboardFinancialStats = () => {
+  const activeRentals = mockRentals.filter(r => r.status === 'ACTIVE');
+  
+  // Estimated monthly revenue from active contracts
+  const estimatedMonthlyRevenue = activeRentals.reduce((sum, r) => {
+    if (r.priceFrequency === 'WEEKLY') return sum + r.priceAmount * 4.33;
+    return sum + r.priceAmount;
+  }, 0);
+  
+  // Realized revenue (mock: 92% of estimated)
+  const realizedRevenue = estimatedMonthlyRevenue * 0.92;
+  
+  // Maintenance cost this month (from seed data)
+  const maintenanceCostMonth = 8450; // Placeholder
+  
+  // Operational margin
+  const operationalMargin = realizedRevenue > 0
+    ? ((realizedRevenue - maintenanceCostMonth) / realizedRevenue) * 100
+    : 0;
+  
+  return {
+    estimatedMonthlyRevenue,
+    realizedRevenue,
+    maintenanceCostMonth,
+    operationalMargin,
+  };
+};
+
+// Get contracts expiring within N days
+export const getExpiringContracts = (days: number = 30) => {
+  const now = new Date();
+  const activeRentals = mockRentals.filter(r => r.status === 'ACTIVE');
+  
+  return activeRentals
+    .map(r => {
+      const driver = mockDrivers.find(d => d.id === r.driverId);
+      const vehicle = mockVehicles.find(v => v.id === r.vehicleId);
+      // Simulate contract end = start + 12 months
+      const contractEnd = new Date(r.startDate);
+      contractEnd.setMonth(contractEnd.getMonth() + 12);
+      const daysRemaining = Math.ceil((contractEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        rentalId: r.id,
+        driverName: driver?.fullName || 'N/A',
+        vehicleId: vehicle?.id || 'N/A',
+        vehicleModel: vehicle ? `${vehicle.make} ${vehicle.model}` : '',
+        contractEnd,
+        daysRemaining,
+      };
+    })
+    .filter(c => c.daysRemaining <= days && c.daysRemaining >= 0)
+    .sort((a, b) => a.daysRemaining - b.daysRemaining);
+};
+
 // Rentals with details helper
 export const getRentalsWithDetails = (): RentalWithDetails[] => {
   return mockRentals.map(rental => {
