@@ -96,10 +96,10 @@ export function VehiclesTable({
                 style={{ animationDelay: `${index * 30}ms` }}
                 onClick={() => onViewDetails(vehicle.id)}
               >
-                <TableCell className="font-mono font-medium text-primary">
+                <TableCell className="font-medium text-primary">
                   {vehicle.id}
                 </TableCell>
-                <TableCell className="font-mono">
+                <TableCell>
                   {vehicle.plate || <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell>

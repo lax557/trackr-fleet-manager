@@ -89,7 +89,7 @@ export function VehicleSearch({ vehicles, onSearch, onSelectVehicle }: VehicleSe
                 >
                   <div className="flex flex-col gap-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-medium text-primary">{vehicle.id}</span>
+                      <span className="font-medium text-primary">{vehicle.id}</span>
                       {vehicle.plate && (
                         <span className="text-sm text-muted-foreground">• {vehicle.plate}</span>
                       )}

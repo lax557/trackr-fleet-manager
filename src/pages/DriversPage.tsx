@@ -103,10 +103,10 @@ export function DriversPage() {
                       {driver.computedStatus === 'active' ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono">
+                  <TableCell>
                     {driver.currentVehicle?.plate || <span className="text-muted-foreground">—</span>}
                   </TableCell>
-                  <TableCell className="font-mono text-primary">
+                  <TableCell className="text-primary">
                     {driver.currentVehicle?.id || <span className="text-muted-foreground">—</span>}
                   </TableCell>
                 </TableRow>

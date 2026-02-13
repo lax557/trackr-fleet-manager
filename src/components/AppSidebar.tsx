@@ -42,7 +42,6 @@ export function AppSidebar() {
           </div>
           <div>
             <h1 className="font-bold text-lg text-sidebar-foreground">Trackr</h1>
-            <p className="text-xs text-muted-foreground">Gestão de Frota</p>
           </div>
         </div>
       </SidebarHeader>
@@ -75,7 +74,10 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-3 mb-3 p-2 rounded-lg bg-sidebar-accent/50">
+        <div 
+          className="flex items-center gap-3 mb-3 p-2 rounded-lg bg-sidebar-accent/50 hover:bg-sidebar-accent cursor-pointer transition-colors"
+          onClick={() => window.location.href = '/settings'}
+        >
           <div className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground text-sm font-medium">
             LA
           </div>

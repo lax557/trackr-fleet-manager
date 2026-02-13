@@ -78,7 +78,7 @@ export function DashboardPage() {
                   onClick={() => navigate(`/vehicles/${vehicle.id}`)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="font-mono font-medium text-primary">{vehicle.id}</div>
+                    <div className="font-medium text-primary">{vehicle.id}</div>
                     <div className="text-sm text-muted-foreground">
                       {vehicle.make} {vehicle.model}
                     </div>
@@ -93,7 +93,7 @@ export function DashboardPage() {
                   onClick={() => navigate(`/vehicles/${vehicle.id}`)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="font-mono font-medium text-primary">{vehicle.id}</div>
+                    <div className="font-medium text-primary">{vehicle.id}</div>
                     <div className="text-sm text-muted-foreground">
                       {vehicle.make} {vehicle.model}
                     </div>
@@ -135,7 +135,7 @@ export function DashboardPage() {
                 >
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-medium text-primary">{vehicle.id}</span>
+                      <span className="font-medium text-primary">{vehicle.id}</span>
                       <span className="text-sm text-muted-foreground">
                         {vehicle.make} {vehicle.model}
                       </span>

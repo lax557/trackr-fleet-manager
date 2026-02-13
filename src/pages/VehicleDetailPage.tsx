@@ -91,9 +91,9 @@ export function VehicleDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold font-mono text-primary">{vehicle.id}</h1>
+              <h1 className="text-2xl font-bold text-primary">{vehicle.id}</h1>
               {vehicle.plate && (
-                <Badge variant="outline" className="font-mono text-base px-3 py-1">
+                <Badge variant="outline" className="text-base px-3 py-1">
                   {vehicle.plate}
                 </Badge>
               )}
@@ -175,11 +175,11 @@ export function VehicleDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">RENAVAM</p>
-                  <p className="font-mono text-sm">{vehicle.renavam || '—'}</p>
+                  <p className="text-sm">{vehicle.renavam || '—'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Chassi (VIN)</p>
-                  <p className="font-mono text-sm">{vehicle.vin || '—'}</p>
+                  <p className="text-sm">{vehicle.vin || '—'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Cadastrado em</p>

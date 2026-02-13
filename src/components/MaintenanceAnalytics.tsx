@@ -276,7 +276,7 @@ export function MaintenanceAnalytics() {
             </div>
             {kpis.topVehicle ? (
               <div className="mt-1">
-                <p className="font-bold font-mono">{kpis.topVehicle.plate || kpis.topVehicle.id}</p>
+                <p className="font-bold">{kpis.topVehicle.plate || kpis.topVehicle.id}</p>
                 <p className="text-sm text-muted-foreground">{formatCurrencyBRL(kpis.topVehicle.cost)}</p>
               </div>
             ) : (
@@ -289,19 +289,20 @@ export function MaintenanceAnalytics() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Spend - with Legend */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Gasto por Mês</CardTitle>
             <CardDescription>Evolução dos gastos com manutenção</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <BarChart data={monthlyData}>
+          <CardContent className="flex-1 min-h-0">
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
+              <BarChart data={monthlyData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis 
                   tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
                   className="text-xs"
+                  width={60}
                 />
                 <ChartTooltip 
                   content={<ChartTooltipContent />}
@@ -319,13 +320,13 @@ export function MaintenanceAnalytics() {
         </Card>
 
         {/* Type Distribution */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Distribuição por Tipo</CardTitle>
             <CardDescription>Preventiva vs Corretiva</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+          <CardContent className="flex-1 min-h-0">
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
               <PieChart>
                 <Pie
                   data={typeDistribution}
@@ -352,45 +353,37 @@ export function MaintenanceAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Area Distribution - improved layout */}
-        <Card className="lg:col-span-2">
+        {/* Area Distribution - Opção A: resumo compacto abaixo */}
+        <Card className="lg:col-span-2 flex flex-col">
           <CardHeader>
             <CardTitle>Distribuição por Área</CardTitle>
             <CardDescription>Gastos por área de serviço</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <ChartContainer config={chartConfig} className="h-[280px]">
-                  <BarChart data={areaDistribution} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis 
-                      type="number"
-                      tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-                      className="text-xs"
-                    />
-                    <YAxis type="category" dataKey="name" className="text-xs" width={80} />
-                    <ChartTooltip formatter={(value: number) => formatCurrencyBRL(value)} />
-                    <Bar dataKey="cost" fill="hsl(var(--primary))" name="Custo Total" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ChartContainer>
-              </div>
-              {/* Mini insight card */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-muted-foreground">Resumo por Área</h4>
-                {areaDistribution.map((area, i) => (
-                  <div key={area.name} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <span className="text-sm">{area.name}</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-mono font-medium">{formatCurrencyBRL(area.cost)}</p>
-                      <p className="text-xs text-muted-foreground">{area.value} serviço(s)</p>
-                    </div>
+          <CardContent className="flex-1 min-h-0">
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
+              <BarChart data={areaDistribution} layout="vertical" margin={{ left: 0, right: 16, top: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  type="number"
+                  tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                  className="text-xs"
+                />
+                <YAxis type="category" dataKey="name" className="text-xs" width={90} />
+                <ChartTooltip formatter={(value: number) => formatCurrencyBRL(value)} />
+                <Bar dataKey="cost" fill="hsl(var(--primary))" name="Custo Total" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ChartContainer>
+            {/* Compact legend below */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4 pt-4 border-t">
+              {areaDistribution.map((area, i) => (
+                <div key={area.name} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground truncate">{area.name}</p>
+                    <p className="text-sm font-medium">{formatCurrencyBRL(area.cost)}</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

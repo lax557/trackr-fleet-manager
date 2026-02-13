@@ -84,7 +84,7 @@ export function ChangeStatusModal({ vehicle, open, onOpenChange, onConfirm }: Ch
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Alterar Status
-            <span className="font-mono text-primary">{vehicle.id}</span>
+            <span className="text-primary">{vehicle.id}</span>
           </DialogTitle>
           <DialogDescription>
             {vehicle.make} {vehicle.model} {vehicle.version}

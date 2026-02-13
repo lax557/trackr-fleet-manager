@@ -88,7 +88,7 @@ export function MoveStageModal({ vehicle, open, onOpenChange, onConfirm }: MoveS
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Mover Etapa de Aquisição
-            <span className="font-mono text-primary">{vehicle.id}</span>
+            <span className="text-primary">{vehicle.id}</span>
           </DialogTitle>
           <DialogDescription>
             {vehicle.make} {vehicle.model} {vehicle.version}

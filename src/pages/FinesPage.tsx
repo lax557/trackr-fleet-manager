@@ -268,7 +268,7 @@ export function FinesPage() {
                       <TableCell>{format(fine.occurredAt, 'dd/MM/yy', { locale: ptBR })}</TableCell>
                       <TableCell>
                         <div>
-                          <span className="font-mono font-medium">{fine.vehiclePlate}</span>
+                          <span className="font-medium">{fine.vehiclePlate}</span>
                           <span className="text-xs text-muted-foreground block">{fine.vehicleId}</span>
                         </div>
                       </TableCell>

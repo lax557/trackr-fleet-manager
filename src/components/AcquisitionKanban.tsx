@@ -69,7 +69,7 @@ export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: Acqu
                   >
                     <CardContent className="p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-primary text-sm">
+                        <span className="font-bold text-primary text-sm">
                           {vehicle.id}
                         </span>
                         <StageBadge stage={stage} />

@@ -71,7 +71,7 @@ export function MaintenanceDetailPage() {
               <MaintenanceStatusBadge status={maintenance.status} />
             </div>
             <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-              <span className="font-mono font-medium text-foreground">{maintenance.vehicle.plate || maintenance.vehicleId}</span>
+              <span className="font-medium text-foreground">{maintenance.vehicle.plate || maintenance.vehicleId}</span>
               <span>•</span>
               <MaintenanceTypeBadge type={maintenance.maintenanceType} />
               <span>•</span>
@@ -105,7 +105,7 @@ export function MaintenanceDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Car className="h-3 w-3" />Veículo</p>
                   <p className="font-medium">{maintenance.vehicle.make} {maintenance.vehicle.model}</p>
-                  <p className="text-sm text-muted-foreground font-mono">{maintenance.vehicle.plate || maintenance.vehicleId}</p>
+                  <p className="text-sm text-muted-foreground">{maintenance.vehicle.plate || maintenance.vehicleId}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Data/Hora</p>
@@ -114,7 +114,7 @@ export function MaintenanceDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Gauge className="h-3 w-3" />Odômetro</p>
-                  <p className="font-medium font-mono">{maintenance.odometerKm ? `${maintenance.odometerKm.toLocaleString()} km` : '—'}</p>
+                  <p className="font-medium">{maintenance.odometerKm ? `${maintenance.odometerKm.toLocaleString()} km` : '—'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Building2 className="h-3 w-3" />Fornecedor</p>
@@ -153,8 +153,8 @@ export function MaintenanceDetailPage() {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.itemName}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right font-mono">{formatCurrencyBRL(item.unitCost)}</TableCell>
-                        <TableCell className="text-right font-mono font-medium">{formatCurrencyBRL(item.totalCost)}</TableCell>
+                        <TableCell className="text-right">{formatCurrencyBRL(item.unitCost)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrencyBRL(item.totalCost)}</TableCell>
                         <TableCell>
                           {item.hasWarranty ? (
                             <div className="flex items-center gap-1">
@@ -187,16 +187,16 @@ export function MaintenanceDetailPage() {
             <CardContent className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Peças</span>
-                <span className="font-mono">{formatCurrencyBRL(maintenance.partsCost)}</span>
+                <span>{formatCurrencyBRL(maintenance.partsCost)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Mão de Obra</span>
-                <span className="font-mono">{formatCurrencyBRL(maintenance.laborCost)}</span>
+                <span>{formatCurrencyBRL(maintenance.laborCost)}</span>
               </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span className="text-lg font-mono text-primary">{formatCurrencyBRL(maintenance.totalCost)}</span>
+                  <span className="text-lg text-primary">{formatCurrencyBRL(maintenance.totalCost)}</span>
                 </div>
               </div>
             </CardContent>
