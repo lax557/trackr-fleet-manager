@@ -22,6 +22,7 @@ import FinesPage from "./pages/FinesPage";
 import FineDetailPage from "./pages/FineDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import NewVehiclePage from "./pages/NewVehiclePage";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/vehicles" element={<VehiclesPage />} />
+                  <Route path="/vehicles/new" element={<NewVehiclePage />} />
                   <Route path="/vehicles/:id" element={<VehicleDetailPage />} />
                   <Route path="/drivers" element={<DriversPage />} />
                   <Route path="/drivers/new" element={<NewDriverPage />} />

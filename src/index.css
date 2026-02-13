@@ -98,8 +98,9 @@
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 15% 18%;
-    --input: 260 15% 18%;
+    /* Dark mode borders - softer, closer to background */
+    --border: 260 10% 14%;
+    --input: 260 10% 14%;
     --ring: 267 80% 60%;
 
     --sidebar-background: 260 15% 6%;
@@ -108,7 +109,7 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 267 30% 15%;
     --sidebar-accent-foreground: 267 60% 80%;
-    --sidebar-border: 260 15% 15%;
+    --sidebar-border: 260 10% 12%;
     --sidebar-ring: 267 80% 60%;
   }
 }

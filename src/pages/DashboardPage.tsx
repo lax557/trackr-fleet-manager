@@ -35,17 +35,16 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Cards - First Row (unchanged) */}
+      {/* Stats Cards - First Row */}
       <VehicleStatsCards 
         stats={stats} 
         onFilterClick={() => navigate('/vehicles')}
       />
 
-      {/* Fleet Management Stats - Second Row (new) */}
+      {/* Fleet Management Stats - Second Row (removed avgYear) */}
       <FleetManagementCards
         avgPrice={fleetStats.avgPrice}
         avgOdometer={fleetStats.avgOdometer}
-        avgYear={fleetStats.avgYear}
         occupancyRate={fleetStats.occupancyRate}
         unproductiveRate={fleetStats.unproductiveRate}
         avgTicket={fleetStats.avgTicket}

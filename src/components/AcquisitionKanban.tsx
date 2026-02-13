@@ -7,7 +7,7 @@ import { AcquisitionStage, VehicleWithDetails } from '@/types';
 import { stageLabels, purchaseModeLabels } from '@/data/mockData';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowRight, Calendar, Car, CreditCard } from 'lucide-react';
+import { ArrowRight, Calendar, CreditCard } from 'lucide-react';
 
 interface AcquisitionKanbanProps {
   vehicles: VehicleWithDetails[];
@@ -19,6 +19,8 @@ const stages: AcquisitionStage[] = [
   'EM_LIBERACAO',
   'APROVADO',
   'FATURADO',
+  'LIBERADO_LOJA',
+  'INSTALACAO_EQUIPAMENTOS',
   'EMPLACADO',
   'RECEBIDO',
   'PRONTO_PARA_ALUGAR',
@@ -30,6 +32,8 @@ export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: Acqu
       EM_LIBERACAO: [],
       APROVADO: [],
       FATURADO: [],
+      LIBERADO_LOJA: [],
+      INSTALACAO_EQUIPAMENTOS: [],
       EMPLACADO: [],
       RECEBIDO: [],
       PRONTO_PARA_ALUGAR: [],
@@ -48,7 +52,7 @@ export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: Acqu
     <div className="overflow-x-auto pb-4">
       <div className="flex gap-4 min-w-max">
         {stages.map(stage => (
-          <div key={stage} className="w-72 flex-shrink-0">
+          <div key={stage} className="w-64 flex-shrink-0">
             <Card className="h-full">
               <CardHeader className="py-3 px-4">
                 <div className="flex items-center justify-between">

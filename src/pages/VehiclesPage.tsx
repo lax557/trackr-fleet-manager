@@ -110,7 +110,7 @@ export function VehiclesPage() {
             Gerencie sua frota de veículos
           </p>
         </div>
-        <Button className="self-start sm:self-auto">
+        <Button className="self-start sm:self-auto" onClick={() => navigate('/vehicles/new')}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Veículo
         </Button>
