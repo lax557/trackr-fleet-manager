@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowRight, Clock, AlertCircle, Car, CheckCircle2, UserCheck, 
   Wrench, AlertTriangle, TrendingUp, DollarSign, Receipt, 
-  FileWarning, CalendarClock, AlertOctagon, Gauge
+  FileWarning, CalendarClock, AlertOctagon, Gauge, ShieldAlert, Tag
 } from 'lucide-react';
 import { formatCurrencyBRL } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,21 +29,23 @@ export function DashboardPage() {
   const fineStats = useMemo(() => getFineStats(), []);
   const expiringContracts = useMemo(() => getExpiringContracts(30), []);
   
-  const vehiclesInMaintenance = vehicles.filter(v => v.currentStatus === 'MANUTENCAO');
-  const availableVehicles = vehicles.filter(v => v.currentStatus === 'DISPONIVEL');
+  const vehiclesNeedAttention = vehicles.filter(v => 
+    v.currentStatus === 'MANUTENCAO' || v.currentStatus === 'SINISTRO'
+  );
   const backlogVehicles = vehicles.filter(v => v.currentStatus === 'EM_LIBERACAO');
 
-  // KPIs operacionais
-  const operationalKpis = [
+  // ── Shared fleet KPIs (both modes) ──
+  const fleetKpis = [
     { label: 'Total', value: stats.total, icon: Car, colorClass: 'text-primary' },
     { label: 'Alugados', value: stats.alugado, icon: UserCheck, colorClass: 'text-blue-600' },
     { label: 'Disponíveis', value: stats.disponivel, icon: CheckCircle2, colorClass: 'text-green-600' },
     { label: 'Manutenção', value: stats.manutencao, icon: Wrench, colorClass: 'text-amber-600' },
-    { label: 'Improdutiva', value: `${fleetStats.unproductiveRate.toFixed(0)}%`, icon: AlertOctagon, colorClass: fleetStats.unproductiveRate <= 10 ? 'text-green-600' : fleetStats.unproductiveRate <= 20 ? 'text-amber-600' : 'text-red-600' },
-    { label: 'Ocupação', value: `${fleetStats.occupancyRate.toFixed(0)}%`, icon: TrendingUp, colorClass: fleetStats.occupancyRate >= 80 ? 'text-green-600' : fleetStats.occupancyRate >= 60 ? 'text-amber-600' : 'text-red-600' },
+    { label: 'Sinistro', value: stats.sinistro, icon: ShieldAlert, colorClass: 'text-red-600' },
+    { label: 'Para Venda', value: stats.paraVenda, icon: Tag, colorClass: 'text-purple-600' },
+    { label: 'Backlog', value: stats.emLiberacao, icon: Clock, colorClass: 'text-muted-foreground' },
   ];
 
-  // KPIs financeiros
+  // ── Financial KPIs (executive only) ──
   const financialKpis = [
     { label: 'Receita Estimada', value: formatCurrencyBRL(financialStats.estimatedMonthlyRevenue), icon: DollarSign, colorClass: 'text-green-600', tooltip: 'Receita mensal estimada com base nos contratos ativos' },
     { label: 'Receita Realizada', value: formatCurrencyBRL(financialStats.realizedRevenue), icon: Receipt, colorClass: 'text-blue-600', tooltip: 'Receita efetivamente recebida no mês' },
@@ -51,15 +53,15 @@ export function DashboardPage() {
     { label: 'Margem Operacional', value: `${financialStats.operationalMargin.toFixed(1)}%`, icon: Gauge, colorClass: financialStats.operationalMargin >= 60 ? 'text-green-600' : financialStats.operationalMargin >= 40 ? 'text-amber-600' : 'text-red-600', tooltip: '(Receita - Manutenção) / Receita' },
   ];
 
-  // KPIs estratégicos (executivo)
+  // ── Strategic KPIs (executive only) ──
   const strategicKpis = [
-    { label: 'Taxa de Ocupação', value: `${fleetStats.occupancyRate.toFixed(0)}%`, icon: TrendingUp, colorClass: fleetStats.occupancyRate >= 80 ? 'text-green-600' : fleetStats.occupancyRate >= 60 ? 'text-amber-600' : 'text-red-600', tooltip: 'Percentual da frota atualmente alugada' },
-    { label: 'Frota Improdutiva', value: `${fleetStats.unproductiveRate.toFixed(0)}%`, icon: AlertOctagon, colorClass: fleetStats.unproductiveRate <= 10 ? 'text-green-600' : fleetStats.unproductiveRate <= 20 ? 'text-amber-600' : 'text-red-600', tooltip: 'Veículos disponíveis ou em manutenção sem gerar receita' },
+    { label: 'Taxa de Ocupação', value: `${fleetStats.occupancyRate.toFixed(0)}%`, icon: TrendingUp, colorClass: fleetStats.occupancyRate >= 80 ? 'text-green-600' : fleetStats.occupancyRate >= 60 ? 'text-amber-600' : 'text-red-600', tooltip: 'Percentual da frota operacional atualmente alugada' },
+    { label: 'Frota Improdutiva', value: `${fleetStats.unproductiveRate.toFixed(0)}%`, icon: AlertOctagon, colorClass: fleetStats.unproductiveRate <= 10 ? 'text-green-600' : fleetStats.unproductiveRate <= 20 ? 'text-amber-600' : 'text-red-600', tooltip: 'Veículos em manutenção ou sinistro sem gerar receita' },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header com toggle */}
+      {/* Header with toggle */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
@@ -83,65 +85,64 @@ export function DashboardPage() {
         </ToggleGroup>
       </div>
 
+      {/* ══════ BLOCO 1 — KPIs da Frota (ambos os modos) ══════ */}
+      <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+        {fleetKpis.map(({ label, value, icon: Icon, colorClass }) => (
+          <Card key={label} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <Icon className={`h-4 w-4 ${colorClass}`} />
+                <span className={`text-xl font-bold ${colorClass}`}>{value}</span>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground font-medium truncate">{label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* ══════ MODO OPERACIONAL ══════ */}
       {mode === 'operational' && (
         <>
-          {/* BLOCO 1 — KPIs operacionais */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {operationalKpis.map(({ label, value, icon: Icon, colorClass }) => (
-              <Card key={label} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <Icon className={`h-5 w-5 ${colorClass}`} />
-                    <span className={`text-2xl font-bold ${colorClass}`}>{value}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground font-medium">{label}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* BLOCO 2 — Gráfico + Ações operacionais (mesma altura) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            {/* Distribuição da Frota */}
-            <div className="lg:col-span-7 flex">
-              <div className="flex-1">
-                <FleetStatusChart stats={stats} />
-              </div>
+          {/* BLOCO 2 — Gráfico + Ações operacionais */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Distribuição da Frota — 7 colunas */}
+            <div className="lg:col-span-7">
+              <FleetStatusChart stats={stats} />
             </div>
 
-            {/* Ações operacionais */}
+            {/* Ações operacionais — 5 colunas */}
             <div className="lg:col-span-5 flex flex-col gap-4">
               {/* Requer Atenção */}
-              <Card className="flex-1 flex flex-col">
+              <Card className="flex-1 flex flex-col min-h-0">
                 <CardHeader className="pb-2 pt-4 px-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-500" />
                       <CardTitle className="text-sm">Requer Atenção</CardTitle>
+                      <span className="text-xs text-muted-foreground">({vehiclesNeedAttention.length})</span>
                     </div>
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/vehicles')}>
                       Ver todos <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 flex-1">
-                  <ScrollArea className="max-h-[280px]">
-                    <div className="space-y-2">
-                      {[...vehiclesInMaintenance.slice(0, 2), ...availableVehicles.slice(0, 1)].map(vehicle => (
+                <CardContent className="px-4 pb-3 flex-1 min-h-0">
+                  <ScrollArea className="h-[120px]">
+                    <div className="space-y-1.5 pr-2">
+                      {vehiclesNeedAttention.slice(0, 15).map(vehicle => (
                         <div 
                           key={vehicle.id}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
                           onClick={() => navigate(`/vehicles/${vehicle.id}`)}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             <span className="font-medium text-primary text-sm">{vehicle.id}</span>
-                            <span className="text-xs text-muted-foreground">{vehicle.make} {vehicle.model}</span>
+                            <span className="text-xs text-muted-foreground truncate">{vehicle.make} {vehicle.model}</span>
                           </div>
                           <StatusBadge status={vehicle.currentStatus} size="sm" />
                         </div>
                       ))}
-                      {vehiclesInMaintenance.length === 0 && availableVehicles.length === 0 && (
+                      {vehiclesNeedAttention.length === 0 && (
                         <p className="text-xs text-muted-foreground text-center py-2">Nenhum veículo requer atenção.</p>
                       )}
                     </div>
@@ -150,32 +151,33 @@ export function DashboardPage() {
               </Card>
 
               {/* Contratos vencendo */}
-              <Card className="flex-1 flex flex-col">
+              <Card className="flex-1 flex flex-col min-h-0">
                 <CardHeader className="pb-2 pt-4 px-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarClock className="h-4 w-4 text-primary" />
                       <CardTitle className="text-sm">Contratos Vencendo</CardTitle>
+                      <span className="text-xs text-muted-foreground">({expiringContracts.length})</span>
                     </div>
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/rentals')}>
                       Ver todos <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 flex-1">
-                  <ScrollArea className="max-h-[280px]">
-                    <div className="space-y-2">
-                      {expiringContracts.length > 0 ? expiringContracts.slice(0, 3).map(c => (
+                <CardContent className="px-4 pb-3 flex-1 min-h-0">
+                  <ScrollArea className="h-[120px]">
+                    <div className="space-y-1.5 pr-2">
+                      {expiringContracts.length > 0 ? expiringContracts.slice(0, 10).map(c => (
                         <div 
                           key={c.rentalId}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
                           onClick={() => navigate('/rentals')}
                         >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">{c.driverName}</span>
-                            <span className="text-xs text-muted-foreground">{c.vehicleId} • {c.vehicleModel}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium truncate">{c.driverName}</span>
+                            <span className="text-xs text-muted-foreground truncate">{c.vehicleId} • {c.vehicleModel}</span>
                           </div>
-                          <span className={`text-xs font-medium ${c.daysRemaining <= 7 ? 'text-red-600' : c.daysRemaining <= 15 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                          <span className={`text-xs font-medium whitespace-nowrap ml-2 ${c.daysRemaining <= 7 ? 'text-red-600' : c.daysRemaining <= 15 ? 'text-amber-600' : 'text-muted-foreground'}`}>
                             {c.daysRemaining}d
                           </span>
                         </div>
@@ -188,7 +190,7 @@ export function DashboardPage() {
               </Card>
 
               {/* Multas pendentes */}
-              <Card className="flex-1 flex flex-col">
+              <Card className="flex-1 flex flex-col min-h-0">
                 <CardHeader className="pb-2 pt-4 px-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -204,15 +206,15 @@ export function DashboardPage() {
                   <div className="grid grid-cols-3 gap-3">
                     <div className="text-center">
                       <p className="text-lg font-bold text-foreground">{fineStats.open + fineStats.dueSoon + fineStats.overdue}</p>
-                      <p className="text-xs text-muted-foreground">Em aberto</p>
+                      <p className="text-[11px] text-muted-foreground">Em aberto</p>
                     </div>
                     <div className="text-center">
                       <p className="text-lg font-bold text-red-600">{fineStats.overdue}</p>
-                      <p className="text-xs text-muted-foreground">Vencidas</p>
+                      <p className="text-[11px] text-muted-foreground">Vencidas</p>
                     </div>
                     <div className="text-center">
                       <p className="text-lg font-bold text-amber-600">{formatCurrencyBRL(fineStats.totalOpenAmount)}</p>
-                      <p className="text-xs text-muted-foreground">Valor total</p>
+                      <p className="text-[11px] text-muted-foreground">Valor total</p>
                     </div>
                   </div>
                 </CardContent>
@@ -262,7 +264,7 @@ export function DashboardPage() {
       {/* ══════ MODO EXECUTIVO ══════ */}
       {mode === 'executive' && (
         <>
-          {/* BLOCO 1 — KPIs financeiros */}
+          {/* BLOCO 2 — KPIs financeiros */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {financialKpis.map(({ label, value, icon: Icon, colorClass, tooltip }) => (
               <Card key={label} className="hover:shadow-md transition-shadow">
@@ -283,7 +285,7 @@ export function DashboardPage() {
             ))}
           </div>
 
-          {/* BLOCO 2 — KPIs estratégicos */}
+          {/* BLOCO 3 — KPIs estratégicos */}
           <div className="grid grid-cols-2 gap-3">
             {strategicKpis.map(({ label, value, icon: Icon, colorClass, tooltip }) => (
               <Card key={label} className="hover:shadow-md transition-shadow">
@@ -304,8 +306,44 @@ export function DashboardPage() {
             ))}
           </div>
 
-          {/* BLOCO 3 — Gráfico Distribuição da Frota (full width) */}
-          <FleetStatusChart stats={stats} />
+          {/* BLOCO 4 — Gráfico + Backlog resumido */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8">
+              <FleetStatusChart stats={stats} />
+            </div>
+            <div className="lg:col-span-4">
+              <Card className="h-full flex flex-col">
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-sm">Backlog Resumido</CardTitle>
+                    <span className="text-xs text-muted-foreground">({backlogVehicles.length})</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-4 pb-3 flex-1 min-h-0">
+                  <ScrollArea className="h-[240px]">
+                    <div className="space-y-1.5 pr-2">
+                      {backlogVehicles.length > 0 ? backlogVehicles.map(vehicle => (
+                        <div 
+                          key={vehicle.id}
+                          className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
+                          onClick={() => navigate(`/vehicles/${vehicle.id}`)}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-medium text-primary text-sm">{vehicle.id}</span>
+                            <span className="text-xs text-muted-foreground truncate">{vehicle.make} {vehicle.model}</span>
+                          </div>
+                          {vehicle.acquisition && <StageBadge stage={vehicle.acquisition.stage} />}
+                        </div>
+                      )) : (
+                        <p className="text-xs text-muted-foreground text-center py-2">Nenhum veículo em aquisição.</p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </>
       )}
     </div>
