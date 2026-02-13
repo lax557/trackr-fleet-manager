@@ -282,7 +282,7 @@ export function DriverDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">CPF</p>
-                <p className="font-mono font-medium">{driver.cpf || '—'}</p>
+                <p className="font-medium">{driver.cpf || '—'}</p>
               </div>
             </div>
             <Separator />
@@ -291,7 +291,7 @@ export function DriverDetailPage() {
                 <p className="text-sm text-muted-foreground">CNH</p>
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <p className="font-mono font-medium">{driver.cnh || '—'}</p>
+                  <p className="font-medium">{driver.cnh || '—'}</p>
                 </div>
               </div>
               <div>
@@ -342,13 +342,13 @@ export function DriverDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Placa</p>
-                    <p className="font-mono font-medium text-lg">
+                    <p className="font-medium text-lg">
                       {currentVehicle.plate || '—'}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">VehicleID</p>
-                    <p className="font-mono font-medium text-lg text-primary">
+                    <p className="font-medium text-lg text-primary">
                       {currentVehicle.id}
                     </p>
                   </div>

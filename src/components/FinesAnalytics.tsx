@@ -255,18 +255,18 @@ export function FinesAnalytics() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 [&_.recharts-responsive-container]:!h-[280px]">
-        <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Multas por Mês</CardTitle>
             <CardDescription>Quantidade de multas por mês</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[280px]">
-              <LineChart data={monthlyData}>
+          <CardContent className="flex-1 min-h-0">
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
+              <LineChart data={monthlyData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
-                <YAxis className="text-xs" />
+                <YAxis className="text-xs" width={40} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} name="Quantidade" />
               </LineChart>
@@ -274,17 +274,17 @@ export function FinesAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Valor por Mês</CardTitle>
             <CardDescription>Total de multas (R$) por mês</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[280px]">
-              <BarChart data={monthlyData}>
+          <CardContent className="flex-1 min-h-0">
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
+              <BarChart data={monthlyData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
-                <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} className="text-xs" />
+                <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} className="text-xs" width={60} />
                 <ChartTooltip formatter={(value: number) => formatCurrencyBRL(value)} />
                 <Bar dataKey="amount" fill="hsl(24.6 95% 53.1%)" name="Valor" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -292,13 +292,13 @@ export function FinesAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Distribuição por Status</CardTitle>
             <CardDescription>Multas por situação</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[280px]">
+          <CardContent className="flex-1 min-h-0">
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
               <PieChart>
                 <Pie data={statusDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                   {statusDistribution.map((_, index) => (
@@ -311,17 +311,17 @@ export function FinesAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Distribuição por Gravidade</CardTitle>
             <CardDescription>Multas por gravidade da infração</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[280px]">
-              <BarChart data={severityDistribution} layout="vertical">
+          <CardContent className="flex-1 min-h-0">
+            <ChartContainer config={chartConfig} className="h-[320px] w-full">
+              <BarChart data={severityDistribution} layout="vertical" margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" className="text-xs" />
-                <YAxis type="category" dataKey="name" className="text-xs" width={80} />
+                <YAxis type="category" dataKey="name" className="text-xs" width={90} />
                 <ChartTooltip 
                   formatter={(value: number, name: string, props: { payload?: { amount?: number } }) => [
                     `${value} multas (${formatCurrencyBRL(props.payload?.amount ?? 0)})`,
@@ -349,7 +349,7 @@ export function FinesAnalytics() {
                 <div key={v.plate} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
                   <span className="text-lg font-bold text-muted-foreground w-6">{index + 1}</span>
                   <div className="flex-1">
-                    <p className="font-mono font-medium">{v.plate}</p>
+                    <p className="font-medium">{v.plate}</p>
                     <p className="text-xs text-muted-foreground">{v.count} multas</p>
                   </div>
                   <p className="font-bold">{formatCurrencyBRL(v.amount)}</p>

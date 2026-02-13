@@ -342,7 +342,7 @@ export function NewMaintenancePage() {
                           />
                         )}
                       </div>
-                      <span className="font-mono font-medium">
+                      <span className="font-medium">
                         Total: R$ {(item.quantity * item.unitCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
@@ -440,11 +440,11 @@ export function NewMaintenancePage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">VehicleID</span>
-                    <span className="font-mono font-medium">{selectedVehicle.id}</span>
+                    <span className="font-medium">{selectedVehicle.id}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Placa</span>
-                    <span className="font-mono">{selectedVehicle.plate || '—'}</span>
+                    <span>{selectedVehicle.plate || '—'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Modelo</span>
@@ -467,20 +467,20 @@ export function NewMaintenancePage() {
             <CardContent className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Peças ({items.length} itens)</span>
-                <span className="font-mono">
+                <span>
                   R$ {partsCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Mão de Obra</span>
-                <span className="font-mono">
+                <span>
                   R$ {parseFloat(laborCost || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span className="text-lg font-mono text-primary">
+                  <span className="text-lg text-primary">
                     R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>

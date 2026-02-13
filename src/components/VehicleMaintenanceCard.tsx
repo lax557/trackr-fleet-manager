@@ -40,7 +40,7 @@ export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProp
           <>
             <div className="flex justify-between text-sm pb-2 border-b">
               <span className="text-muted-foreground">Total gasto</span>
-              <span className="font-mono font-medium">{formatCurrencyBRL(totalSpent)}</span>
+              <span className="font-medium">{formatCurrencyBRL(totalSpent)}</span>
             </div>
             <div className="space-y-2">
               {maintenances.map((m) => (
@@ -55,7 +55,7 @@ export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProp
                       {maintenanceTypeLabels[m.maintenanceType]}
                     </Badge>
                   </div>
-                  <span className="font-mono text-sm font-medium">{formatCurrencyBRL(m.totalCost)}</span>
+                  <span className="text-sm font-medium">{formatCurrencyBRL(m.totalCost)}</span>
                 </div>
               ))}
             </div>

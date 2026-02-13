@@ -98,9 +98,9 @@
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Dark mode borders - softer, closer to background */
-    --border: 260 8% 12%;
-    --input: 260 8% 12%;
+    /* Dark mode borders - very soft, almost invisible */
+    --border: 260 6% 14%;
+    --input: 260 6% 14%;
     --ring: 267 80% 60%;
 
     --sidebar-background: 260 15% 6%;
@@ -109,7 +109,7 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 267 30% 15%;
     --sidebar-accent-foreground: 267 60% 80%;
-    --sidebar-border: 260 10% 12%;
+    --sidebar-border: 260 6% 14%;
     --sidebar-ring: 267 80% 60%;
   }
 }
@@ -128,6 +128,11 @@
   html.dark {
     background-color: hsl(260 15% 8%);
     color-scheme: dark;
+  }
+
+  /* Ensure all borders use theme tokens in dark mode */
+  .dark * {
+    border-color: hsl(var(--border));
   }
 }
 

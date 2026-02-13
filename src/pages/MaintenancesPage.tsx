@@ -347,13 +347,13 @@ export function MaintenancesPage() {
                   ) : (
                     maintenances.map((m) => (
                       <TableRow key={m.id}>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="text-sm">
                           {format(m.occurredAt, "dd/MM/yy HH:mm", { locale: ptBR })}
                         </TableCell>
-                        <TableCell className="font-mono font-medium">
+                        <TableCell className="font-medium">
                           {m.vehicle.plate || '—'}
                         </TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">
+                        <TableCell className="text-sm text-muted-foreground">
                           {m.vehicleId}
                         </TableCell>
                         <TableCell>
@@ -365,10 +365,10 @@ export function MaintenancesPage() {
                         <TableCell className="text-sm">
                           {m.supplierName || '—'}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
+                        <TableCell className="text-right text-sm">
                           {m.odometerKm ? `${m.odometerKm.toLocaleString()} km` : '—'}
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
+                        <TableCell className="text-right font-medium">
                           R$ {m.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>

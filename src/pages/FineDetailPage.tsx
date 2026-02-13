@@ -247,7 +247,7 @@ export function FineDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Código</p>
-                <p className="font-mono font-medium">{fine.infractionCode}</p>
+                <p className="font-medium">{fine.infractionCode}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Gravidade</p>
@@ -304,7 +304,7 @@ export function FineDetailPage() {
               onClick={() => navigate(`/vehicles/${fine.vehicleId}`)}
             >
               <p className="text-sm text-muted-foreground">Veículo</p>
-              <p className="font-mono font-bold text-lg">{fine.vehiclePlate}</p>
+              <p className="font-bold text-lg">{fine.vehiclePlate}</p>
               <p className="text-sm text-muted-foreground">{fine.vehicleId} - {fine.vehicleMakeModel}</p>
             </div>
 
