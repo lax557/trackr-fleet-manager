@@ -248,10 +248,10 @@ export function MaintenanceAnalytics() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-primary/20 bg-primary/5">
+        <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
-              <Car className="h-5 w-5 text-primary" />
+              <Car className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Custo médio/carro</p>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -265,7 +265,7 @@ export function MaintenanceAnalytics() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <p className="text-2xl font-bold mt-1 text-primary">{formatCurrencyBRL(kpis.avgCostPerCar)}</p>
+            <p className="text-2xl font-bold mt-1">{formatCurrencyBRL(kpis.avgCostPerCar)}</p>
           </CardContent>
         </Card>
         <Card>

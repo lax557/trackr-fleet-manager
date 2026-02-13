@@ -37,7 +37,7 @@ import {
   Plus,
   Eye
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 import { toast } from 'sonner';
 import { CategoryBadge } from '@/components/CategoryBadge';
 
@@ -47,6 +47,7 @@ interface RentalFormData {
   driverId: string | null;
   vehicleId: string | null;
   startDate: string;
+  endDate: string;
   priceAmount: string;
   priceFrequency: PriceFrequency;
   billingWeekday: BillingWeekday;
@@ -76,10 +77,14 @@ export function NewRentalPage() {
   const [driverSearch, setDriverSearch] = useState('');
   const [isDriverPreSelected, setIsDriverPreSelected] = useState(!!preSelectedDriverId);
   
+  const initialStartDate = format(new Date(), 'yyyy-MM-dd');
+  const initialEndDate = format(addMonths(new Date(), 12), 'yyyy-MM-dd');
+
   const [formData, setFormData] = useState<RentalFormData>({
     driverId: preSelectedDriverId,
     vehicleId: null,
-    startDate: format(new Date(), 'yyyy-MM-dd'),
+    startDate: initialStartDate,
+    endDate: initialEndDate,
     priceAmount: '600',
     priceFrequency: 'WEEKLY',
     billingWeekday: 'MON',
@@ -373,7 +378,22 @@ export function NewRentalPage() {
                     id="startDate"
                     type="date"
                     value={formData.startDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                    onChange={(e) => {
+                      const newStart = e.target.value;
+                      const newEnd = newStart ? format(addMonths(new Date(newStart), 12), 'yyyy-MM-dd') : formData.endDate;
+                      setFormData(prev => ({ ...prev, startDate: newStart, endDate: newEnd }));
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">Data de Término</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={formData.endDate}
+                    min={formData.startDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
                   />
                 </div>
 
@@ -469,6 +489,9 @@ export function NewRentalPage() {
                   <div className="text-sm text-muted-foreground space-y-1">
                     <p>Motorista: <span className="text-foreground font-medium">{selectedDriver?.fullName}</span></p>
                     <p>Veículo: <span className="text-foreground font-medium">{selectedVehicle?.plate || selectedVehicle?.id}</span></p>
+                    <p>Período: <span className="text-foreground font-medium">
+                      {formData.startDate ? format(new Date(formData.startDate), 'dd/MM/yyyy') : '—'} a {formData.endDate ? format(new Date(formData.endDate), 'dd/MM/yyyy') : '—'}
+                    </span></p>
                     <p>
                       Valor: <span className="text-foreground font-medium">
                         R$ {formData.priceAmount} / {priceFrequencyLabels[formData.priceFrequency]}

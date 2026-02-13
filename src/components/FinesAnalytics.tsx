@@ -255,14 +255,14 @@ export function FinesAnalytics() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 [&_.recharts-responsive-container]:!h-[280px]">
         <Card>
           <CardHeader>
             <CardTitle>Multas por Mês</CardTitle>
             <CardDescription>Quantidade de multas por mês</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+            <ChartContainer config={chartConfig} className="h-[280px]">
               <LineChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
@@ -280,7 +280,7 @@ export function FinesAnalytics() {
             <CardDescription>Total de multas (R$) por mês</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+            <ChartContainer config={chartConfig} className="h-[280px]">
               <BarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" className="text-xs" />
@@ -298,7 +298,7 @@ export function FinesAnalytics() {
             <CardDescription>Multas por situação</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+            <ChartContainer config={chartConfig} className="h-[280px]">
               <PieChart>
                 <Pie data={statusDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                   {statusDistribution.map((_, index) => (
@@ -317,7 +317,7 @@ export function FinesAnalytics() {
             <CardDescription>Multas por gravidade da infração</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+            <ChartContainer config={chartConfig} className="h-[280px]">
               <BarChart data={severityDistribution} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" className="text-xs" />

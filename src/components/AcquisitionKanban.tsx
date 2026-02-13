@@ -19,10 +19,8 @@ const stages: AcquisitionStage[] = [
   'EM_LIBERACAO',
   'APROVADO',
   'FATURADO',
-  'LIBERADO_LOJA',
-  'INSTALACAO_EQUIPAMENTOS',
-  'EMPLACADO',
   'RECEBIDO',
+  'INSTALACAO_EQUIPAMENTOS',
   'PRONTO_PARA_ALUGAR',
 ];
 
@@ -32,10 +30,8 @@ export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: Acqu
       EM_LIBERACAO: [],
       APROVADO: [],
       FATURADO: [],
-      LIBERADO_LOJA: [],
-      INSTALACAO_EQUIPAMENTOS: [],
-      EMPLACADO: [],
       RECEBIDO: [],
+      INSTALACAO_EQUIPAMENTOS: [],
       PRONTO_PARA_ALUGAR: [],
     };
 

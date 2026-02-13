@@ -99,8 +99,8 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Dark mode borders - softer, closer to background */
-    --border: 260 10% 14%;
-    --input: 260 10% 14%;
+    --border: 260 8% 12%;
+    --input: 260 8% 12%;
     --ring: 267 80% 60%;
 
     --sidebar-background: 260 15% 6%;
@@ -122,6 +122,12 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+  }
+
+  /* Prevent white flash on dark mode transitions */
+  html.dark {
+    background-color: hsl(260 15% 8%);
+    color-scheme: dark;
   }
 }
 
