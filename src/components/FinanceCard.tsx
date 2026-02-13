@@ -1,23 +1,18 @@
-import { VehicleFinanceBasic, PurchaseMode } from '@/types';
-import { purchaseModeLabels, paymentStatusLabels } from '@/data/mockData';
+import { VehicleFinanceBasic } from '@/types';
+import { purchaseModeLabels } from '@/data/mockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PaymentBadge } from '@/components/StatusBadge';
-import { DollarSign, Edit, TrendingUp, TrendingDown, PiggyBank, Calculator, CreditCard } from 'lucide-react';
+import { DollarSign, Edit, TrendingUp, TrendingDown, Calculator, CreditCard } from 'lucide-react';
+import { formatCurrencyBRL } from '@/lib/utils';
 
 interface FinanceCardProps {
   finance: VehicleFinanceBasic;
   onEdit?: () => void;
 }
 
-function formatCurrency(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '—';
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 export function FinanceCard({ finance, onEdit }: FinanceCardProps) {
-  // Calculated metrics
   const installmentsPaid = finance.installmentsPaid ?? 0;
   const installmentsTotal = finance.installmentsTotal ?? 0;
   const installmentValue = finance.installmentValue ?? 0;
@@ -46,25 +41,20 @@ export function FinanceCard({ finance, onEdit }: FinanceCardProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {/* Key Metrics - Top section with better hierarchy */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="h-4 w-4 text-green-600" />
               <p className="text-sm text-muted-foreground">Total Pago</p>
             </div>
-            <p className="text-xl font-bold text-green-600">
-              {formatCurrency(totalPaid)}
-            </p>
+            <p className="text-xl font-bold text-green-600">{formatCurrencyBRL(totalPaid)}</p>
           </div>
           <div className="p-4 rounded-lg bg-orange-500/5 border border-orange-500/10">
             <div className="flex items-center gap-2 mb-1">
               <TrendingDown className="h-4 w-4 text-orange-600" />
               <p className="text-sm text-muted-foreground">Falta Pagar</p>
             </div>
-            <p className="text-xl font-bold text-orange-600">
-              {formatCurrency(remainingAmount)}
-            </p>
+            <p className="text-xl font-bold text-orange-600">{formatCurrencyBRL(remainingAmount)}</p>
           </div>
           <div className="p-4 rounded-lg bg-muted/50 border">
             <div className="flex items-center gap-2 mb-1">
@@ -72,12 +62,8 @@ export function FinanceCard({ finance, onEdit }: FinanceCardProps) {
               <p className="text-sm text-muted-foreground">Parcelas</p>
             </div>
             <div className="flex items-baseline gap-2">
-              <p className="text-xl font-bold">
-                {installmentsPaid}/{installmentsTotal}
-              </p>
-              <Badge variant="outline" className="text-xs">
-                {progressPercent}%
-              </Badge>
+              <p className="text-xl font-bold">{installmentsPaid}/{installmentsTotal}</p>
+              <Badge variant="outline" className="text-xs">{progressPercent}%</Badge>
             </div>
           </div>
           <div className="p-4 rounded-lg bg-muted/50 border">
@@ -91,7 +77,6 @@ export function FinanceCard({ finance, onEdit }: FinanceCardProps) {
           </div>
         </div>
 
-        {/* Progress bar for installments */}
         {installmentsTotal > 0 && (
           <div className="mb-6">
             <div className="flex justify-between text-sm text-muted-foreground mb-2">
@@ -99,32 +84,28 @@ export function FinanceCard({ finance, onEdit }: FinanceCardProps) {
               <span>{installmentsPaid} de {installmentsTotal} pagas</span>
             </div>
             <div className="h-3 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
+              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         )}
 
-        {/* Detail grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <p className="text-sm text-muted-foreground">Valor de Compra</p>
-            <p className="font-medium">{formatCurrency(finance.purchasePrice)}</p>
+            <p className="font-medium">{formatCurrencyBRL(finance.purchasePrice)}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Valor FIPE</p>
-            <p className="font-medium">{formatCurrency(finance.fipeValue)}</p>
+            <p className="font-medium">{formatCurrencyBRL(finance.fipeValue)}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Entrada</p>
-            <p className="font-medium">{formatCurrency(finance.downPayment)}</p>
+            <p className="font-medium">{formatCurrencyBRL(finance.downPayment)}</p>
           </div>
           {finance.installmentValue && (
             <div>
               <p className="text-sm text-muted-foreground">Valor da Parcela</p>
-              <p className="font-medium">{formatCurrency(finance.installmentValue)}</p>
+              <p className="font-medium">{formatCurrencyBRL(finance.installmentValue)}</p>
             </div>
           )}
           <div>

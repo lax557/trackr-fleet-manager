@@ -20,9 +20,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Plus, MoreHorizontal, Eye, Play, StopCircle, XCircle, FileText } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { formatCurrencyBRL } from '@/lib/utils';
 
 const rentalStatusStyles: Record<RentalStatus, string> = {
   DRAFT: 'bg-gray-100 text-gray-700 border-gray-200',
@@ -50,23 +51,17 @@ export function RentalsPage() {
   }), [rentals]);
 
   const handleActivate = (rental: RentalWithDetails) => {
-    // Validações
     if (rental.status !== 'DRAFT' && rental.status !== 'AWAITING_SIGNATURE') {
       toast.error('Apenas locações em rascunho ou aguardando assinatura podem ser ativadas.');
       return;
     }
-    
     if (!rental.contract) {
       toast.error('A locação precisa ter um contrato gerado antes de ser ativada.');
       return;
     }
-
     if (rental.contract.signatureStatus !== 'SIGNED') {
       toast.warning('Atenção: O contrato ainda não foi assinado. Deseja ativar mesmo assim?');
-      // Em uma aplicação real, mostraria um modal de confirmação
     }
-
-    // Simula ativação
     toast.success(`Locação ativada! ${rental.driver.fullName} agora está ATIVO com o veículo ${rental.vehicle.plate || rental.vehicle.id}.`);
   };
 
@@ -84,6 +79,11 @@ export function RentalsPage() {
       return;
     }
     toast.success('Locação cancelada.');
+  };
+
+  // Compute end date: endDate if exists, otherwise startDate + 12 months
+  const getEndDate = (rental: RentalWithDetails) => {
+    return rental.endDate || addMonths(rental.startDate, 12);
   };
 
   return (
@@ -148,6 +148,7 @@ export function RentalsPage() {
                 <TableHead>Veículo</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Início</TableHead>
+                <TableHead>Término</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Contrato</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -172,9 +173,12 @@ export function RentalsPage() {
                     {format(rental.startDate, 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   <TableCell>
+                    {format(getEndDate(rental), 'dd/MM/yyyy', { locale: ptBR })}
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">
-                        R$ {rental.priceAmount.toLocaleString('pt-BR')}
+                        {formatCurrencyBRL(rental.priceAmount)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {priceFrequencyLabels[rental.priceFrequency]}

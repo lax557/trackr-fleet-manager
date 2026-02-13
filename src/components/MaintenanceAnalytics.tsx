@@ -30,6 +30,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from 'recharts';
 import { 
   DollarSign, 
@@ -37,18 +38,18 @@ import {
   Car,
   Filter,
   X,
-  Users,
   HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { format, subMonths, isWithinInterval, eachDayOfInterval } from 'date-fns';
+import { format, subMonths, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { formatCurrencyBRL } from '@/lib/utils';
 
 const chartConfig = {
   total: {
@@ -75,133 +76,82 @@ const COLORS = [
 ];
 
 export function MaintenanceAnalytics() {
-  // Filters
   const [dateFrom, setDateFrom] = useState(format(subMonths(new Date(), 12), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [vehicleId, setVehicleId] = useState('');
   const [typeFilter, setTypeFilter] = useState<MaintenanceType | 'ALL'>('ALL');
   const [areaFilter, setAreaFilter] = useState<ServiceArea | 'ALL'>('ALL');
 
-  // Filtered data
   const filteredData = useMemo(() => {
     let data = getMaintenancesWithDetails();
-
-    // Date filter
     if (dateFrom && dateTo) {
       const from = new Date(dateFrom);
       const to = new Date(dateTo);
       to.setHours(23, 59, 59, 999);
       data = data.filter(m => isWithinInterval(m.occurredAt, { start: from, end: to }));
     }
-
-    // Vehicle filter
-    if (vehicleId) {
-      data = data.filter(m => m.vehicleId === vehicleId);
-    }
-
-    // Type filter
-    if (typeFilter !== 'ALL') {
-      data = data.filter(m => m.maintenanceType === typeFilter);
-    }
-
-    // Area filter
-    if (areaFilter !== 'ALL') {
-      data = data.filter(m => m.serviceArea === areaFilter);
-    }
-
+    if (vehicleId) data = data.filter(m => m.vehicleId === vehicleId);
+    if (typeFilter !== 'ALL') data = data.filter(m => m.maintenanceType === typeFilter);
+    if (areaFilter !== 'ALL') data = data.filter(m => m.serviceArea === areaFilter);
     return data;
   }, [dateFrom, dateTo, vehicleId, typeFilter, areaFilter]);
 
-  // Monthly spend chart data
   const monthlyData = useMemo(() => {
     const months: Record<string, { month: string; total: number; preventive: number; corrective: number }> = {};
-    
     filteredData.forEach(m => {
       const monthKey = format(m.occurredAt, 'yyyy-MM');
       const monthLabel = format(m.occurredAt, 'MMM/yy', { locale: ptBR });
-      
-      if (!months[monthKey]) {
-        months[monthKey] = { month: monthLabel, total: 0, preventive: 0, corrective: 0 };
-      }
-      
+      if (!months[monthKey]) months[monthKey] = { month: monthLabel, total: 0, preventive: 0, corrective: 0 };
       months[monthKey].total += m.totalCost;
-      if (m.maintenanceType === 'PREVENTIVE') {
-        months[monthKey].preventive += m.totalCost;
-      } else {
-        months[monthKey].corrective += m.totalCost;
-      }
+      if (m.maintenanceType === 'PREVENTIVE') months[monthKey].preventive += m.totalCost;
+      else months[monthKey].corrective += m.totalCost;
     });
-
     return Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
   }, [filteredData]);
 
-  // Type distribution
   const typeDistribution = useMemo(() => {
     const preventive = filteredData.filter(m => m.maintenanceType === 'PREVENTIVE');
     const corrective = filteredData.filter(m => m.maintenanceType === 'CORRECTIVE');
-    
     return [
       { name: 'Preventiva', value: preventive.length, cost: preventive.reduce((s, m) => s + m.totalCost, 0) },
       { name: 'Corretiva', value: corrective.length, cost: corrective.reduce((s, m) => s + m.totalCost, 0) },
     ];
   }, [filteredData]);
 
-  // Area distribution
   const areaDistribution = useMemo(() => {
     const areas: Record<string, { name: string; value: number; cost: number }> = {};
-    
     filteredData.forEach(m => {
       const areaName = serviceAreaLabels[m.serviceArea];
-      if (!areas[m.serviceArea]) {
-        areas[m.serviceArea] = { name: areaName, value: 0, cost: 0 };
-      }
+      if (!areas[m.serviceArea]) areas[m.serviceArea] = { name: areaName, value: 0, cost: 0 };
       areas[m.serviceArea].value += 1;
       areas[m.serviceArea].cost += m.totalCost;
     });
-
     return Object.values(areas).sort((a, b) => b.cost - a.cost);
   }, [filteredData]);
 
-  // KPIs including fleet average cost
   const kpis = useMemo(() => {
     const totalSpent = filteredData.reduce((sum, m) => sum + m.totalCost, 0);
     const monthCount = monthlyData.length || 1;
     const avgMonthly = totalSpent / monthCount;
-    
     const preventiveCount = filteredData.filter(m => m.maintenanceType === 'PREVENTIVE').length;
-    const preventiveRate = filteredData.length > 0 
-      ? (preventiveCount / filteredData.length) * 100 
-      : 0;
+    const preventiveRate = filteredData.length > 0 ? (preventiveCount / filteredData.length) * 100 : 0;
 
-    // Top vehicle by cost
     const vehicleCosts: Record<string, { id: string; plate: string | null; cost: number }> = {};
     filteredData.forEach(m => {
-      if (!vehicleCosts[m.vehicleId]) {
-        vehicleCosts[m.vehicleId] = { id: m.vehicleId, plate: m.vehicle.plate, cost: 0 };
-      }
+      if (!vehicleCosts[m.vehicleId]) vehicleCosts[m.vehicleId] = { id: m.vehicleId, plate: m.vehicle.plate, cost: 0 };
       vehicleCosts[m.vehicleId].cost += m.totalCost;
     });
     const topVehicle = Object.values(vehicleCosts).sort((a, b) => b.cost - a.cost)[0];
 
-    // Calculate average fleet for the period
-    let avgFleet = 0;
     let avgCostPerCar = 0;
-    
     if (dateFrom && dateTo) {
       const from = new Date(dateFrom);
       const to = new Date(dateTo);
-      avgFleet = getAverageFleetForPeriod(from, to);
+      const avgFleet = getAverageFleetForPeriod(from, to);
       avgCostPerCar = avgFleet > 0 ? totalSpent / avgFleet : 0;
     }
 
-    return {
-      totalSpent,
-      avgMonthly,
-      preventiveRate,
-      topVehicle,
-      avgFleet,
-      avgCostPerCar,
-    };
+    return { totalSpent, avgMonthly, preventiveRate, topVehicle, avgCostPerCar };
   }, [filteredData, monthlyData, dateFrom, dateTo]);
 
   const clearFilters = () => {
@@ -235,49 +185,28 @@ export function MaintenanceAnalytics() {
         <CardContent>
           <div className="flex flex-wrap gap-4">
             <div className="flex gap-2">
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="w-40"
-              />
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="w-40"
-              />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
             </div>
-
             <Select value={vehicleId || 'ALL'} onValueChange={(v) => setVehicleId(v === 'ALL' ? '' : v)}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Veículo" />
-              </SelectTrigger>
+              <SelectTrigger className="w-48"><SelectValue placeholder="Veículo" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todos Veículos</SelectItem>
                 {mockVehicles.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.plate || v.id} - {v.model}
-                  </SelectItem>
+                  <SelectItem key={v.id} value={v.id}>{v.plate || v.id} - {v.model}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
             <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as MaintenanceType | 'ALL')}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Tipo" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todos Tipos</SelectItem>
                 <SelectItem value="PREVENTIVE">Preventiva</SelectItem>
                 <SelectItem value="CORRECTIVE">Corretiva</SelectItem>
               </SelectContent>
             </Select>
-
             <Select value={areaFilter} onValueChange={(v) => setAreaFilter(v as ServiceArea | 'ALL')}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Área" />
-              </SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Área" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todas Áreas</SelectItem>
                 {Object.entries(serviceAreaLabels).map(([key, label]) => (
@@ -289,17 +218,15 @@ export function MaintenanceAnalytics() {
         </CardContent>
       </Card>
 
-      {/* KPIs - Updated with fleet average cost */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* KPIs - Removed "Frota média" card */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-primary" />
               <p className="text-sm text-muted-foreground">Total no período</p>
             </div>
-            <p className="text-2xl font-bold mt-1">
-              R$ {kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
+            <p className="text-2xl font-bold mt-1">{formatCurrencyBRL(kpis.totalSpent)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -308,45 +235,17 @@ export function MaintenanceAnalytics() {
               <TrendingUp className="h-5 w-5 text-blue-600" />
               <p className="text-sm text-muted-foreground">Média mensal</p>
             </div>
-            <p className="text-2xl font-bold mt-1">
-              R$ {kpis.avgMonthly.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
+            <p className="text-2xl font-bold mt-1">{formatCurrencyBRL(kpis.avgMonthly)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">Preventiva vs Corretiva</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-2xl font-bold text-blue-600">
-                {kpis.preventiveRate.toFixed(0)}%
-              </span>
+              <span className="text-2xl font-bold text-blue-600">{kpis.preventiveRate.toFixed(0)}%</span>
               <span className="text-muted-foreground">/</span>
-              <span className="text-2xl font-bold text-orange-600">
-                {(100 - kpis.preventiveRate).toFixed(0)}%
-              </span>
+              <span className="text-2xl font-bold text-orange-600">{(100 - kpis.preventiveRate).toFixed(0)}%</span>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-emerald-600" />
-              <p className="text-sm text-muted-foreground">Frota média</p>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>Média diária de veículos operacionais no período.</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Exclui: Em Liberação, Para Venda
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <p className="text-2xl font-bold mt-1">
-              {kpis.avgFleet.toFixed(1)}
-            </p>
           </CardContent>
         </Card>
         <Card className="border-primary/20 bg-primary/5">
@@ -366,9 +265,7 @@ export function MaintenanceAnalytics() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <p className="text-2xl font-bold mt-1 text-primary">
-              R$ {kpis.avgCostPerCar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
+            <p className="text-2xl font-bold mt-1 text-primary">{formatCurrencyBRL(kpis.avgCostPerCar)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -379,12 +276,8 @@ export function MaintenanceAnalytics() {
             </div>
             {kpis.topVehicle ? (
               <div className="mt-1">
-                <p className="font-bold font-mono">
-                  {kpis.topVehicle.plate || kpis.topVehicle.id}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  R$ {kpis.topVehicle.cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
+                <p className="font-bold font-mono">{kpis.topVehicle.plate || kpis.topVehicle.id}</p>
+                <p className="text-sm text-muted-foreground">{formatCurrencyBRL(kpis.topVehicle.cost)}</p>
               </div>
             ) : (
               <p className="text-muted-foreground mt-1">—</p>
@@ -395,7 +288,7 @@ export function MaintenanceAnalytics() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Spend */}
+        {/* Monthly Spend - with Legend */}
         <Card>
           <CardHeader>
             <CardTitle>Gasto por Mês</CardTitle>
@@ -412,12 +305,14 @@ export function MaintenanceAnalytics() {
                 />
                 <ChartTooltip 
                   content={<ChartTooltipContent />}
-                  formatter={(value: number) => 
-                    `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  }
+                  formatter={(value: number) => formatCurrencyBRL(value)}
                 />
-                <Bar dataKey="preventive" stackId="a" fill="hsl(221.2 83.2% 53.3%)" name="Preventiva" />
-                <Bar dataKey="corrective" stackId="a" fill="hsl(24.6 95% 53.1%)" name="Corretiva" />
+                <Legend 
+                  formatter={(value) => value === 'preventive' ? 'Preventiva' : 'Corretiva'}
+                  wrapperStyle={{ fontSize: '12px' }}
+                />
+                <Bar dataKey="preventive" stackId="a" fill="hsl(221.2 83.2% 53.3%)" name="preventive" />
+                <Bar dataKey="corrective" stackId="a" fill="hsl(24.6 95% 53.1%)" name="corrective" />
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -448,7 +343,7 @@ export function MaintenanceAnalytics() {
                 </Pie>
                 <ChartTooltip 
                   formatter={(value: number, name: string, props: { payload?: { cost?: number } }) => [
-                    `${value} registros (R$ ${(props.payload?.cost ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`,
+                    `${value} registros (${formatCurrencyBRL(props.payload?.cost ?? 0)})`,
                     name
                   ]}
                 />
@@ -457,30 +352,46 @@ export function MaintenanceAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Area Distribution */}
+        {/* Area Distribution - improved layout */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Distribuição por Área</CardTitle>
             <CardDescription>Gastos por área de serviço</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <BarChart data={areaDistribution} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  type="number"
-                  tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-                  className="text-xs"
-                />
-                <YAxis type="category" dataKey="name" className="text-xs" width={80} />
-                <ChartTooltip 
-                  formatter={(value: number) => 
-                    `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  }
-                />
-                <Bar dataKey="cost" fill="hsl(var(--primary))" name="Custo Total" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ChartContainer>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <ChartContainer config={chartConfig} className="h-[280px]">
+                  <BarChart data={areaDistribution} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      type="number"
+                      tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+                      className="text-xs"
+                    />
+                    <YAxis type="category" dataKey="name" className="text-xs" width={80} />
+                    <ChartTooltip formatter={(value: number) => formatCurrencyBRL(value)} />
+                    <Bar dataKey="cost" fill="hsl(var(--primary))" name="Custo Total" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+              {/* Mini insight card */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Resumo por Área</h4>
+                {areaDistribution.map((area, i) => (
+                  <div key={area.name} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                      <span className="text-sm">{area.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-mono font-medium">{formatCurrencyBRL(area.cost)}</p>
+                      <p className="text-xs text-muted-foreground">{area.value} serviço(s)</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

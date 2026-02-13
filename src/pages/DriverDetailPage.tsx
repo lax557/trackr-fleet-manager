@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
-import { DriverDocType } from '@/types';
+import { useMemo, useState } from 'react';
+import { DriverDocType, DriverNote } from '@/types';
 import { 
   getDriversWithDetails, 
   mockVehicles, 
@@ -13,8 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { DocumentsCard } from '@/components/DocumentsCard';
-import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users, Plus, ArrowRight } from 'lucide-react';
+import { ArrowLeft, User, Phone, Car, AlertTriangle, Wallet, Calendar, CreditCard, Users, Plus, ArrowRight, Trash2, StickyNote, MapPin } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { getCurrentStatus } from '@/data/mockData';
 import { format } from 'date-fns';
@@ -24,7 +27,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { fineStatusColors, fineStatusLabels } from '@/types/fines';
+import { toast } from 'sonner';
 
 const driverDocTypes: DriverDocType[] = [
   'CONTRATO',
@@ -34,6 +49,11 @@ const driverDocTypes: DriverDocType[] = [
   'PERFIL_APP'
 ];
 
+const formatCEP = (value: string) => {
+  const numbers = value.replace(/\D/g, '');
+  return numbers.replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+};
+
 export function DriverDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -41,18 +61,24 @@ export function DriverDetailPage() {
   const driversWithDetails = getDriversWithDetails();
   const driver = driversWithDetails.find(d => d.id === id);
 
+  const [notes, setNotes] = useState<DriverNote[]>(driver?.notes || []);
+  const [newNote, setNewNote] = useState('');
+
+  // Address state
+  const [address, setAddress] = useState(driver?.address || {
+    street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zipCode: ''
+  });
+
   const documents = useMemo(() => {
     return id ? getFilesForScope('DRIVER', id) : [];
   }, [id]);
 
   const handleDocumentUpload = (docType: string, file: File) => {
     console.log('Upload document:', { docType, file, driverId: id });
-    // In a real app, this would upload to storage and save metadata
   };
 
   const handleDocumentDelete = (fileId: string) => {
     console.log('Delete document:', { fileId });
-    // In a real app, this would delete from storage
   };
 
   if (!driver) {
@@ -70,21 +96,44 @@ export function DriverDetailPage() {
   const currentVehicle = driver.currentVehicle;
   const vehicleStatus = currentVehicle ? getCurrentStatus(currentVehicle.id) : null;
   
-  // Get driver fines from the fines data
   const driverFines = useMemo(() => getFinesForDriver(driver.id), [driver.id]);
   const openFines = driverFines.filter(f => ['OPEN', 'DUE_SOON', 'OVERDUE'].includes(f.status));
   const openFinesCount = openFines.length;
 
-  // Use computed status based on business rules
   const displayStatus = driver.computedStatus;
   
-  // Check if driver has an active rental
   const hasActiveRental = mockRentals.some(
     r => r.driverId === driver.id && r.status === 'ACTIVE'
   );
   
   const handleStartRental = () => {
     navigate(`/rentals/new?driverId=${driver.id}`);
+  };
+
+  const handleAddNote = () => {
+    if (!newNote.trim()) return;
+    const note: DriverNote = {
+      id: `note-${Date.now()}`,
+      driverId: driver.id,
+      content: newNote.trim(),
+      author: 'admin',
+      createdAt: new Date(),
+    };
+    setNotes(prev => [note, ...prev]);
+    setNewNote('');
+    toast.success('Nota adicionada.');
+  };
+
+  const handleDeleteDriver = () => {
+    // Soft delete / archive
+    console.log('Archiving driver:', driver.id);
+    toast.success('Motorista arquivado com sucesso.');
+    navigate('/drivers');
+  };
+
+  const handleSaveAddress = () => {
+    console.log('Saving address:', address);
+    toast.success('Endereço salvo.');
   };
 
   return (
@@ -111,29 +160,57 @@ export function DriverDetailPage() {
           </div>
         </div>
         
-        {/* CTA: Iniciar locação */}
-        {!hasActiveRental ? (
-          <Button onClick={handleStartRental} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Iniciar locação
-          </Button>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button disabled variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Iniciar locação
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Motorista já possui locação ativa. Para trocar de veículo, use a locação atual.</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
+        <div className="flex gap-2">
+          {/* Delete button - only for inactive drivers */}
+          {displayStatus === 'inactive' && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir motorista?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    O motorista será arquivado e não aparecerá mais na listagem principal. 
+                    Dados históricos (locações, multas) serão preservados.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteDriver}>
+                    Confirmar Exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {!hasActiveRental ? (
+            <Button onClick={handleStartRental} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Iniciar locação
+            </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button disabled variant="outline" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Iniciar locação
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Motorista já possui locação ativa. Para trocar de veículo, use a locação atual.</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Seção 1: Dados do Motorista - Extended */}
+        {/* Seção 1: Dados do Motorista */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -268,7 +345,93 @@ export function DriverDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Seção 3: Multas */}
+        {/* Seção 3: Endereço */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              Endereço
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="md:col-span-2">
+                <Label htmlFor="street">Rua</Label>
+                <Input id="street" value={address.street} onChange={e => setAddress(p => ({ ...p, street: e.target.value }))} placeholder="Rua / Avenida" />
+              </div>
+              <div>
+                <Label htmlFor="number">Número</Label>
+                <Input id="number" value={address.number} onChange={e => setAddress(p => ({ ...p, number: e.target.value }))} placeholder="123" />
+              </div>
+              <div>
+                <Label htmlFor="complement">Complemento</Label>
+                <Input id="complement" value={address.complement} onChange={e => setAddress(p => ({ ...p, complement: e.target.value }))} placeholder="Apto 101" />
+              </div>
+              <div>
+                <Label htmlFor="neighborhood">Bairro</Label>
+                <Input id="neighborhood" value={address.neighborhood} onChange={e => setAddress(p => ({ ...p, neighborhood: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="city">Cidade</Label>
+                <Input id="city" value={address.city} onChange={e => setAddress(p => ({ ...p, city: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="state">Estado</Label>
+                <Input id="state" value={address.state} onChange={e => setAddress(p => ({ ...p, state: e.target.value }))} placeholder="SP" maxLength={2} />
+              </div>
+              <div>
+                <Label htmlFor="zipCode">CEP</Label>
+                <Input id="zipCode" value={address.zipCode} onChange={e => setAddress(p => ({ ...p, zipCode: formatCEP(e.target.value) }))} placeholder="00000-000" />
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleSaveAddress}>
+              Salvar Endereço
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Seção 4: Notas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <StickyNote className="h-5 w-5 text-primary" />
+              Notas
+            </CardTitle>
+            <CardDescription>Anotações sobre o motorista</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Escreva uma nota..."
+                className="min-h-[80px]"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={handleAddNote} disabled={!newNote.trim()}>
+              Adicionar Nota
+            </Button>
+            
+            {notes.length > 0 && (
+              <div className="space-y-3 mt-4">
+                {notes.map(note => (
+                  <div key={note.id} className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {note.author} • {format(note.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {notes.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-2">Nenhuma nota registrada.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Seção 5: Multas */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -333,7 +496,7 @@ export function DriverDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Seção 4: Documentos (antigo Contrato) */}
+        {/* Seção 6: Documentos */}
         <DocumentsCard
           title="Documentos"
           description="Documentos do motorista"
@@ -346,7 +509,7 @@ export function DriverDetailPage() {
           onDelete={handleDocumentDelete}
         />
 
-        {/* Seção 5: Financeiro */}
+        {/* Seção 7: Financeiro */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

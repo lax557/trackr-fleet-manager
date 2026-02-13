@@ -25,6 +25,8 @@ export type AcquisitionStage =
   | 'EM_LIBERACAO' 
   | 'APROVADO' 
   | 'FATURADO' 
+  | 'LIBERADO_LOJA'
+  | 'INSTALACAO_EQUIPAMENTOS'
   | 'EMPLACADO' 
   | 'RECEBIDO' 
   | 'PRONTO_PARA_ALUGAR';
@@ -80,6 +82,24 @@ export interface Vehicle {
   updatedAt: Date;
 }
 
+export interface DriverNote {
+  id: string;
+  driverId: string;
+  content: string;
+  author: string;
+  createdAt: Date;
+}
+
+export interface DriverAddress {
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zipCode: string;
+}
+
 export interface Driver {
   id: string;
   fullName: string;
@@ -91,6 +111,9 @@ export interface Driver {
   birthDate?: Date | null;
   fatherName?: string | null;
   motherName?: string | null;
+  address?: DriverAddress | null;
+  notes?: DriverNote[];
+  isArchived?: boolean;
 }
 
 export interface Rental {

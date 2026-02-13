@@ -35,6 +35,8 @@ const stages: AcquisitionStage[] = [
   'EM_LIBERACAO',
   'APROVADO',
   'FATURADO',
+  'LIBERADO_LOJA',
+  'INSTALACAO_EQUIPAMENTOS',
   'EMPLACADO',
   'RECEBIDO',
   'PRONTO_PARA_ALUGAR',

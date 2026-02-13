@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Wrench, Plus, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatCurrencyBRL } from '@/lib/utils';
 
 interface VehicleMaintenanceCardProps {
   vehicleId: string;
@@ -15,13 +16,8 @@ interface VehicleMaintenanceCardProps {
 export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProps) {
   const navigate = useNavigate();
 
-  const maintenances = useMemo(() => {
-    return getMaintenancesForVehicle(vehicleId).slice(0, 3);
-  }, [vehicleId]);
-
-  const totalSpent = useMemo(() => {
-    return getMaintenancesForVehicle(vehicleId).reduce((sum, m) => sum + m.totalCost, 0);
-  }, [vehicleId]);
+  const maintenances = useMemo(() => getMaintenancesForVehicle(vehicleId).slice(0, 3), [vehicleId]);
+  const totalSpent = useMemo(() => getMaintenancesForVehicle(vehicleId).reduce((sum, m) => sum + m.totalCost, 0), [vehicleId]);
 
   return (
     <Card>
@@ -31,11 +27,7 @@ export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProp
             <Wrench className="h-5 w-5 text-primary" />
             <CardTitle className="text-base">Manutenções</CardTitle>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate(`/maintenance/new?vehicleId=${vehicleId}`)}
-          >
+          <Button variant="outline" size="sm" onClick={() => navigate(`/maintenance/new?vehicleId=${vehicleId}`)}>
             <Plus className="h-4 w-4 mr-1" />
             Nova
           </Button>
@@ -43,20 +35,13 @@ export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProp
       </CardHeader>
       <CardContent className="space-y-3">
         {maintenances.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Nenhuma manutenção registrada
-          </p>
+          <p className="text-sm text-muted-foreground text-center py-4">Nenhuma manutenção registrada</p>
         ) : (
           <>
-            {/* Summary */}
             <div className="flex justify-between text-sm pb-2 border-b">
               <span className="text-muted-foreground">Total gasto</span>
-              <span className="font-mono font-medium">
-                R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
+              <span className="font-mono font-medium">{formatCurrencyBRL(totalSpent)}</span>
             </div>
-
-            {/* Recent maintenances */}
             <div className="space-y-2">
               {maintenances.map((m) => (
                 <div 
@@ -65,32 +50,16 @@ export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProp
                   onClick={() => navigate(`/maintenance/${m.id}`)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="text-xs text-muted-foreground">
-                      {format(m.occurredAt, 'dd/MM/yy', { locale: ptBR })}
-                    </div>
-                    <Badge 
-                      variant="outline" 
-                      className={m.maintenanceType === 'PREVENTIVE' 
-                        ? 'border-blue-500 text-blue-600 text-xs' 
-                        : 'border-orange-500 text-orange-600 text-xs'
-                      }
-                    >
+                    <div className="text-xs text-muted-foreground">{format(m.occurredAt, 'dd/MM/yy', { locale: ptBR })}</div>
+                    <Badge variant="outline" className={m.maintenanceType === 'PREVENTIVE' ? 'border-blue-500 text-blue-600 text-xs' : 'border-orange-500 text-orange-600 text-xs'}>
                       {maintenanceTypeLabels[m.maintenanceType]}
                     </Badge>
                   </div>
-                  <span className="font-mono text-sm font-medium">
-                    R$ {m.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
+                  <span className="font-mono text-sm font-medium">{formatCurrencyBRL(m.totalCost)}</span>
                 </div>
               ))}
             </div>
-
-            {/* View all */}
-            <Button 
-              variant="ghost" 
-              className="w-full mt-2"
-              onClick={() => navigate(`/maintenance?vehicle=${vehicleId}`)}
-            >
+            <Button variant="ghost" className="w-full mt-2" onClick={() => navigate(`/maintenance?vehicle=${vehicleId}`)}>
               Ver todas
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
