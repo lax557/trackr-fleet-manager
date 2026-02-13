@@ -25,6 +25,16 @@ import FineDetailPage from "./pages/FineDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import NewVehiclePage from "./pages/NewVehiclePage";
+// Financial module
+import FinancialDashboardPage from "./pages/FinancialDashboardPage";
+import TransactionsPage from "./pages/TransactionsPage";
+import BankAccountsPage from "./pages/BankAccountsPage";
+import BillsPage from "./pages/BillsPage";
+import PartnersPage from "./pages/PartnersPage";
+import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
+import FinancialReportsPage from "./pages/FinancialReportsPage";
+import ReconciliationPage from "./pages/ReconciliationPage";
+import FinancialAIPage from "./pages/FinancialAIPage";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +73,17 @@ const App = () => (
                   <Route path="/maintenance/:id/edit" element={<NewMaintenancePage />} />
                   <Route path="/fines" element={<FinesPage />} />
                   <Route path="/fines/:id" element={<FineDetailPage />} />
+                  {/* Financial module */}
+                  <Route path="/financial" element={<FinancialDashboardPage />} />
+                  <Route path="/financial/transactions" element={<TransactionsPage />} />
+                  <Route path="/financial/accounts" element={<BankAccountsPage />} />
+                  <Route path="/financial/payables" element={<BillsPage type="PAGAR" />} />
+                  <Route path="/financial/receivables" element={<BillsPage type="RECEBER" />} />
+                  <Route path="/financial/partners" element={<PartnersPage />} />
+                  <Route path="/financial/chart-of-accounts" element={<ChartOfAccountsPage />} />
+                  <Route path="/financial/reports" element={<FinancialReportsPage />} />
+                  <Route path="/financial/reconciliation" element={<ReconciliationPage />} />
+                  <Route path="/financial/ai" element={<FinancialAIPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
