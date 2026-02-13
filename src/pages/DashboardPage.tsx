@@ -29,10 +29,30 @@ export function DashboardPage() {
   const fineStats = useMemo(() => getFineStats(), []);
   const expiringContracts = useMemo(() => getExpiringContracts(30), []);
   
-  const vehiclesNeedAttention = vehicles.filter(v => 
-    v.currentStatus === 'MANUTENCAO' || v.currentStatus === 'SINISTRO'
+  // Sort: SINISTRO first, then MANUTENCAO
+  const vehiclesNeedAttention = useMemo(() => {
+    const filtered = vehicles.filter(v => 
+      v.currentStatus === 'MANUTENCAO' || v.currentStatus === 'SINISTRO'
+    );
+    return filtered.sort((a, b) => {
+      const priority: Record<string, number> = { 'SINISTRO': 0, 'MANUTENCAO': 1 };
+      return (priority[a.currentStatus] ?? 2) - (priority[b.currentStatus] ?? 2);
+    });
+  }, [vehicles]);
+
+  const backlogVehicles = useMemo(() => 
+    vehicles.filter(v => v.currentStatus === 'EM_LIBERACAO'), [vehicles]
   );
-  const backlogVehicles = vehicles.filter(v => v.currentStatus === 'EM_LIBERACAO');
+
+  // Sorted expiring contracts (soonest first)
+  const sortedExpiringContracts = useMemo(() => 
+    [...expiringContracts].sort((a, b) => a.daysRemaining - b.daysRemaining), [expiringContracts]
+  );
+
+  // TOP N limits
+  const TOP_ATTENTION = 6;
+  const TOP_CONTRACTS = 5;
+  const TOP_BACKLOG = 6;
 
   // ── Shared fleet KPIs (both modes) ──
   const fleetKpis = [
@@ -131,7 +151,7 @@ export function DashboardPage() {
                 <CardContent className="px-4 pb-3 flex-1 min-h-0 overflow-hidden">
                   <ScrollArea className="h-full">
                     <div className="space-y-1.5 pr-2">
-                      {vehiclesNeedAttention.slice(0, 20).map(vehicle => (
+                      {vehiclesNeedAttention.slice(0, TOP_ATTENTION).map(vehicle => (
                         <div 
                           key={vehicle.id}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
@@ -145,7 +165,7 @@ export function DashboardPage() {
                         </div>
                       ))}
                       {vehiclesNeedAttention.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-2">Nenhum veículo requer atenção.</p>
+                        <p className="text-xs text-muted-foreground text-center py-6">Nenhum veículo requer atenção agora.</p>
                       )}
                     </div>
                   </ScrollArea>
@@ -158,8 +178,8 @@ export function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarClock className="h-4 w-4 text-primary" />
-                      <CardTitle className="text-sm">Contratos Vencendo</CardTitle>
-                      <span className="text-xs text-muted-foreground">({expiringContracts.length})</span>
+                       <CardTitle className="text-sm">Contratos Vencendo</CardTitle>
+                      <span className="text-xs text-muted-foreground">({sortedExpiringContracts.length})</span>
                     </div>
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/rentals')}>
                       Ver todos <ArrowRight className="h-3 w-3 ml-1" />
@@ -169,7 +189,7 @@ export function DashboardPage() {
                 <CardContent className="px-4 pb-3 flex-1 min-h-0 overflow-hidden">
                   <ScrollArea className="h-full">
                     <div className="space-y-1.5 pr-2">
-                      {expiringContracts.length > 0 ? expiringContracts.slice(0, 15).map(c => (
+                      {sortedExpiringContracts.length > 0 ? sortedExpiringContracts.slice(0, TOP_CONTRACTS).map(c => (
                         <div 
                           key={c.rentalId}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
@@ -184,7 +204,7 @@ export function DashboardPage() {
                           </span>
                         </div>
                       )) : (
-                        <p className="text-xs text-muted-foreground text-center py-2">Nenhum contrato vencendo em 30 dias.</p>
+                        <p className="text-xs text-muted-foreground text-center py-6">Nenhum contrato vencendo nos próximos 30 dias.</p>
                       )}
                     </div>
                   </ScrollArea>
@@ -241,7 +261,7 @@ export function DashboardPage() {
             <CardContent className="px-5 pb-3">
               {backlogVehicles.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {backlogVehicles.map(vehicle => (
+                  {backlogVehicles.slice(0, TOP_BACKLOG).map(vehicle => (
                     <div 
                       key={vehicle.id}
                       className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
@@ -256,7 +276,7 @@ export function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-2">Nenhum veículo em aquisição.</p>
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhum veículo em backlog.</p>
               )}
             </CardContent>
           </Card>
