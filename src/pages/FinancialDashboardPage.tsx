@@ -5,7 +5,7 @@ import { formatCurrencyBRL } from '@/lib/utils';
 import { DollarSign, TrendingUp, TrendingDown, Wallet, ArrowDownCircle, ArrowUpCircle, Flame, Timer, Percent } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
@@ -16,7 +16,7 @@ export default function FinancialDashboardPage() {
   const navigate = useNavigate();
   const stats = useMemo(() => getFinancialDashboardStats(), []);
 
-  const expenseData = useMemo(() => 
+  const expenseData = useMemo(() =>
     Object.entries(stats.expenseByCategory).map(([cat, val]) => ({
       name: categoryLabels[cat as TransactionCategory] || cat,
       value: Math.round(val),
@@ -40,6 +40,35 @@ export default function FinancialDashboardPage() {
     { label: 'Runway', value: `${Math.round(stats.runway)} dias`, icon: Timer, color: stats.runway >= 90 ? 'text-green-600' : 'text-amber-600', tooltip: 'Saldo / Queima diária' },
   ];
 
+  const CustomCashFlowTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
+          <p className="font-medium text-popover-foreground text-sm mb-1">{label}</p>
+          {payload.map((p: any) => (
+            <p key={p.dataKey} className="text-sm" style={{ color: p.stroke }}>
+              {p.name}: {formatCurrencyBRL(p.value)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
+          <p className="font-medium text-popover-foreground text-sm">{data.name}</p>
+          <p className="text-sm text-muted-foreground">{formatCurrencyBRL(data.value)}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -62,42 +91,46 @@ export default function FinancialDashboardPage() {
         ))}
       </div>
 
-      {/* Cash flow + Expense breakdown */}
+      {/* Cash flow + Expense breakdown — same pattern as dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <Card className="lg:col-span-8">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Fluxo de Caixa (6 meses)</CardTitle>
+            <CardTitle className="text-base">Fluxo de Caixa (6 meses)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={stats.cashFlow}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="month" className="text-xs" />
-                <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" />
-                <RechartsTooltip formatter={(v: number) => formatCurrencyBRL(v)} />
-                <Area type="monotone" dataKey="receitas" stroke="hsl(142,71%,45%)" fill="hsl(142,71%,45%)" fillOpacity={0.15} name="Receitas" />
-                <Area type="monotone" dataKey="despesas" stroke="hsl(0,72%,51%)" fill="hsl(0,72%,51%)" fillOpacity={0.15} name="Despesas" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.cashFlow}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="month" className="text-xs" tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fontSize: 12 }} />
+                  <RechartsTooltip content={<CustomCashFlowTooltip />} />
+                  <Area type="monotone" dataKey="receitas" stroke="hsl(142,71%,45%)" fill="hsl(142,71%,45%)" fillOpacity={0.15} name="Receitas" strokeWidth={2} />
+                  <Area type="monotone" dataKey="despesas" stroke="hsl(0,72%,51%)" fill="hsl(0,72%,51%)" fillOpacity={0.15} name="Despesas" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-4">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Composição de Despesas</CardTitle>
+            <CardTitle className="text-base">Composição de Despesas</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Pie data={expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} innerRadius={50} label={false}>
-                  {expenseData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip formatter={(v: number) => formatCurrencyBRL(v)} />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={50} paddingAngle={2} label={false}>
+                    {expenseData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="transparent" />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip content={<CustomPieTooltip />} />
+                  <Legend verticalAlign="bottom" height={36} formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -127,7 +160,7 @@ export default function FinancialDashboardPage() {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm">Transações Recentes</CardTitle>
+            <CardTitle className="text-base">Transações Recentes</CardTitle>
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/financial/transactions')}>
               Ver todas <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
@@ -138,7 +171,7 @@ export default function FinancialDashboardPage() {
             {recentTxns.map(txn => (
               <div key={txn.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center ${txn.type === 'RECEITA' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${txn.type === 'RECEITA' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {txn.type === 'RECEITA' ? <ArrowDownCircle className="h-4 w-4" /> : <ArrowUpCircle className="h-4 w-4" />}
                   </div>
                   <div className="min-w-0">
