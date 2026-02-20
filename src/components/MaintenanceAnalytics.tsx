@@ -19,6 +19,8 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
   ChartConfig
 } from '@/components/ui/chart';
 import { 
@@ -30,7 +32,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
   Tooltip as RechartsTooltip,
 } from 'recharts';
 import { 
@@ -356,12 +357,7 @@ export function MaintenanceAnalytics() {
                   content={<ChartTooltipContent />}
                   formatter={(value: number) => formatCurrencyBRL(value)}
                 />
-                <Legend 
-                  formatter={(value) => value === 'preventive' ? 'Preventiva' : value === 'corrective' ? 'Corretiva' : value}
-                  wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
-                  iconType="circle"
-                  iconSize={8}
-                />
+                <ChartLegend content={<ChartLegendContent />} />
                 <Bar dataKey="preventive" stackId="a" fill="hsl(221.2 83.2% 53.3%)" name="preventive" />
                 <Bar dataKey="corrective" stackId="a" fill="hsl(24.6 95% 53.1%)" name="corrective" />
               </BarChart>
