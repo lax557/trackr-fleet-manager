@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { addDays, differenceInDays, format, startOfWeek, endOfWeek, addWeeks } from 'date-fns';
+import { differenceInDays, format, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const COLORS = ['hsl(267,80%,54%)', 'hsl(217,91%,60%)', 'hsl(38,92%,50%)', 'hsl(0,72%,51%)', 'hsl(142,71%,45%)', 'hsl(280,60%,50%)', 'hsl(200,70%,50%)', 'hsl(30,80%,55%)'];
@@ -30,59 +30,65 @@ export default function FinancialDashboardPage() {
 
   const recentTxns = transactions.slice(0, 8);
 
-  // "O que está por vir" data
+  // "O que está por vir" — current week only (Mon-Sun), flow only
   const forecastData = useMemo(() => {
     const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
     const pendingPayables = bills.filter(b => b.type === 'PAGAR' && (b.status === 'PENDENTE' || b.status === 'VENCIDO'));
     const pendingReceivables = bills.filter(b => b.type === 'RECEBER' && (b.status === 'PENDENTE' || b.status === 'VENCIDO'));
-    
-    const totalReceivable = pendingReceivables.reduce((s, b) => s + b.amount, 0);
-    const totalPayable = pendingPayables.reduce((s, b) => s + b.amount, 0);
+
+    // Filter to current week only
+    const weekPayables = pendingPayables.filter(b => b.dueDate >= weekStart && b.dueDate <= weekEnd);
+    const weekReceivables = pendingReceivables.filter(b => b.dueDate >= weekStart && b.dueDate <= weekEnd);
+
+    const totalReceivable = weekReceivables.reduce((s, b) => s + b.amount, 0);
+    const totalPayable = weekPayables.reduce((s, b) => s + b.amount, 0);
     const projectedBalance = totalReceivable - totalPayable;
 
-    // Weekly forecast for next 4 weeks (flow only, no accumulated balance)
-    const weeklyData: { week: string; entradas: number; saidas: number; saldo: number }[] = [];
-    
-    for (let w = 0; w < 4; w++) {
-      const weekStart = startOfWeek(addWeeks(now, w), { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(addWeeks(now, w), { weekStartsOn: 1 });
-      
-      const weekReceivables = pendingReceivables
-        .filter(b => b.dueDate >= weekStart && b.dueDate <= weekEnd)
+    // Daily breakdown (Seg-Dom)
+    const dayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    const dailyData: { day: string; entradas: number; saidas: number; saldoAcumulado: number }[] = [];
+    let accumulated = 0;
+
+    for (let d = 0; d < 7; d++) {
+      const dayDate = addDays(weekStart, d);
+      const dayStart = new Date(dayDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const dayIn = weekReceivables
+        .filter(b => b.dueDate >= dayStart && b.dueDate <= dayEnd)
         .reduce((s, b) => s + b.amount, 0);
-      
-      const weekPayables = pendingPayables
-        .filter(b => b.dueDate >= weekStart && b.dueDate <= weekEnd)
+
+      const dayOut = weekPayables
+        .filter(b => b.dueDate >= dayStart && b.dueDate <= dayEnd)
         .reduce((s, b) => s + b.amount, 0);
-      
-      weeklyData.push({
-        week: `Sem ${w + 1}`,
-        entradas: Math.round(weekReceivables),
-        saidas: Math.round(-weekPayables),
-        saldo: Math.round(weekReceivables - weekPayables),
+
+      accumulated += dayIn - dayOut;
+
+      dailyData.push({
+        day: dayLabels[d],
+        entradas: Math.round(dayIn),
+        saidas: Math.round(-dayOut),
+        saldoAcumulado: Math.round(accumulated),
       });
     }
 
-    // Critical payables (upcoming or overdue)
-    const criticalPayables = pendingPayables
-      .map(b => ({
-        ...b,
-        daysUntil: differenceInDays(b.dueDate, now),
-      }))
-      .sort((a, b) => a.daysUntil - b.daysUntil)
-      .slice(0, 5);
+    // Critical payables for the week
+    const criticalPayables = weekPayables
+      .map(b => ({ ...b, daysUntil: differenceInDays(b.dueDate, now) }))
+      .sort((a, b) => a.daysUntil - b.daysUntil);
 
-    // Upcoming receivables
-    const upcomingReceivables = pendingReceivables
-      .map(b => ({
-        ...b,
-        daysUntil: differenceInDays(b.dueDate, now),
-      }))
-      .sort((a, b) => a.daysUntil - b.daysUntil)
-      .slice(0, 5);
+    // Upcoming receivables for the week
+    const upcomingReceivables = weekReceivables
+      .map(b => ({ ...b, daysUntil: differenceInDays(b.dueDate, now) }))
+      .sort((a, b) => a.daysUntil - b.daysUntil);
 
-    return { totalReceivable, totalPayable, projectedBalance, weeklyData, criticalPayables, upcomingReceivables };
-  }, [stats, bills]);
+    return { totalReceivable, totalPayable, projectedBalance, dailyData, criticalPayables, upcomingReceivables, weekStart, weekEnd };
+  }, [bills]);
 
   const kpis = [
     { label: 'Saldo Total', value: formatCurrencyBRL(stats.totalBalance), icon: Wallet, color: 'text-primary' },
@@ -231,25 +237,28 @@ export default function FinancialDashboardPage() {
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <CalendarClock className="h-5 w-5 text-primary" />
           O que está por vir
+          <span className="text-xs font-normal text-muted-foreground ml-2">
+            ({format(forecastData.weekStart, 'dd/MM', { locale: ptBR })} – {format(forecastData.weekEnd, 'dd/MM', { locale: ptBR })})
+          </span>
         </h2>
 
         {/* Forecast KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Total a Receber</p>
+              <p className="text-xs text-muted-foreground">Total a Receber (Semana)</p>
               <p className="text-xl font-bold text-green-600 mt-1">{formatCurrencyBRL(forecastData.totalReceivable)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Total a Pagar</p>
+              <p className="text-xs text-muted-foreground">Total a Pagar (Semana)</p>
               <p className="text-xl font-bold text-red-600 mt-1">{formatCurrencyBRL(forecastData.totalPayable)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Saldo Previsto</p>
+              <p className="text-xs text-muted-foreground">Saldo Previsto (Semana)</p>
               <p className={`text-xl font-bold mt-1 ${forecastData.projectedBalance >= 0 ? 'text-primary' : 'text-red-600'}`}>
                 {formatCurrencyBRL(forecastData.projectedBalance)}
               </p>
@@ -257,23 +266,23 @@ export default function FinancialDashboardPage() {
           </Card>
         </div>
 
-        {/* Weekly forecast chart */}
+        {/* Daily forecast chart — current week */}
         <Card className="mb-4">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Fluxo Semanal Previsto</CardTitle>
-            <CardDescription>Entradas, saídas e saldo acumulado (próximas 4 semanas)</CardDescription>
+            <CardTitle className="text-base">Fluxo Diário — Semana Corrente</CardTitle>
+            <CardDescription>Entradas, saídas e saldo acumulado por dia (Seg–Dom)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={forecastData.weeklyData}>
+                <ComposedChart data={forecastData.dailyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="week" className="text-xs" tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="day" className="text-xs" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} className="text-xs" tick={{ fontSize: 12 }} />
                   <RechartsTooltip content={<CustomCashFlowTooltip />} />
                   <Bar dataKey="entradas" fill="hsl(142,71%,45%)" name="Entradas" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="saidas" fill="hsl(0,72%,51%)" name="Saídas" radius={[4, 4, 0, 0]} />
-                  <Line type="monotone" dataKey="saldo" stroke="hsl(217,91%,60%)" strokeWidth={2} dot={{ fill: "hsl(217,91%,60%)" }} name="Saldo Previsto (fluxo)" />
+                  <Line type="monotone" dataKey="saldoAcumulado" stroke="hsl(217,91%,60%)" strokeWidth={2} dot={{ fill: "hsl(217,91%,60%)" }} name="Saldo Previsto (fluxo)" />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -287,7 +296,7 @@ export default function FinancialDashboardPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-red-500" />
-                  Contas a Pagar Críticas
+                  Contas a Pagar (Semana)
                 </CardTitle>
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/financial/bills')}>
                   Ver todas <ArrowRight className="h-3 w-3 ml-1" />
@@ -324,7 +333,7 @@ export default function FinancialDashboardPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <ArrowDownCircle className="h-4 w-4 text-green-500" />
-                  Contas a Receber Próximas
+                  Contas a Receber (Semana)
                 </CardTitle>
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/financial/bills')}>
                   Ver todas <ArrowRight className="h-3 w-3 ml-1" />
