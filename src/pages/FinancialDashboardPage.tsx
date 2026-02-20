@@ -38,7 +38,7 @@ export default function FinancialDashboardPage() {
     
     const totalReceivable = pendingReceivables.reduce((s, b) => s + b.amount, 0);
     const totalPayable = pendingPayables.reduce((s, b) => s + b.amount, 0);
-    const projectedBalance = stats.totalBalance + totalReceivable - totalPayable;
+    const projectedBalance = totalReceivable - totalPayable;
 
     // Weekly forecast for next 4 weeks
     const weeklyData: { week: string; entradas: number; saidas: number; saldo: number }[] = [];
