@@ -353,9 +353,34 @@ export function MaintenanceAnalytics() {
                   className="text-xs"
                   width={60}
                 />
-                <ChartTooltip 
-                  content={<ChartTooltipContent formatter={(value) => formatCurrencyBRL(Number(value))} />}
-                />
+                <RechartsTooltip content={({ active, payload, label }) => {
+                  if (!active || !payload) return null;
+                  const prev = payload.find(p => p.dataKey === 'preventive');
+                  const corr = payload.find(p => p.dataKey === 'corrective');
+                  const prevVal = Number(prev?.value || 0);
+                  const corrVal = Number(corr?.value || 0);
+                  return (
+                    <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
+                      <p className="font-medium text-popover-foreground text-sm mb-2">{label}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'hsl(221.2 83.2% 53.3%)' }} />
+                        <span className="text-sm text-muted-foreground">Preventiva:</span>
+                        <span className="text-sm font-medium">{formatCurrencyBRL(prevVal)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'hsl(24.6 95% 53.1%)' }} />
+                        <span className="text-sm text-muted-foreground">Corretiva:</span>
+                        <span className="text-sm font-medium">{formatCurrencyBRL(corrVal)}</span>
+                      </div>
+                      <div className="border-t border-border pt-1 mt-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">Total:</span>
+                          <span className="text-sm font-bold">{formatCurrencyBRL(prevVal + corrVal)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }} />
                 <ChartLegend content={<ChartLegendContent />} />
                 <Bar dataKey="preventive" stackId="a" fill="hsl(221.2 83.2% 53.3%)" name="preventive" />
                 <Bar dataKey="corrective" stackId="a" fill="hsl(24.6 95% 53.1%)" name="corrective" />
