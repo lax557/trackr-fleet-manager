@@ -357,8 +357,10 @@ export function MaintenanceAnalytics() {
                   formatter={(value: number) => formatCurrencyBRL(value)}
                 />
                 <Legend 
-                  formatter={(value) => value === 'preventive' ? 'Preventiva' : 'Corretiva'}
-                  wrapperStyle={{ fontSize: '12px' }}
+                  formatter={(value) => value === 'preventive' ? 'Preventiva' : value === 'corrective' ? 'Corretiva' : value}
+                  wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
+                  iconType="circle"
+                  iconSize={8}
                 />
                 <Bar dataKey="preventive" stackId="a" fill="hsl(221.2 83.2% 53.3%)" name="preventive" />
                 <Bar dataKey="corrective" stackId="a" fill="hsl(24.6 95% 53.1%)" name="corrective" />
@@ -450,8 +452,8 @@ export function MaintenanceAnalytics() {
                         <span className="text-sm font-medium truncate">{v.plate || v.id}</span>
                         <span className="text-xs text-muted-foreground truncate hidden sm:inline">{v.model}</span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-xs text-muted-foreground">{v.count}x</span>
+                      <div className="flex items-center gap-3 shrink-0 ml-2">
+                        <span className="text-xs text-muted-foreground">{v.count} {v.count === 1 ? 'manutenção' : 'manutenções'}</span>
                         <span className="text-sm font-bold">{formatCurrencyBRL(v.cost)}</span>
                       </div>
                     </div>
