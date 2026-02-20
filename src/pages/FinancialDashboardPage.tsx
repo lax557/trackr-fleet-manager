@@ -40,9 +40,8 @@ export default function FinancialDashboardPage() {
     const totalPayable = pendingPayables.reduce((s, b) => s + b.amount, 0);
     const projectedBalance = totalReceivable - totalPayable;
 
-    // Weekly forecast for next 4 weeks
+    // Weekly forecast for next 4 weeks (flow only, no accumulated balance)
     const weeklyData: { week: string; entradas: number; saidas: number; saldo: number }[] = [];
-    let runningBalance = stats.totalBalance;
     
     for (let w = 0; w < 4; w++) {
       const weekStart = startOfWeek(addWeeks(now, w), { weekStartsOn: 1 });
@@ -56,13 +55,11 @@ export default function FinancialDashboardPage() {
         .filter(b => b.dueDate >= weekStart && b.dueDate <= weekEnd)
         .reduce((s, b) => s + b.amount, 0);
       
-      runningBalance += weekReceivables - weekPayables;
-      
       weeklyData.push({
         week: `Sem ${w + 1}`,
         entradas: Math.round(weekReceivables),
         saidas: Math.round(-weekPayables),
-        saldo: Math.round(runningBalance),
+        saldo: Math.round(weekReceivables - weekPayables),
       });
     }
 
@@ -276,7 +273,7 @@ export default function FinancialDashboardPage() {
                   <RechartsTooltip content={<CustomCashFlowTooltip />} />
                   <Bar dataKey="entradas" fill="hsl(142,71%,45%)" name="Entradas" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="saidas" fill="hsl(0,72%,51%)" name="Saídas" radius={[4, 4, 0, 0]} />
-                  <Line type="monotone" dataKey="saldo" stroke="hsl(217,91%,60%)" strokeWidth={2} dot={{ fill: "hsl(217,91%,60%)" }} name="Saldo Acumulado" />
+                  <Line type="monotone" dataKey="saldo" stroke="hsl(217,91%,60%)" strokeWidth={2} dot={{ fill: "hsl(217,91%,60%)" }} name="Saldo Previsto (fluxo)" />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
