@@ -354,8 +354,7 @@ export function MaintenanceAnalytics() {
                   width={60}
                 />
                 <ChartTooltip 
-                  content={<ChartTooltipContent />}
-                  formatter={(value: number) => formatCurrencyBRL(value)}
+                  content={<ChartTooltipContent formatter={(value) => formatCurrencyBRL(Number(value))} />}
                 />
                 <ChartLegend content={<ChartLegendContent />} />
                 <Bar dataKey="preventive" stackId="a" fill="hsl(221.2 83.2% 53.3%)" name="preventive" />
