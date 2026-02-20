@@ -84,9 +84,9 @@ export function FleetStatusChart({ stats, stretch }: FleetStatusChartProps) {
               <Pie
                 data={chartData}
                 cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={90}
+                cy="45%"
+                innerRadius={80}
+                outerRadius={120}
                 paddingAngle={2}
                 dataKey="value"
                 labelLine={false}
