@@ -31,6 +31,7 @@ import {
   Pie,
   Cell,
   Legend,
+  Tooltip as RechartsTooltip,
 } from 'recharts';
 import { 
   DollarSign, 
@@ -38,7 +39,8 @@ import {
   Car,
   Filter,
   X,
-  HelpCircle
+  HelpCircle,
+  Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,6 +75,11 @@ const COLORS = [
   'hsl(142.1 76.2% 36.3%)',
   'hsl(262.1 83.3% 57.8%)',
   'hsl(0 72.2% 50.6%)',
+];
+
+const PIE_COLORS = [
+  'hsl(221.2 83.2% 53.3%)',
+  'hsl(24.6 95% 53.1%)',
 ];
 
 export function MaintenanceAnalytics() {
@@ -129,6 +136,27 @@ export function MaintenanceAnalytics() {
     return Object.values(areas).sort((a, b) => b.cost - a.cost);
   }, [filteredData]);
 
+  // NEW: Top 10 vehicles by maintenance cost
+  const topVehicles = useMemo(() => {
+    const vehicleCosts: Record<string, { id: string; plate: string | null; model: string; cost: number; count: number }> = {};
+    filteredData.forEach(m => {
+      if (!vehicleCosts[m.vehicleId]) {
+        vehicleCosts[m.vehicleId] = { 
+          id: m.vehicleId, 
+          plate: m.vehicle.plate, 
+          model: `${m.vehicle.make} ${m.vehicle.model}`,
+          cost: 0, 
+          count: 0 
+        };
+      }
+      vehicleCosts[m.vehicleId].cost += m.totalCost;
+      vehicleCosts[m.vehicleId].count += 1;
+    });
+    return Object.values(vehicleCosts).sort((a, b) => b.cost - a.cost).slice(0, 10);
+  }, [filteredData]);
+
+  const maxVehicleCost = topVehicles.length > 0 ? topVehicles[0].cost : 1;
+
   const kpis = useMemo(() => {
     const totalSpent = filteredData.reduce((sum, m) => sum + m.totalCost, 0);
     const monthCount = monthlyData.length || 1;
@@ -163,6 +191,26 @@ export function MaintenanceAnalytics() {
   };
 
   const hasActiveFilters = vehicleId || typeFilter !== 'ALL' || areaFilter !== 'ALL';
+
+  // Custom tooltip for Preventiva vs Corretiva pie
+  const totalTypeCount = typeDistribution.reduce((s, d) => s + d.value, 0);
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      const percent = totalTypeCount > 0 ? ((data.value / totalTypeCount) * 100).toFixed(0) : '0';
+      return (
+        <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: payload[0].payload.name === 'Preventiva' ? PIE_COLORS[0] : PIE_COLORS[1] }} />
+            <span className="font-medium text-popover-foreground text-sm">{data.name}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">{formatCurrencyBRL(data.cost)} ({percent}%)</p>
+          <p className="text-xs text-muted-foreground">{data.value} registros</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -218,7 +266,7 @@ export function MaintenanceAnalytics() {
         </CardContent>
       </Card>
 
-      {/* KPIs - Removed "Frota média" card */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-4">
@@ -286,9 +334,9 @@ export function MaintenanceAnalytics() {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Charts — 4 columns grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Spend - with Legend */}
+        {/* Monthly Spend */}
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Gasto por Mês</CardTitle>
@@ -319,7 +367,7 @@ export function MaintenanceAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Type Distribution */}
+        {/* Type Distribution with enhanced tooltip */}
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Distribuição por Tipo</CardTitle>
@@ -338,23 +386,18 @@ export function MaintenanceAnalytics() {
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
-                  {typeDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {typeDistribution.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <ChartTooltip 
-                  formatter={(value: number, name: string, props: { payload?: { cost?: number } }) => [
-                    `${value} registros (${formatCurrencyBRL(props.payload?.cost ?? 0)})`,
-                    name
-                  ]}
-                />
+                <RechartsTooltip content={<CustomPieTooltip />} />
               </PieChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* Area Distribution - Opção A: resumo compacto abaixo */}
-        <Card className="lg:col-span-2 flex flex-col">
+        {/* Area Distribution */}
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Distribuição por Área</CardTitle>
             <CardDescription>Gastos por área de serviço</CardDescription>
@@ -373,7 +416,6 @@ export function MaintenanceAnalytics() {
                 <Bar dataKey="cost" fill="hsl(var(--primary))" name="Custo Total" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ChartContainer>
-            {/* Compact legend below */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4 pt-4 border-t">
               {areaDistribution.map((area, i) => (
                 <div key={area.name} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
@@ -384,6 +426,47 @@ export function MaintenanceAnalytics() {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Top 10 Vehicles by Cost */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              Top 10 Veículos — Maior Custo
+            </CardTitle>
+            <CardDescription>Concentração de custos de manutenção</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 min-h-0">
+            <div className="space-y-2">
+              {topVehicles.map((v, index) => (
+                <div key={v.id} className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-muted-foreground w-5 text-right">{index + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-medium truncate">{v.plate || v.id}</span>
+                        <span className="text-xs text-muted-foreground truncate hidden sm:inline">{v.model}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        <span className="text-xs text-muted-foreground">{v.count}x</span>
+                        <span className="text-sm font-bold">{formatCurrencyBRL(v.cost)}</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full bg-primary/70 transition-all"
+                        style={{ width: `${(v.cost / maxVehicleCost) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {topVehicles.length === 0 && (
+                <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma manutenção no período.</p>
+              )}
             </div>
           </CardContent>
         </Card>
