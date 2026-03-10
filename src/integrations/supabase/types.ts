@@ -118,6 +118,41 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_templates: {
+        Row: {
+          body: string
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          body?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          body?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_centers: {
         Row: {
           code: string
@@ -870,6 +905,44 @@ export type Database = {
           },
         ]
       }
+      pricing_rules: {
+        Row: {
+          active: boolean
+          category: string
+          company_id: string
+          created_at: string
+          deposit_amount: number
+          id: string
+          weekly_rate: number
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          company_id: string
+          created_at?: string
+          deposit_amount: number
+          id?: string
+          weekly_rate: number
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          company_id?: string
+          created_at?: string
+          deposit_amount?: number
+          id?: string
+          weekly_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_id: string
@@ -1019,6 +1092,71 @@ export type Database = {
             columns: ["rental_id"]
             isOneToOne: false
             referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rental_contracts: {
+        Row: {
+          company_id: string
+          created_at: string
+          driver_id: string
+          id: string
+          rendered_body: string
+          rental_id: string
+          status: Database["public"]["Enums"]["rental_contract_status"]
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          driver_id: string
+          id?: string
+          rendered_body?: string
+          rental_id: string
+          status?: Database["public"]["Enums"]["rental_contract_status"]
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          driver_id?: string
+          id?: string
+          rendered_body?: string
+          rental_id?: string
+          status?: Database["public"]["Enums"]["rental_contract_status"]
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_contracts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_contracts_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_contracts_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1343,6 +1481,12 @@ export type Database = {
       maintenance_order_status: "open" | "in_progress" | "done" | "cancelled"
       maintenance_type: "preventive" | "corrective"
       payment_method: "pix" | "boleto" | "card" | "transfer" | "cash" | "other"
+      rental_contract_status:
+        | "draft"
+        | "generated"
+        | "sent"
+        | "signed"
+        | "cancelled"
       rental_event_type:
         | "created"
         | "status_changed"
@@ -1508,6 +1652,13 @@ export const Constants = {
       maintenance_order_status: ["open", "in_progress", "done", "cancelled"],
       maintenance_type: ["preventive", "corrective"],
       payment_method: ["pix", "boleto", "card", "transfer", "cash", "other"],
+      rental_contract_status: [
+        "draft",
+        "generated",
+        "sent",
+        "signed",
+        "cancelled",
+      ],
       rental_event_type: [
         "created",
         "status_changed",
