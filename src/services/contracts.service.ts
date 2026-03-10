@@ -37,7 +37,8 @@ export async function fetchContractTemplates(): Promise<ContractTemplate[]> {
 export function renderTemplate(body: string, rental: RentalWithDetails): string {
   const vars: Record<string, string> = {
     '{{nome_motorista}}': rental.driver_name || '—',
-    '{{cpf_motorista}}': (rental as any).driver_cpf || '—',
+    '{{cpf_motorista}}': (rental as any).drivers?.cpf || (rental as any).driver_cpf || '—',
+    '{{cnh_motorista}}': (rental as any).drivers?.cnh || (rental as any).driver_cnh || '—',
     '{{marca}}': rental.vehicle_brand || '—',
     '{{modelo}}': rental.vehicle_model || '—',
     '{{versao}}': '',

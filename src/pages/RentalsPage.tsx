@@ -163,7 +163,7 @@ export function RentalsPage() {
                           Ver Detalhes
                         </DropdownMenuItem>
                         {rental.status === 'draft' && (
-                          <DropdownMenuItem onClick={() => statusMutation.mutate({ id: rental.id, status: 'awaiting_signature' })}>
+                          <DropdownMenuItem onClick={() => navigate(`/rentals/${rental.id}`)}>
                             <Send className="h-4 w-4 mr-2" />
                             Enviar para Assinatura
                           </DropdownMenuItem>
