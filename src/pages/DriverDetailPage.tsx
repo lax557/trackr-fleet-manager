@@ -8,7 +8,7 @@ import {
   driverDocTypeLabels,
   mockRentals
 } from '@/data/mockData';
-import { getFinesForDriver } from '@/data/finesData';
+// fines now loaded from DB in dedicated component
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
