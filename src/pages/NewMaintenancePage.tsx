@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createOrder, areaLabels, MaintenanceTypeDB, ServiceAreaDB, MaintenanceOrderStatus } from '@/services/maintenance.service';
+import { createOrder, getOrderById, updateOrder, areaLabels, MaintenanceTypeDB, ServiceAreaDB, MaintenanceOrderStatus } from '@/services/maintenance.service';
 import { fetchVehicles } from '@/services/vehicles.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import {
 import { ArrowLeft, Plus, Trash2, Wrench, Car, DollarSign, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ItemForm {
   id: string;
@@ -25,8 +26,10 @@ interface ItemForm {
 export function NewMaintenancePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { id: editId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const vehicleIdParam = searchParams.get('vehicleId') || '';
+  const isEditing = !!editId;
 
   const [vehicleId, setVehicleId] = useState(vehicleIdParam);
   const [openedAt, setOpenedAt] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
@@ -38,6 +41,36 @@ export function NewMaintenancePage() {
   const [notes, setNotes] = useState('');
   const [laborCost, setLaborCost] = useState('0');
   const [items, setItems] = useState<ItemForm[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load existing order for edit mode
+  const { data: existingOrder, isLoading: loadingOrder } = useQuery({
+    queryKey: ['maintenance-order', editId],
+    queryFn: () => getOrderById(editId!),
+    enabled: isEditing,
+  });
+
+  // Populate form when existing order loads
+  useEffect(() => {
+    if (existingOrder && !loaded) {
+      setVehicleId(existingOrder.vehicle_id);
+      setOpenedAt(format(new Date(existingOrder.opened_at), "yyyy-MM-dd'T'HH:mm"));
+      setOdometerKm(existingOrder.odometer_at_open?.toString() || '');
+      setSupplierName(existingOrder.supplier_name || '');
+      setMaintenanceType(existingOrder.type);
+      setServiceArea(existingOrder.service_area);
+      setStatus(existingOrder.status);
+      setNotes(existingOrder.notes || '');
+      setLaborCost((existingOrder.labor_cost || 0).toString());
+      setItems((existingOrder.maintenance_items || []).map(i => ({
+        id: i.id,
+        description: i.description,
+        qty: i.qty,
+        unitCost: i.unit_cost,
+      })));
+      setLoaded(true);
+    }
+  }, [existingOrder, loaded]);
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles-list'],
@@ -54,7 +87,7 @@ export function NewMaintenancePage() {
   const updateItem = (id: string, field: keyof ItemForm, value: any) =>
     setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
 
-  const saveMut = useMutation({
+  const createMut = useMutation({
     mutationFn: () => createOrder({
       vehicle_id: vehicleId,
       opened_at: new Date(openedAt).toISOString(),
@@ -75,18 +108,61 @@ export function NewMaintenancePage() {
     onError: (e: any) => toast.error(e.message || 'Erro ao salvar manutenção'),
   });
 
+  const updateMut = useMutation({
+    mutationFn: () => updateOrder(editId!, {
+      type: maintenanceType,
+      service_area: serviceArea,
+      status,
+      supplier_name: supplierName || null,
+      odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
+      notes: notes || null,
+      labor_cost: parseFloat(laborCost || '0'),
+      opened_at: new Date(openedAt).toISOString(),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-order', editId] });
+      toast.success('Manutenção atualizada com sucesso!');
+      navigate('/maintenance');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao atualizar manutenção'),
+  });
+
   const handleSave = () => {
     if (!vehicleId) { toast.error('Selecione um veículo'); return; }
-    saveMut.mutate();
+    if (isEditing) {
+      updateMut.mutate();
+    } else {
+      createMut.mutate();
+    }
   };
+
+  const isSaving = createMut.isPending || updateMut.isPending;
+
+  if (isEditing && loadingOrder) {
+    return (
+      <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/maintenance')}><ArrowLeft className="h-5 w-5" /></Button>
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Wrench className="h-6 w-6 text-primary" />Nova Manutenção</h1>
-          <p className="text-muted-foreground mt-1">Registre uma nova manutenção de veículo</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Wrench className="h-6 w-6 text-primary" />
+            {isEditing ? 'Editar Manutenção' : 'Nova Manutenção'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isEditing ? 'Atualize os dados da manutenção' : 'Registre uma nova manutenção de veículo'}
+          </p>
         </div>
       </div>
 
@@ -99,7 +175,7 @@ export function NewMaintenancePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Veículo *</Label>
-                  <Select value={vehicleId} onValueChange={setVehicleId}>
+                  <Select value={vehicleId} onValueChange={setVehicleId} disabled={isEditing}>
                     <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                     <SelectContent>
                       {vehicles.map(v => (
@@ -210,7 +286,10 @@ export function NewMaintenancePage() {
           </Card>
 
           <div className="space-y-2">
-            <Button className="w-full" size="lg" onClick={handleSave} disabled={saveMut.isPending}><Save className="h-4 w-4 mr-2" />Salvar Manutenção</Button>
+            <Button className="w-full" size="lg" onClick={handleSave} disabled={isSaving}>
+              <Save className="h-4 w-4 mr-2" />
+              {isEditing ? 'Atualizar Manutenção' : 'Salvar Manutenção'}
+            </Button>
             <Button variant="outline" className="w-full" onClick={() => navigate('/maintenance')}>Cancelar</Button>
           </div>
         </div>

@@ -68,7 +68,6 @@ export const rolePermissions: Record<SystemRole, PermissionAction[]> = {
     'fine:view',
     'fine:create',
     'fine:edit',
-    'finance:view_costs',
     'dashboard:operational',
   ],
   executive: [

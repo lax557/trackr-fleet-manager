@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, MoreHorizontal, Edit, Copy, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Plus, MoreHorizontal, Edit, Copy, Trash2, FileText, Loader2, Power, PowerOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -44,6 +44,18 @@ export function ContractTemplatesPage() {
       queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
       setDeleteId(null);
       toast.success('Modelo excluído.');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from('contract_templates').update({ is_active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { is_active }) => {
+      queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
+      toast.success(is_active ? 'Modelo ativado.' : 'Modelo desativado.');
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -175,6 +187,12 @@ export function ContractTemplatesPage() {
                           <DropdownMenuItem onClick={() => duplicateMutation.mutate(template)}>
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => toggleActiveMutation.mutate({ id: template.id, is_active: !template.is_active })}
+                          >
+                            {template.is_active ? <PowerOff className="h-4 w-4 mr-2" /> : <Power className="h-4 w-4 mr-2" />}
+                            {template.is_active ? 'Desativar' : 'Ativar'}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setDeleteId(template.id)}

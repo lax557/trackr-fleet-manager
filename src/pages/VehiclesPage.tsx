@@ -15,10 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, List, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { VehicleStats } from '@/types';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export function VehiclesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<VehicleCategory | null>(null);
@@ -134,10 +136,12 @@ export function VehiclesPage() {
           <h1 className="text-2xl font-bold text-foreground">Veículos</h1>
           <p className="text-muted-foreground text-sm">Gerencie sua frota de veículos</p>
         </div>
-        <Button className="self-start sm:self-auto" onClick={() => navigate('/vehicles/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Veículo
-        </Button>
+        {can('vehicle:create') && (
+          <Button className="self-start sm:self-auto" onClick={() => navigate('/vehicles/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Veículo
+          </Button>
+        )}
       </div>
 
       <VehicleStatsCards stats={stats} onFilterClick={handleStatusCardClick} activeFilter={statusFilter} />
