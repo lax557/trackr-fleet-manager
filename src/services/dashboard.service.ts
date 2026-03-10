@@ -318,12 +318,16 @@ function estimateRentalRevenueForMonth(
   year: number,
   month: number, // 0-indexed
 ): number {
-  const monthStart = new Date(year, month, 1);
-  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+  const monthStart = new Date(Date.UTC(year, month, 1, 12));
+  const monthEnd = new Date(Date.UTC(year, month + 1, 0, 12));
+
+  // Normalize inputs to UTC noon
+  const sRef = toUTCDate(startRef);
+  const eRef = toUTCDate(endRef);
 
   // Clamp effective range to the month
-  const effectiveStart = startRef > monthStart ? startRef : monthStart;
-  const effectiveEnd = endRef < monthEnd ? endRef : monthEnd;
+  const effectiveStart = sRef > monthStart ? sRef : monthStart;
+  const effectiveEnd = eRef < monthEnd ? eRef : monthEnd;
 
   if (effectiveStart > effectiveEnd) return 0;
 
@@ -331,11 +335,11 @@ function estimateRentalRevenueForMonth(
   let prorataAmount = 0;
   let firstFullWeekMonday: Date;
 
-  const startDay = effectiveStart.getDay(); // 0=Sun,1=Mon
+  const startDay = effectiveStart.getUTCDay(); // 0=Sun,1=Mon
 
   if (startDay === 1) {
     // Start is Monday — no pro-rata, this Monday counts as first charge
-    firstFullWeekMonday = new Date(effectiveStart);
+    firstFullWeekMonday = toUTCDate(effectiveStart);
   } else {
     // Pro-rata from effectiveStart to Sunday of that week
     const weekSunday = getWeekSunday(effectiveStart);
@@ -345,7 +349,7 @@ function estimateRentalRevenueForMonth(
 
     // First full-week Monday is the Monday after effectiveStart's week
     const nextMonday = getWeekMonday(effectiveStart);
-    nextMonday.setDate(nextMonday.getDate() + 7);
+    nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
     firstFullWeekMonday = nextMonday;
   }
 
