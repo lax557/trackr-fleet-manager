@@ -1,124 +1,131 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
-import { 
-  getMaintenancesWithDetails,
-  maintenanceStatusLabels,
-  maintenanceTypeLabels,
-  serviceAreaLabels
-} from '@/data/mockData';
-import { MaintenanceStatus, MaintenanceType } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getOrderById, setOrderStatus, statusLabels, typeLabels, areaLabels, MaintenanceOrderStatus, MaintenanceTypeDB } from '@/services/maintenance.service';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
-} from '@/components/ui/table';
-import { 
-  ArrowLeft, Edit, Copy, Wrench, Car, DollarSign, ShieldCheck, Calendar, Gauge, Building2
-} from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ArrowLeft, Edit, Wrench, Car, DollarSign, Calendar, Gauge, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrencyBRL } from '@/lib/utils';
+import { toast } from 'sonner';
 
-function MaintenanceStatusBadge({ status }: { status: MaintenanceStatus }) {
-  const variants: Record<MaintenanceStatus, { variant: 'default' | 'secondary' | 'outline'; className: string }> = {
-    OPEN: { variant: 'outline', className: 'border-amber-500 text-amber-600 dark:text-amber-400' },
-    IN_PROGRESS: { variant: 'secondary', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-    DONE: { variant: 'default', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+function StatusBadge({ status }: { status: MaintenanceOrderStatus }) {
+  const map: Record<string, { variant: 'default' | 'secondary' | 'outline'; className: string }> = {
+    open: { variant: 'outline', className: 'border-amber-500 text-amber-600 dark:text-amber-400' },
+    in_progress: { variant: 'secondary', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    done: { variant: 'default', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    cancelled: { variant: 'outline', className: 'border-muted-foreground text-muted-foreground' },
   };
-  const { variant, className } = variants[status];
-  return <Badge variant={variant} className={className}>{maintenanceStatusLabels[status]}</Badge>;
+  const { variant, className } = map[status] || map.open;
+  return <Badge variant={variant} className={className}>{statusLabels[status]}</Badge>;
 }
 
-function MaintenanceTypeBadge({ type }: { type: MaintenanceType }) {
-  const isPreventive = type === 'PREVENTIVE';
-  return (
-    <Badge variant="outline" className={isPreventive ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-orange-500 text-orange-600 dark:text-orange-400'}>
-      {maintenanceTypeLabels[type]}
-    </Badge>
-  );
+function TypeBadge({ type }: { type: MaintenanceTypeDB }) {
+  const isPrev = type === 'preventive';
+  return <Badge variant="outline" className={isPrev ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-orange-500 text-orange-600 dark:text-orange-400'}>{typeLabels[type]}</Badge>;
 }
 
 export function MaintenanceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { can } = usePermissions();
+  const queryClient = useQueryClient();
 
-  const maintenance = useMemo(() => getMaintenancesWithDetails().find(m => m.id === id), [id]);
+  const { data: order, isLoading, error } = useQuery({
+    queryKey: ['maintenance-order', id],
+    queryFn: () => getOrderById(id!),
+    enabled: !!id,
+  });
 
-  if (!maintenance) {
+  const statusMut = useMutation({
+    mutationFn: ({ status }: { status: MaintenanceOrderStatus }) => setOrderStatus(id!, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-order', id] });
+      toast.success('Status atualizado!');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (isLoading) return <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">Carregando...</div>;
+  if (error || !order) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <p className="text-muted-foreground">Manutenção não encontrada.</p>
-        <Button variant="outline" onClick={() => navigate('/maintenance')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
+        <Button variant="outline" onClick={() => navigate('/maintenance')}><ArrowLeft className="h-4 w-4 mr-2" />Voltar</Button>
       </div>
     );
   }
+
+  const items = order.maintenance_items || [];
+  const nextStatus: Record<string, MaintenanceOrderStatus | null> = {
+    open: 'in_progress',
+    in_progress: 'done',
+    done: null,
+    cancelled: null,
+  };
+  const nextStatusLabel: Record<string, string> = {
+    open: 'Iniciar Execução',
+    in_progress: 'Finalizar',
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/maintenance')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/maintenance')}><ArrowLeft className="h-5 w-5" /></Button>
           <div>
             <div className="flex items-center gap-3">
               <Wrench className="h-6 w-6 text-primary" />
-              <h1 className="text-xl font-bold">Manutenção #{maintenance.id.slice(0, 8)}</h1>
-              <MaintenanceStatusBadge status={maintenance.status} />
+              <h1 className="text-xl font-bold">Manutenção #{order.id.slice(0, 8)}</h1>
+              <StatusBadge status={order.status} />
             </div>
             <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{maintenance.vehicle.plate || maintenance.vehicleId}</span>
+              <span className="font-medium text-foreground">{order.vehicles?.plate || order.vehicles?.vehicle_code || '—'}</span>
               <span>•</span>
-              <MaintenanceTypeBadge type={maintenance.maintenanceType} />
+              <TypeBadge type={order.type} />
               <span>•</span>
-              <span>{serviceAreaLabels[maintenance.serviceArea]}</span>
+              <span>{areaLabels[order.service_area]}</span>
             </div>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate(`/maintenance/${id}/edit`)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-          <Button variant="outline">
-            <Copy className="h-4 w-4 mr-2" />
-            Duplicar
-          </Button>
+          {can('maintenance:create') && nextStatus[order.status] && (
+            <Button onClick={() => statusMut.mutate({ status: nextStatus[order.status]! })} disabled={statusMut.isPending}>
+              {nextStatusLabel[order.status]}
+            </Button>
+          )}
+          {can('maintenance:create') && (
+            <Button variant="outline" onClick={() => navigate(`/maintenance/${id}/edit`)}><Edit className="h-4 w-4 mr-2" />Editar</Button>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Car className="h-5 w-5 text-primary" />
-                <CardTitle>Informações do Serviço</CardTitle>
-              </div>
-            </CardHeader>
+            <CardHeader className="pb-3"><div className="flex items-center gap-2"><Car className="h-5 w-5 text-primary" /><CardTitle>Informações do Serviço</CardTitle></div></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Car className="h-3 w-3" />Veículo</p>
-                  <p className="font-medium">{maintenance.vehicle.make} {maintenance.vehicle.model}</p>
-                  <p className="text-sm text-muted-foreground">{maintenance.vehicle.plate || maintenance.vehicleId}</p>
+                  <p className="font-medium">{order.vehicles?.brand} {order.vehicles?.model}</p>
+                  <p className="text-sm text-muted-foreground">{order.vehicles?.plate || order.vehicles?.vehicle_code}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" />Data/Hora</p>
-                  <p className="font-medium">{format(maintenance.occurredAt, "dd/MM/yyyy", { locale: ptBR })}</p>
-                  <p className="text-sm text-muted-foreground">{format(maintenance.occurredAt, "HH:mm", { locale: ptBR })}</p>
+                  <p className="font-medium">{format(new Date(order.opened_at), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  <p className="text-sm text-muted-foreground">{format(new Date(order.opened_at), 'HH:mm', { locale: ptBR })}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Gauge className="h-3 w-3" />Odômetro</p>
-                  <p className="font-medium">{maintenance.odometerKm ? `${maintenance.odometerKm.toLocaleString()} km` : '—'}</p>
+                  <p className="font-medium">{order.odometer_at_open ? `${order.odometer_at_open.toLocaleString()} km` : '—'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-1"><Building2 className="h-3 w-3" />Fornecedor</p>
-                  <p className="font-medium">{maintenance.supplierName || '—'}</p>
+                  <p className="font-medium">{order.supplier_name || '—'}</p>
                 </div>
               </div>
             </CardContent>
@@ -126,11 +133,8 @@ export function MaintenanceDetailPage() {
 
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
-                <CardTitle>Itens/Peças</CardTitle>
-              </div>
-              <CardDescription>{maintenance.items.length} item(s) registrado(s)</CardDescription>
+              <div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-primary" /><CardTitle>Itens/Peças</CardTitle></div>
+              <CardDescription>{items.length} item(s) registrado(s)</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -140,43 +144,28 @@ export function MaintenanceDetailPage() {
                     <TableHead className="text-right">Qtd</TableHead>
                     <TableHead className="text-right">Custo Unit.</TableHead>
                     <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Garantia</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {maintenance.items.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum item registrado</TableCell>
+                  {items.length === 0 ? (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum item registrado</TableCell></TableRow>
+                  ) : items.map(item => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.description}</TableCell>
+                      <TableCell className="text-right">{item.qty}</TableCell>
+                      <TableCell className="text-right">{formatCurrencyBRL(item.unit_cost)}</TableCell>
+                      <TableCell className="text-right font-medium">{formatCurrencyBRL(item.total_cost)}</TableCell>
                     </TableRow>
-                  ) : (
-                    maintenance.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.itemName}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrencyBRL(item.unitCost)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrencyBRL(item.totalCost)}</TableCell>
-                        <TableCell>
-                          {item.hasWarranty ? (
-                            <div className="flex items-center gap-1">
-                              <ShieldCheck className="h-4 w-4 text-green-600" />
-                              <span className="text-sm">{item.warrantyUntil ? format(item.warrantyUntil, 'dd/MM/yy', { locale: ptBR }) : 'Sim'}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                  ))}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
 
-          {maintenance.notes && (
+          {order.notes && (
             <Card>
               <CardHeader className="pb-3"><CardTitle>Observações</CardTitle></CardHeader>
-              <CardContent><p className="text-sm whitespace-pre-wrap">{maintenance.notes}</p></CardContent>
+              <CardContent><p className="text-sm whitespace-pre-wrap">{order.notes}</p></CardContent>
             </Card>
           )}
         </div>
@@ -185,62 +174,17 @@ export function MaintenanceDetailPage() {
           <Card className="border-primary/50">
             <CardHeader className="pb-3"><CardTitle className="text-base">Resumo de Custos</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Peças</span>
-                <span>{formatCurrencyBRL(maintenance.partsCost)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Mão de Obra</span>
-                <span>{formatCurrencyBRL(maintenance.laborCost)}</span>
-              </div>
-              <div className="border-t pt-3">
-                <div className="flex justify-between font-medium">
-                  <span>Total</span>
-                  <span className="text-lg text-primary">{formatCurrencyBRL(maintenance.totalCost)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">Garantia Geral</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {maintenance.hasWarranty ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-green-600">
-                    <ShieldCheck className="h-4 w-4" />
-                    <span className="font-medium">Garantia ativa</span>
-                  </div>
-                  {maintenance.warrantyUntil && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Válida até</span>
-                      <span className="font-medium">{format(maintenance.warrantyUntil, 'dd/MM/yyyy', { locale: ptBR })}</span>
-                    </div>
-                  )}
-                  {maintenance.warrantyNotes && <p className="text-muted-foreground mt-2">{maintenance.warrantyNotes}</p>}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sem garantia geral</p>
-              )}
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Peças</span><span>{formatCurrencyBRL(order.parts_cost || 0)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Mão de Obra</span><span>{formatCurrencyBRL(order.labor_cost || 0)}</span></div>
+              <div className="border-t pt-3"><div className="flex justify-between font-medium"><span>Total</span><span className="text-lg text-primary">{formatCurrencyBRL(order.total_cost || 0)}</span></div></div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base">Ações Rápidas</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate(`/vehicles/${maintenance.vehicleId}`)}>
-                <Car className="h-4 w-4 mr-2" />
-                Ver Veículo
-              </Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate(`/maintenance?vehicle=${maintenance.vehicleId}`)}>
-                <Wrench className="h-4 w-4 mr-2" />
-                Histórico do Veículo
-              </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate(`/vehicles/${order.vehicle_id}`)}><Car className="h-4 w-4 mr-2" />Ver Veículo</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate(`/maintenance?vehicle=${order.vehicle_id}`)}><Wrench className="h-4 w-4 mr-2" />Histórico do Veículo</Button>
             </CardContent>
           </Card>
         </div>
