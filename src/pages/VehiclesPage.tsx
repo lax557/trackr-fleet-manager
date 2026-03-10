@@ -13,6 +13,7 @@ import { MoveStageModal } from '@/components/MoveStageModal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, List, LayoutGrid } from 'lucide-react';
+import { toast } from 'sonner';
 import { VehicleStats } from '@/types';
 
 export function VehiclesPage() {
