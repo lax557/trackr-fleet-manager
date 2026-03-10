@@ -86,7 +86,7 @@ export function DashboardPage() {
 
   // ── Financial KPIs (executive) ──
   const financialKpis = execMetrics ? [
-    { label: 'Receita Estimada', value: formatCurrencyBRL(execMetrics.estimatedMonthlyRevenue), icon: DollarSign, colorClass: 'text-green-600', tooltip: 'Receita mensal estimada com base nos contratos ativos' },
+    { label: 'Receita Estimada', value: formatCurrencyBRL(execMetrics.estimatedMonthlyRevenue), icon: DollarSign, colorClass: 'text-green-600', tooltip: 'Receita mensal estimada: weekly_rate × segundas-feiras do mês dentro do período do contrato' },
     { label: 'Receita Realizada', value: execMetrics.realizedRevenue !== null ? formatCurrencyBRL(execMetrics.realizedRevenue) : '—', icon: Receipt, colorClass: 'text-blue-600', tooltip: execMetrics.realizedRevenue !== null ? 'Receita efetivamente recebida no mês' : 'Conectar provedor de pagamento para exibir' },
     { label: 'Custo Manutenção', value: formatCurrencyBRL(execMetrics.maintenanceCostMonth), icon: Wrench, colorClass: 'text-amber-600', tooltip: 'Custo total de manutenções no mês' },
     { label: 'Margem Operacional', value: execMetrics.estimatedMonthlyRevenue > 0 ? `${execMetrics.operationalMargin.toFixed(1)}%` : '—', icon: Gauge, colorClass: execMetrics.operationalMargin >= 60 ? 'text-green-600' : execMetrics.operationalMargin >= 40 ? 'text-amber-600' : 'text-red-600', tooltip: '(Receita - Manutenção) / Receita' },
