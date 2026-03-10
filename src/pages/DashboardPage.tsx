@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { getVehicleStats, getVehiclesWithDetails, getFleetManagementStats, getDashboardFinancialStats, getExpiringContracts } from '@/data/mockData';
-import { getFineStats } from '@/data/finesData';
+import { useQuery } from '@tanstack/react-query';
+import { fetchFines, deriveFineStatus } from '@/services/fines.service';
 import { FleetStatusChart } from '@/components/FleetStatusChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
