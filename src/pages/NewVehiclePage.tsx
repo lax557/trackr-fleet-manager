@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { VehicleCategory, VehicleStatus, AcquisitionStage } from '@/types';
-import { categoryLabels, categoryDescriptions, statusLabels, stageLabels } from '@/data/mockData';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { VehicleCategory } from '@/types';
+import { categoryLabels, categoryDescriptions } from '@/data/mockData';
+import { createVehicle } from '@/services/vehicles.service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,25 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Car } from 'lucide-react';
+import { ArrowLeft, Car, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const categories: VehicleCategory[] = ['A', 'B', 'C', 'D', 'EV'];
-const initialStatuses: VehicleStatus[] = ['DISPONIVEL', 'EM_LIBERACAO'];
-const pipelineStages: AcquisitionStage[] = [
-  'EM_LIBERACAO',
-  'APROVADO',
-  'FATURADO',
-  'RECEBIDO',
-  'INSTALACAO_EQUIPAMENTOS',
-  'PRONTO_PARA_ALUGAR',
-];
 
 export function NewVehiclePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
-    vehicleId: '',
     plate: '',
     make: '',
     model: '',
@@ -39,8 +32,21 @@ export function NewVehiclePage() {
     yearMfg: '',
     yearModel: '',
     category: '' as VehicleCategory | '',
-    status: 'EM_LIBERACAO' as VehicleStatus,
-    stage: 'EM_LIBERACAO' as AcquisitionStage,
+    color: '',
+    vin: '',
+    renavam: '',
+  });
+
+  const mutation = useMutation({
+    mutationFn: createVehicle,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Veículo cadastrado com sucesso!');
+      navigate(`/vehicles/${data.id}`);
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao cadastrar: ${error.message}`);
+    },
   });
 
   const handleChange = (field: string, value: string) => {
@@ -50,21 +56,27 @@ export function NewVehiclePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.vehicleId || !formData.make || !formData.model || !formData.category) {
-      toast.error('Preencha os campos obrigatórios: VehicleID, Marca, Modelo e Categoria.');
+    if (!formData.make || !formData.model || !formData.category) {
+      toast.error('Preencha os campos obrigatórios: Marca, Modelo e Categoria.');
       return;
     }
 
-    // In a real app this would persist to the database
-    console.log('Creating vehicle:', formData);
-
-    toast.success(`Veículo ${formData.vehicleId} cadastrado com sucesso!`);
-    navigate(`/vehicles/${formData.vehicleId}`);
+    mutation.mutate({
+      brand: formData.make,
+      model: formData.model,
+      version: formData.version || undefined,
+      plate: formData.plate || undefined,
+      category: formData.category || 'B',
+      year_mfg: formData.yearMfg ? parseInt(formData.yearMfg) : undefined,
+      year_model: formData.yearModel ? parseInt(formData.yearModel) : undefined,
+      color: formData.color || undefined,
+      vin: formData.vin || undefined,
+      renavam: formData.renavam || undefined,
+    });
   };
 
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/vehicles')}>
           <ArrowLeft className="h-5 w-5" />
@@ -82,19 +94,9 @@ export function NewVehiclePage() {
               <Car className="h-5 w-5 text-primary" />
               <CardTitle>Dados do Veículo</CardTitle>
             </div>
-            <CardDescription>Informações básicas de cadastro</CardDescription>
+            <CardDescription>O código (TRK-XXX) será gerado automaticamente</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="vehicleId">VehicleID *</Label>
-              <Input
-                id="vehicleId"
-                value={formData.vehicleId}
-                onChange={(e) => handleChange('vehicleId', e.target.value.toUpperCase())}
-                placeholder="Ex: TRK-011"
-                required
-              />
-            </div>
             <div>
               <Label htmlFor="plate">Placa</Label>
               <Input
@@ -149,6 +151,15 @@ export function NewVehiclePage() {
               </Select>
             </div>
             <div>
+              <Label htmlFor="color">Cor</Label>
+              <Input
+                id="color"
+                value={formData.color}
+                onChange={(e) => handleChange('color', e.target.value)}
+                placeholder="Ex: Branco"
+              />
+            </div>
+            <div>
               <Label htmlFor="yearMfg">Ano Fabricação</Label>
               <Input
                 id="yearMfg"
@@ -168,47 +179,24 @@ export function NewVehiclePage() {
                 placeholder="2025"
               />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Status e Pipeline</CardTitle>
-            <CardDescription>Defina o estado inicial do veículo</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="status">Status Inicial</Label>
-              <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {initialStatuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {statusLabels[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="vin">Chassi (VIN)</Label>
+              <Input
+                id="vin"
+                value={formData.vin}
+                onChange={(e) => handleChange('vin', e.target.value)}
+                placeholder="Opcional"
+              />
             </div>
-            {formData.status === 'EM_LIBERACAO' && (
-              <div>
-                <Label htmlFor="stage">Etapa do Pipeline</Label>
-                <Select value={formData.stage} onValueChange={(v) => handleChange('stage', v)}>
-                  <SelectTrigger id="stage">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pipelineStages.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {stageLabels[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div>
+              <Label htmlFor="renavam">RENAVAM</Label>
+              <Input
+                id="renavam"
+                value={formData.renavam}
+                onChange={(e) => handleChange('renavam', e.target.value)}
+                placeholder="Opcional"
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -216,7 +204,8 @@ export function NewVehiclePage() {
           <Button type="button" variant="outline" onClick={() => navigate('/vehicles')}>
             Cancelar
           </Button>
-          <Button type="submit">
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Cadastrar Veículo
           </Button>
         </div>

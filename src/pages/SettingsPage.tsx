@@ -1,67 +1,54 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useTheme } from '@/hooks/useTheme';
-import { ArrowLeft, User, Palette, Save, Camera } from 'lucide-react';
+import { ArrowLeft, User, Palette, Save, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 
-const STORAGE_KEY = 'trackr_user_profile';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  avatar: string | null;
-}
-
-const defaultProfile: UserProfile = {
-  name: 'Lucas de Assis',
-  email: 'lucas.assis@trackr.com',
-  phone: '(11) 99999-9999',
-  role: 'Operador',
-  avatar: null,
+const roleLabels: Record<string, string> = {
+  admin: 'Administrador',
+  manager: 'Gerente',
+  executive: 'Executivo',
+  operator: 'Operador',
 };
-
-function loadProfile(): UserProfile {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return { ...defaultProfile, ...JSON.parse(stored) };
-  } catch {}
-  return defaultProfile;
-}
 
 export function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, profile, signOut } = useAuth();
 
-  const [profile, setProfile] = useState<UserProfile>(loadProfile);
+  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [saving, setSaving] = useState(false);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 500_000) {
-      toast.error('Imagem muito grande. Máximo 500KB.');
-      return;
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('user_id', user.id);
+      if (error) throw error;
+      toast.success('Perfil salvo com sucesso!');
+    } catch (err: any) {
+      toast.error(`Erro ao salvar: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfile(prev => ({ ...prev, avatar: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    toast.success('Perfil salvo com sucesso!');
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
   };
 
-  const initials = profile.name
+  const initials = (fullName || user?.email || '')
     .split(' ')
     .map(n => n[0])
     .join('')
@@ -70,20 +57,17 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Perfil</h1>
-          <p className="text-muted-foreground text-sm">
-            Gerencie seu perfil e preferências
-          </p>
+          <p className="text-muted-foreground text-sm">Gerencie seu perfil e preferências</p>
         </div>
       </div>
 
-      {/* Avatar + Profile Section */}
+      {/* Profile */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -93,44 +77,25 @@ export function SettingsPage() {
           <CardDescription>Suas informações pessoais</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Avatar */}
           <div className="flex items-center gap-6">
-            <div className="relative group">
-              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl overflow-hidden border-2 border-border">
-                {profile.avatar ? (
-                  <img src={profile.avatar} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  initials
-                )}
-              </div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              >
-                <Camera className="h-5 w-5 text-white" />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
+            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl border-2 border-border">
+              {initials}
             </div>
             <div>
-              <p className="font-medium text-lg">{profile.name}</p>
-              <p className="text-sm text-muted-foreground">{profile.role}</p>
+              <p className="font-medium text-lg">{fullName || user?.email}</p>
+              <p className="text-sm text-muted-foreground">
+                {roleLabels[profile?.role || 'operator'] || profile?.role}
+              </p>
             </div>
           </div>
 
-          {/* Fields */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome completo</Label>
               <Input
                 id="name"
-                value={profile.name}
-                onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 placeholder="Seu nome completo"
               />
             </div>
@@ -140,19 +105,9 @@ export function SettingsPage() {
               <Input
                 id="email"
                 type="email"
-                value={profile.email}
-                onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="seu@email.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={profile.phone}
-                onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="(11) 99999-9999"
+                value={user?.email || ''}
+                disabled
+                className="bg-muted"
               />
             </div>
 
@@ -160,7 +115,7 @@ export function SettingsPage() {
               <Label htmlFor="role">Cargo</Label>
               <Input
                 id="role"
-                value={profile.role}
+                value={roleLabels[profile?.role || 'operator'] || profile?.role || ''}
                 disabled
                 className="bg-muted"
               />
@@ -169,7 +124,7 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Theme Section */}
+      {/* Theme */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -223,11 +178,15 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave}>
+      {/* Actions */}
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={handleSignOut}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sair
+        </Button>
+        <Button onClick={handleSave} disabled={saving}>
           <Save className="h-4 w-4 mr-2" />
-          Salvar Alterações
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </div>
     </div>
