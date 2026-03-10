@@ -573,14 +573,14 @@ export function DriverDetailPage() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {fine.infractionDescription}
+                          {fine.infraction}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Vence: {format(fine.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
+                          Vence: {fine.due_date ? format(new Date(fine.due_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
                         </p>
                       </div>
-                      <Badge className={fineStatusColors[fine.status]} variant="secondary">
-                        {fineStatusLabels[fine.status]}
+                      <Badge className={fineStatusColorsImport[fine.derivedStatus as keyof typeof fineStatusColorsImport] || ''} variant="secondary">
+                        {fineStatusLabelsImport[fine.derivedStatus as keyof typeof fineStatusLabelsImport] || fine.status}
                       </Badge>
                     </div>
                   ))}
