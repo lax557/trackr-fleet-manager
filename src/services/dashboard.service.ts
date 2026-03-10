@@ -1,0 +1,285 @@
+import { supabase } from '@/integrations/supabase/client';
+import { deriveFineStatus } from './fines.service';
+import { VehicleStats } from '@/types';
+
+// ── Status mapping: DB enum → UI key ──
+const statusMap: Record<string, keyof Omit<VehicleStats, 'total'>> = {
+  available: 'disponivel',
+  rented: 'alugado',
+  maintenance: 'manutencao',
+  incident: 'sinistro',
+  for_sale: 'paraVenda',
+  backlog: 'emLiberacao',
+};
+
+// ── 1. Fleet counts by status ──
+export async function getFleetCounts(): Promise<VehicleStats> {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('status')
+    .is('deleted_at', null);
+
+  if (error) throw error;
+
+  const stats: VehicleStats = { total: 0, disponivel: 0, alugado: 0, manutencao: 0, sinistro: 0, paraVenda: 0, emLiberacao: 0 };
+  (data || []).forEach(v => {
+    stats.total++;
+    const key = statusMap[v.status];
+    if (key) stats[key]++;
+  });
+  return stats;
+}
+
+// ── 2. Attention lists (top N each) ──
+export interface AttentionFine {
+  id: string;
+  due_date: string | null;
+  amount: number;
+  status: string;
+  infraction: string | null;
+  vehicles: { plate: string | null; brand: string; model: string; vehicle_code: string | null } | null;
+}
+
+export interface AttentionMaintenance {
+  id: string;
+  status: string;
+  opened_at: string;
+  type: string;
+  vehicles: { plate: string | null; brand: string; model: string; vehicle_code: string | null } | null;
+}
+
+export interface AttentionRental {
+  id: string;
+  status: string;
+  start_date: string;
+  drivers: { full_name: string } | null;
+  vehicles: { plate: string | null; brand: string; model: string; vehicle_code: string | null } | null;
+}
+
+export interface AttentionVehicle {
+  id: string;
+  status: string;
+  brand: string;
+  model: string;
+  vehicle_code: string | null;
+  plate: string | null;
+}
+
+export interface ExpiringRental {
+  id: string;
+  start_date: string;
+  end_date: string | null;
+  weekly_rate: number | null;
+  drivers: { full_name: string } | null;
+  vehicles: { brand: string; model: string; vehicle_code: string | null; plate: string | null } | null;
+  daysRemaining: number;
+}
+
+export interface AttentionLists {
+  vehiclesAttention: AttentionVehicle[];
+  finesDueSoon: AttentionFine[];
+  maintenancesOpen: AttentionMaintenance[];
+  rentalsAwaiting: AttentionRental[];
+  expiringContracts: ExpiringRental[];
+}
+
+export async function getAttentionLists(): Promise<AttentionLists> {
+  const now = new Date();
+
+  // Vehicles in maintenance or incident
+  const vehiclesP = supabase
+    .from('vehicles')
+    .select('id, status, brand, model, vehicle_code, plate')
+    .is('deleted_at', null)
+    .in('status', ['maintenance', 'incident'])
+    .limit(10);
+
+  // Fines due soon (open, within 7 days or overdue)
+  const finesP = supabase
+    .from('fines')
+    .select('id, due_date, amount, status, infraction, vehicles(plate, brand, model, vehicle_code)')
+    .in('status', ['open', 'nearing_due', 'overdue'])
+    .order('due_date', { ascending: true })
+    .limit(10);
+
+  // Maintenances open/in_progress
+  const maintP = supabase
+    .from('maintenance_orders')
+    .select('id, status, opened_at, type, vehicles(plate, brand, model, vehicle_code)')
+    .in('status', ['open', 'in_progress'])
+    .order('opened_at', { ascending: true })
+    .limit(10);
+
+  // Rentals awaiting signature
+  const rentalsP = supabase
+    .from('rentals')
+    .select('id, status, start_date, drivers(full_name), vehicles(plate, brand, model, vehicle_code)')
+    .eq('status', 'awaiting_signature')
+    .limit(10);
+
+  // Expiring contracts: active rentals with end_date within 30 days OR start_date ~12 months ago
+  const rentalsExpiringP = supabase
+    .from('rentals')
+    .select('id, start_date, end_date, weekly_rate, drivers(full_name), vehicles(brand, model, vehicle_code, plate)')
+    .eq('status', 'active')
+    .order('start_date', { ascending: true });
+
+  const [vehiclesRes, finesRes, maintRes, rentalsRes, rentalsExpRes] = await Promise.all([
+    vehiclesP, finesP, maintP, rentalsP, rentalsExpiringP,
+  ]);
+
+  // Derive fine statuses and filter to truly due soon
+  const enrichedFines = (finesRes.data || []).map(f => ({
+    ...f,
+    derivedStatus: deriveFineStatus(f),
+  })).filter(f => ['open', 'nearing_due', 'overdue'].includes(f.derivedStatus));
+
+  // Calculate expiring contracts
+  const expiringContracts: ExpiringRental[] = (rentalsExpRes.data || [])
+    .map(r => {
+      let contractEnd: Date;
+      if (r.end_date) {
+        contractEnd = new Date(r.end_date);
+      } else {
+        // Estimate: start_date + 12 months
+        contractEnd = new Date(r.start_date);
+        contractEnd.setMonth(contractEnd.getMonth() + 12);
+      }
+      const daysRemaining = Math.ceil((contractEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return { ...r, daysRemaining };
+    })
+    .filter(r => r.daysRemaining >= 0 && r.daysRemaining <= 30)
+    .sort((a, b) => a.daysRemaining - b.daysRemaining)
+    .slice(0, 10);
+
+  return {
+    vehiclesAttention: (vehiclesRes.data || []) as AttentionVehicle[],
+    finesDueSoon: enrichedFines as unknown as AttentionFine[],
+    maintenancesOpen: (maintRes.data || []) as unknown as AttentionMaintenance[],
+    rentalsAwaiting: (rentalsRes.data || []) as unknown as AttentionRental[],
+    expiringContracts,
+  };
+}
+
+// ── 3. Fines summary ──
+export interface FinesSummary {
+  open: number;
+  dueSoon: number;
+  overdue: number;
+  paid: number;
+  totalOpenAmount: number;
+}
+
+export async function getFinesSummary(): Promise<FinesSummary> {
+  const { data, error } = await supabase
+    .from('fines')
+    .select('status, due_date, amount');
+  if (error) throw error;
+
+  const summary: FinesSummary = { open: 0, dueSoon: 0, overdue: 0, paid: 0, totalOpenAmount: 0 };
+  (data || []).forEach(f => {
+    const derived = deriveFineStatus(f);
+    if (derived === 'open') summary.open++;
+    else if (derived === 'nearing_due') summary.dueSoon++;
+    else if (derived === 'overdue') summary.overdue++;
+    else if (derived === 'paid') summary.paid++;
+
+    if (['open', 'nearing_due', 'overdue'].includes(derived)) {
+      summary.totalOpenAmount += f.amount;
+    }
+  });
+  return summary;
+}
+
+// ── 4. Backlog vehicles ──
+export interface BacklogVehicle {
+  id: string;
+  brand: string;
+  model: string;
+  vehicle_code: string | null;
+  plate: string | null;
+  status: string;
+}
+
+export async function getBacklogVehicles(): Promise<BacklogVehicle[]> {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('id, brand, model, vehicle_code, plate, status')
+    .is('deleted_at', null)
+    .eq('status', 'backlog')
+    .limit(20);
+  if (error) throw error;
+  return (data || []) as BacklogVehicle[];
+}
+
+// ── 5. Executive metrics ──
+export interface ExecutiveMetrics {
+  estimatedMonthlyRevenue: number;
+  realizedRevenue: number | null; // null = not connected to payment provider
+  maintenanceCostMonth: number;
+  operationalMargin: number;
+  occupancyRate: number;
+  unproductiveRate: number;
+}
+
+export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+  // Active rentals for revenue estimation
+  const rentalsP = supabase
+    .from('rentals')
+    .select('weekly_rate')
+    .eq('status', 'active');
+
+  // Maintenance cost this month
+  const maintP = supabase
+    .from('maintenance_orders')
+    .select('total_cost')
+    .gte('opened_at', monthStart)
+    .lte('opened_at', monthEnd);
+
+  // Fleet counts for occupancy/unproductive
+  const vehiclesP = supabase
+    .from('vehicles')
+    .select('status, delivered_at')
+    .is('deleted_at', null);
+
+  const [rentalsRes, maintRes, vehiclesRes] = await Promise.all([rentalsP, maintP, vehiclesP]);
+
+  // Estimated revenue: weekly_rate * (days in month / 7)
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const weeksInMonth = daysInMonth / 7;
+  const estimatedMonthlyRevenue = (rentalsRes.data || []).reduce((sum, r) => {
+    return sum + (r.weekly_rate || 0) * weeksInMonth;
+  }, 0);
+
+  // Maintenance cost
+  const maintenanceCostMonth = (maintRes.data || []).reduce((sum, m) => sum + (m.total_cost || 0), 0);
+
+  // Margin
+  const operationalMargin = estimatedMonthlyRevenue > 0
+    ? ((estimatedMonthlyRevenue - maintenanceCostMonth) / estimatedMonthlyRevenue) * 100
+    : 0;
+
+  // Fleet metrics
+  const allVehicles = vehiclesRes.data || [];
+  // Active fleet = delivered (delivered_at not null) and not backlog
+  const activeFleet = allVehicles.filter(v => v.delivered_at !== null && v.status !== 'backlog');
+  const activeCount = activeFleet.length;
+  const rentedCount = activeFleet.filter(v => v.status === 'rented').length;
+  const unproductiveCount = activeFleet.filter(v => v.status === 'maintenance' || v.status === 'incident').length;
+
+  const occupancyRate = activeCount > 0 ? (rentedCount / activeCount) * 100 : 0;
+  const unproductiveRate = activeCount > 0 ? (unproductiveCount / activeCount) * 100 : 0;
+
+  return {
+    estimatedMonthlyRevenue,
+    realizedRevenue: null, // Phase 2: connect to payment provider
+    maintenanceCostMonth,
+    operationalMargin,
+    occupancyRate,
+    unproductiveRate,
+  };
+}
