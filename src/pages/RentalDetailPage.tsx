@@ -19,7 +19,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { formatCurrencyBRL } from '@/lib/utils';
+import { formatCurrencyBRL, formatDateOnly } from '@/lib/utils';
 import { useState } from 'react';
 
 const statusLabels: Record<string, string> = {
@@ -251,11 +251,11 @@ export function RentalDetailPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Início</p>
-                  <p className="font-medium">{format(new Date(rental.start_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  <p className="font-medium">{formatDateOnly(rental.start_date)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Término</p>
-                  <p className="font-medium">{rental.end_date ? format(new Date(rental.end_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}</p>
+                  <p className="font-medium">{formatDateOnly(rental.end_date)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Entrega Prevista</p>
