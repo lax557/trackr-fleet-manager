@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, List, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { VehicleStats } from '@/types';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export function VehiclesPage() {
   const navigate = useNavigate();
