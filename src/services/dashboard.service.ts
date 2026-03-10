@@ -213,6 +213,26 @@ export async function getBacklogVehicles(): Promise<BacklogVehicle[]> {
 }
 
 // ── 5. Executive metrics ──
+
+/** Count Mondays in a given month/year that fall within [rangeStart, rangeEnd]. */
+function countMondaysInMonthWithinRange(
+  year: number,
+  month: number, // 0-indexed
+  rangeStart: Date,
+  rangeEnd: Date | null,
+): number {
+  let count = 0;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(year, month, day);
+    if (d.getDay() !== 1) continue; // not Monday
+    if (d < rangeStart) continue;
+    if (rangeEnd && d > rangeEnd) continue;
+    count++;
+  }
+  return count;
+}
+
 export interface ExecutiveMetrics {
   estimatedMonthlyRevenue: number;
   realizedRevenue: number | null; // null = not connected to payment provider
@@ -224,13 +244,15 @@ export interface ExecutiveMetrics {
 
 export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const monthStart = new Date(year, month, 1).toISOString();
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
 
   // Active rentals for revenue estimation
   const rentalsP = supabase
     .from('rentals')
-    .select('weekly_rate')
+    .select('weekly_rate, start_date, delivered_at, returned_at, end_date')
     .eq('status', 'active');
 
   // Maintenance cost this month
@@ -248,11 +270,12 @@ export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
 
   const [rentalsRes, maintRes, vehiclesRes] = await Promise.all([rentalsP, maintP, vehiclesP]);
 
-  // Estimated revenue: weekly_rate * (days in month / 7)
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const weeksInMonth = daysInMonth / 7;
+  // Estimated revenue: count Mondays in current month within each contract's effective period
   const estimatedMonthlyRevenue = (rentalsRes.data || []).reduce((sum, r) => {
-    return sum + (r.weekly_rate || 0) * weeksInMonth;
+    const effectiveStart = new Date(r.delivered_at || r.start_date);
+    const effectiveEnd = r.returned_at ? new Date(r.returned_at) : (r.end_date ? new Date(r.end_date) : null);
+    const mondays = countMondaysInMonthWithinRange(year, month, effectiveStart, effectiveEnd);
+    return sum + (r.weekly_rate || 0) * mondays;
   }, 0);
 
   // Maintenance cost
@@ -263,16 +286,17 @@ export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
     ? ((estimatedMonthlyRevenue - maintenanceCostMonth) / estimatedMonthlyRevenue) * 100
     : 0;
 
-  // Fleet metrics
+  // Fleet metrics — exclude backlog AND for_sale from operational fleet
   const allVehicles = vehiclesRes.data || [];
-  // Active fleet = delivered (delivered_at not null) and not backlog
-  const activeFleet = allVehicles.filter(v => v.delivered_at !== null && v.status !== 'backlog');
-  const activeCount = activeFleet.length;
-  const rentedCount = activeFleet.filter(v => v.status === 'rented').length;
-  const unproductiveCount = activeFleet.filter(v => v.status === 'maintenance' || v.status === 'incident').length;
+  const operationalFleet = allVehicles.filter(
+    v => v.delivered_at !== null && v.status !== 'backlog' && v.status !== 'for_sale'
+  );
+  const operationalCount = operationalFleet.length;
+  const rentedCount = operationalFleet.filter(v => v.status === 'rented').length;
+  const unproductiveCount = operationalFleet.filter(v => v.status === 'maintenance' || v.status === 'incident').length;
 
-  const occupancyRate = activeCount > 0 ? (rentedCount / activeCount) * 100 : 0;
-  const unproductiveRate = activeCount > 0 ? (unproductiveCount / activeCount) * 100 : 0;
+  const occupancyRate = operationalCount > 0 ? (rentedCount / operationalCount) * 100 : 0;
+  const unproductiveRate = operationalCount > 0 ? (unproductiveCount / operationalCount) * 100 : 0;
 
   return {
     estimatedMonthlyRevenue,

@@ -37,8 +37,8 @@ interface ChartDataItem {
 export function FleetStatusChart({ stats, stretch }: FleetStatusChartProps) {
   const chartData = useMemo<ChartDataItem[]>(() => {
     const data: ChartDataItem[] = [
-      { name: statusLabels.disponivel, value: stats.disponivel, color: statusColors.disponivel, key: 'disponivel' },
       { name: statusLabels.alugado, value: stats.alugado, color: statusColors.alugado, key: 'alugado' },
+      { name: statusLabels.disponivel, value: stats.disponivel, color: statusColors.disponivel, key: 'disponivel' },
       { name: statusLabels.manutencao, value: stats.manutencao, color: statusColors.manutencao, key: 'manutencao' },
       { name: statusLabels.sinistro, value: stats.sinistro, color: statusColors.sinistro, key: 'sinistro' },
       { name: statusLabels.paraVenda, value: stats.paraVenda, color: statusColors.paraVenda, key: 'paraVenda' },
