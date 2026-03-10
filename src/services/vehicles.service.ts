@@ -1,32 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { VehicleWithDetails, VehicleStats, VehicleStatus } from '@/types';
 
-// DB row type
-interface VehicleRow {
-  id: string;
-  company_id: string;
-  vehicle_code: string | null;
-  plate: string | null;
-  renavam: string | null;
-  brand: string;
-  model: string;
-  version: string | null;
-  year_mfg: number | null;
-  year_model: number | null;
-  category: string;
-  vin: string | null;
-  color: string | null;
-  status: string;
-  status_since: string;
-  odometer: number | null;
-  acquisition_date: string | null;
-  acquisition_cost: number | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-// Map DB status to frontend status
 const statusMap: Record<string, VehicleStatus> = {
   available: 'DISPONIVEL',
   rented: 'ALUGADO',
@@ -40,7 +14,7 @@ const reverseStatusMap: Record<string, string> = Object.fromEntries(
   Object.entries(statusMap).map(([k, v]) => [v, k])
 );
 
-function mapRowToVehicleWithDetails(row: any): VehicleWithDetails & { vehicleCode: string | null } {
+function mapRowToVehicleWithDetails(row: any): VehicleWithDetails & { vehicleCode: string | null; deliveredAt: Date | null } {
   return {
     id: row.id,
     vehicleCode: row.vehicle_code || null,
@@ -57,6 +31,7 @@ function mapRowToVehicleWithDetails(row: any): VehicleWithDetails & { vehicleCod
     updatedAt: new Date(row.updated_at),
     currentStatus: statusMap[row.status] || 'DISPONIVEL',
     statusSince: new Date(row.status_since),
+    deliveredAt: row.delivered_at ? new Date(row.delivered_at) : null,
     currentDriver: null,
     acquisition: null,
     finance: null,
@@ -64,7 +39,7 @@ function mapRowToVehicleWithDetails(row: any): VehicleWithDetails & { vehicleCod
   };
 }
 
-export async function fetchVehicles(): Promise<(VehicleWithDetails & { vehicleCode: string | null })[]> {
+export async function fetchVehicles() {
   const { data, error } = await supabase
     .from('vehicles')
     .select('*')
@@ -75,7 +50,7 @@ export async function fetchVehicles(): Promise<(VehicleWithDetails & { vehicleCo
   return (data || []).map(mapRowToVehicleWithDetails);
 }
 
-export async function fetchVehicleById(vehicleId: string): Promise<(VehicleWithDetails & { vehicleCode: string | null }) | null> {
+export async function fetchVehicleById(vehicleId: string) {
   const { data, error } = await supabase
     .from('vehicles')
     .select('*')
@@ -112,7 +87,6 @@ export async function createVehicle(vehicle: {
   vin?: string;
   renavam?: string;
 }) {
-  // Get user's company_id
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
@@ -153,6 +127,19 @@ export async function updateVehicleStatus(vehicleId: string, newStatus: VehicleS
   const { error } = await supabase
     .from('vehicles')
     .update({ status: dbStatus as any, status_since: new Date().toISOString() })
+    .eq('id', vehicleId);
+
+  if (error) throw error;
+}
+
+export async function markVehicleDelivered(vehicleId: string) {
+  const { error } = await supabase
+    .from('vehicles')
+    .update({
+      delivered_at: new Date().toISOString(),
+      status: 'available' as any,
+      status_since: new Date().toISOString(),
+    })
     .eq('id', vehicleId);
 
   if (error) throw error;

@@ -1,30 +1,47 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useTheme } from '@/hooks/useTheme';
-import { ArrowLeft, User, Palette, Save, LogOut } from 'lucide-react';
+import { ArrowLeft, User, Palette, Save, LogOut, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { roleLabels } from '@/types/roles';
 
-const roleLabels: Record<string, string> = {
-  admin: 'Administrador',
-  manager: 'Gerente',
-  executive: 'Executivo',
-  operator: 'Operador',
-};
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
 
 export function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { user, profile, signOut } = useAuth();
+  const { can } = usePermissions();
 
-  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'system'>(theme);
   const [saving, setSaving] = useState(false);
+
+  // Sync from profile when it loads
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || '');
+      setPhone((profile as any).phone || '');
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    setSelectedTheme(theme);
+  }, [theme]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -32,9 +49,14 @@ export function SettingsPage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName })
+        .update({
+          full_name: fullName,
+          phone: phone.replace(/\D/g, '') || null,
+          theme: selectedTheme,
+        })
         .eq('user_id', user.id);
       if (error) throw error;
+      setTheme(selectedTheme);
       toast.success('Perfil salvo com sucesso!');
     } catch (err: any) {
       toast.error(`Erro ao salvar: ${err.message}`);
@@ -62,10 +84,24 @@ export function SettingsPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Perfil</h1>
-          <p className="text-muted-foreground text-sm">Gerencie seu perfil e preferências</p>
+          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+          <p className="text-muted-foreground text-sm">Perfil e preferências</p>
         </div>
       </div>
+
+      {/* Admin link */}
+      {can('settings:manage_users') && (
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/settings/users')}>
+          <CardContent className="flex items-center gap-4 py-4">
+            <Users className="h-5 w-5 text-primary" />
+            <div className="flex-1">
+              <p className="font-medium">Usuários e Permissões</p>
+              <p className="text-sm text-muted-foreground">Gerencie cargos e acessos da equipe</p>
+            </div>
+            <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile */}
       <Card>
@@ -84,7 +120,7 @@ export function SettingsPage() {
             <div>
               <p className="font-medium text-lg">{fullName || user?.email}</p>
               <p className="text-sm text-muted-foreground">
-                {roleLabels[profile?.role || 'operator'] || profile?.role}
+                {roleLabels[profile?.role as keyof typeof roleLabels] || profile?.role}
               </p>
             </div>
           </div>
@@ -101,7 +137,18 @@ export function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                value={formatPhone(phone)}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                placeholder="(11) 99999-9999"
+                maxLength={15}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mail (somente leitura)</Label>
               <Input
                 id="email"
                 type="email"
@@ -115,7 +162,7 @@ export function SettingsPage() {
               <Label htmlFor="role">Cargo</Label>
               <Input
                 id="role"
-                value={roleLabels[profile?.role || 'operator'] || profile?.role || ''}
+                value={roleLabels[profile?.role as keyof typeof roleLabels] || profile?.role || ''}
                 disabled
                 className="bg-muted"
               />
@@ -137,8 +184,8 @@ export function SettingsPage() {
           <div className="space-y-3">
             <Label>Tema</Label>
             <RadioGroup
-              value={theme}
-              onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}
+              value={selectedTheme}
+              onValueChange={(value) => setSelectedTheme(value as 'light' | 'dark' | 'system')}
               className="grid grid-cols-3 gap-4"
             >
               <div>
@@ -147,7 +194,7 @@ export function SettingsPage() {
                   htmlFor="theme-light"
                   className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                 >
-                  <div className="mb-2 h-8 w-8 rounded-full bg-background border shadow-sm" />
+                  <div className="mb-2 h-8 w-8 rounded-full bg-white border shadow-sm" />
                   <span className="text-sm font-medium">Claro</span>
                 </Label>
               </div>
@@ -169,7 +216,7 @@ export function SettingsPage() {
                   htmlFor="theme-system"
                   className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                 >
-                  <div className="mb-2 h-8 w-8 rounded-full bg-gradient-to-br from-background to-slate-800 border shadow-sm" />
+                  <div className="mb-2 h-8 w-8 rounded-full bg-gradient-to-br from-white to-slate-800 border shadow-sm" />
                   <span className="text-sm font-medium">Sistema</span>
                 </Label>
               </div>

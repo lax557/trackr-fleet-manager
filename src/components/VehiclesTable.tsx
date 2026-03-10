@@ -131,7 +131,10 @@ export function VehiclesTable({
                   />
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {format(vehicle.statusSince, 'dd/MM/yyyy', { locale: ptBR })}
+                  {(vehicle as any).deliveredAt
+                    ? format((vehicle as any).deliveredAt, 'dd/MM/yyyy', { locale: ptBR })
+                    : <span className="text-muted-foreground">Em liberação</span>
+                  }
                 </TableCell>
                 <TableCell>
                   {vehicle.acquisition ? (
