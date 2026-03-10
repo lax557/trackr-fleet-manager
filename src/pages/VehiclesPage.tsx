@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { VehicleStatus, VehicleCategory, VehicleWithDetails, AcquisitionStage, PurchaseMode } from '@/types';
-import { fetchVehicles } from '@/services/vehicles.service';
+import { fetchVehicles, updateVehicleStatus } from '@/services/vehicles.service';
 import { VehicleStatsCards } from '@/components/VehicleStatsCards';
 import { VehicleSearch } from '@/components/VehicleSearch';
 import { VehicleFilters } from '@/components/VehicleFilters';
