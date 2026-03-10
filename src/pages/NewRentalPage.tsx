@@ -345,7 +345,7 @@ export function NewRentalPage() {
                   <p className="text-sm font-medium mb-2">Resumo</p>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <p>Motorista: <span className="text-foreground font-medium">{selectedDriver?.full_name || '—'}</span></p>
-                    <p>Veículo: <span className="text-foreground font-medium">{selectedVehicle?.plate || selectedVehicle?.vehicle_code || '—'}</span></p>
+                    <p>Veículo: <span className="text-foreground font-medium">{selectedVehicle?.plate || selectedVehicle?.vehicleCode || '—'}</span></p>
                     <p>Período: <span className="text-foreground font-medium">
                       {formData.startDate ? format(new Date(formData.startDate), 'dd/MM/yyyy') : '—'} a {formData.endDate ? format(new Date(formData.endDate), 'dd/MM/yyyy') : '—'}
                     </span></p>
