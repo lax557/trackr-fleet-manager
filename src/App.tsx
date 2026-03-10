@@ -21,6 +21,7 @@ import DriverDetailPage from "./pages/DriverDetailPage";
 import NewDriverPage from "./pages/NewDriverPage";
 import RentalsPage from "./pages/RentalsPage";
 import NewRentalPage from "./pages/NewRentalPage";
+import RentalDetailPage from "./pages/RentalDetailPage";
 import ContractTemplatesPage from "./pages/ContractTemplatesPage";
 import ContractTemplateEditorPage from "./pages/ContractTemplateEditorPage";
 import MaintenancesPage from "./pages/MaintenancesPage";

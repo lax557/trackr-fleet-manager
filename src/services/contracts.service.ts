@@ -53,7 +53,7 @@ export function renderTemplate(body: string, rental: RentalWithDetails): string 
 
   let result = body;
   for (const [placeholder, value] of Object.entries(vars)) {
-    result = result.replaceAll(placeholder, value);
+    result = result.split(placeholder).join(value);
   }
   return result;
 }
