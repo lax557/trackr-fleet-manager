@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
-import { getFinesWithDetails } from '@/data/finesData';
-import { mockVehicles, mockDrivers } from '@/data/mockData';
-import { 
-  FineStatusType, 
-  FineSeverity,
-  fineStatusLabels, 
-  fineSeverityLabels 
-} from '@/types/fines';
+import { useQuery } from '@tanstack/react-query';
+import {
+  fetchFines,
+  deriveFineStatus,
+  fineStatusLabels,
+  severityLabels,
+  FineStatus,
+} from '@/services/fines.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,47 +16,41 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartConfig
+  ChartConfig,
 } from '@/components/ui/chart';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   PieChart,
   Pie,
   Cell,
   LineChart,
   Line,
 } from 'recharts';
-import { 
-  DollarSign, 
+import {
+  DollarSign,
   AlertTriangle,
   Filter,
   X,
-  User,
   CheckCircle2,
-  Users
+  Users,
 } from 'lucide-react';
-import { format, subMonths, isWithinInterval, isBefore } from 'date-fns';
+import { format, subMonths, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrencyBRL } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const chartConfig = {
-  count: {
-    label: "Quantidade",
-    color: "hsl(var(--primary))",
-  },
-  amount: {
-    label: "Valor",
-    color: "hsl(24.6 95% 53.1%)",
-  },
+  count: { label: 'Quantidade', color: 'hsl(var(--primary))' },
+  amount: { label: 'Valor', color: 'hsl(24.6 95% 53.1%)' },
 } satisfies ChartConfig;
 
 const STATUS_COLORS = [
@@ -79,76 +73,99 @@ export function FinesAnalytics() {
   const [dateFrom, setDateFrom] = useState(format(subMonths(new Date(), 12), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [vehicleFilter, setVehicleFilter] = useState('');
-  const [severityFilter, setSeverityFilter] = useState<FineSeverity | 'ALL'>('ALL');
+  const [severityFilter, setSeverityFilter] = useState('ALL');
+
+  const { data: rawFines = [], isLoading } = useQuery({
+    queryKey: ['fines'],
+    queryFn: fetchFines,
+  });
+
+  const enrichedFines = useMemo(() => {
+    return rawFines.map(f => ({
+      ...f,
+      derivedStatus: deriveFineStatus(f),
+      vehiclePlate: f.vehicles?.plate || null,
+      vehicleLabel: f.vehicles ? `${f.vehicles.brand} ${f.vehicles.model}` : '',
+      driverName: f.drivers?.full_name || null,
+    }));
+  }, [rawFines]);
 
   const filteredData = useMemo(() => {
-    let data = getFinesWithDetails();
+    let data = enrichedFines;
     if (dateFrom && dateTo) {
       const from = new Date(dateFrom);
       const to = new Date(dateTo);
       to.setHours(23, 59, 59, 999);
-      data = data.filter(f => isWithinInterval(f.occurredAt, { start: from, end: to }));
+      data = data.filter(f => {
+        const d = new Date(f.occurred_at);
+        return isWithinInterval(d, { start: from, end: to });
+      });
     }
-    if (vehicleFilter) data = data.filter(f => f.vehicleId === vehicleFilter);
+    if (vehicleFilter) data = data.filter(f => f.vehicle_id === vehicleFilter);
     if (severityFilter !== 'ALL') data = data.filter(f => f.severity === severityFilter);
     return data;
-  }, [dateFrom, dateTo, vehicleFilter, severityFilter]);
+  }, [enrichedFines, dateFrom, dateTo, vehicleFilter, severityFilter]);
 
   const monthlyData = useMemo(() => {
     const months: Record<string, { month: string; count: number; amount: number }> = {};
     filteredData.forEach(f => {
-      const monthKey = format(f.occurredAt, 'yyyy-MM');
-      const monthLabel = format(f.occurredAt, 'MMM/yy', { locale: ptBR });
+      const monthKey = format(new Date(f.occurred_at), 'yyyy-MM');
+      const monthLabel = format(new Date(f.occurred_at), 'MMM/yy', { locale: ptBR });
       if (!months[monthKey]) months[monthKey] = { month: monthLabel, count: 0, amount: 0 };
       months[monthKey].count += 1;
-      months[monthKey].amount += f.originalAmount;
+      months[monthKey].amount += f.amount;
     });
     return Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
   }, [filteredData]);
 
   const statusDistribution = useMemo(() => {
-    const statuses: Record<FineStatusType, number> = {
-      OPEN: 0, DUE_SOON: 0, OVERDUE: 0, PAID: 0, CONTESTED: 0, CANCELED: 0,
+    const statuses: Record<FineStatus, number> = {
+      open: 0, nearing_due: 0, overdue: 0, paid: 0, disputed: 0, cancelled: 0,
     };
-    filteredData.forEach(f => { statuses[f.status]++; });
+    filteredData.forEach(f => { statuses[f.derivedStatus]++; });
     return Object.entries(statuses)
       .filter(([_, value]) => value > 0)
-      .map(([key, value]) => ({ name: fineStatusLabels[key as FineStatusType], value }));
+      .map(([key, value]) => ({ name: fineStatusLabels[key as FineStatus], value }));
   }, [filteredData]);
 
   const severityDistribution = useMemo(() => {
-    const severities: Record<FineSeverity, { count: number; amount: number }> = {
-      LEVE: { count: 0, amount: 0 }, MEDIA: { count: 0, amount: 0 },
-      GRAVE: { count: 0, amount: 0 }, GRAVISSIMA: { count: 0, amount: 0 },
+    const sevs: Record<string, { count: number; amount: number }> = {
+      leve: { count: 0, amount: 0 },
+      media: { count: 0, amount: 0 },
+      grave: { count: 0, amount: 0 },
+      gravissima: { count: 0, amount: 0 },
     };
     filteredData.forEach(f => {
-      severities[f.severity].count++;
-      severities[f.severity].amount += f.originalAmount;
+      if (f.severity && sevs[f.severity]) {
+        sevs[f.severity].count++;
+        sevs[f.severity].amount += f.amount;
+      }
     });
-    return Object.entries(severities).map(([key, val]) => ({
-      name: fineSeverityLabels[key as FineSeverity], count: val.count, amount: val.amount,
+    return Object.entries(sevs).map(([key, val]) => ({
+      name: severityLabels[key] || key,
+      count: val.count,
+      amount: val.amount,
     }));
   }, [filteredData]);
 
   const topVehicles = useMemo(() => {
     const vehicles: Record<string, { plate: string; count: number; amount: number }> = {};
     filteredData.forEach(f => {
-      if (!vehicles[f.vehicleId]) vehicles[f.vehicleId] = { plate: f.vehiclePlate || f.vehicleId, count: 0, amount: 0 };
-      vehicles[f.vehicleId].count++;
-      vehicles[f.vehicleId].amount += f.originalAmount;
+      if (!vehicles[f.vehicle_id]) vehicles[f.vehicle_id] = { plate: f.vehiclePlate || f.vehicle_id, count: 0, amount: 0 };
+      vehicles[f.vehicle_id].count++;
+      vehicles[f.vehicle_id].amount += f.amount;
     });
     return Object.values(vehicles).sort((a, b) => b.amount - a.amount).slice(0, 5);
   }, [filteredData]);
 
-  // NEW: Top 5 drivers by fines
   const topDrivers = useMemo(() => {
     const drivers: Record<string, { name: string; count: number; amount: number }> = {};
     filteredData.forEach(f => {
-      const driverId = f.driverId || 'unknown';
-      const driverName = f.driverName || 'Não identificado';
-      if (!drivers[driverId]) drivers[driverId] = { name: driverName, count: 0, amount: 0 };
-      drivers[driverId].count++;
-      drivers[driverId].amount += f.originalAmount;
+      const dId = f.driver_id || 'unknown';
+      const dName = f.driverName || 'Não identificado';
+      if (!drivers[dId]) drivers[dId] = { name: dName, count: 0, amount: 0 };
+      drivers[dId].count++;
+      drivers[dId].amount += f.amount;
     });
     return Object.values(drivers).sort((a, b) => b.count - a.count).slice(0, 5);
   }, [filteredData]);
@@ -157,15 +174,10 @@ export function FinesAnalytics() {
   const maxVehicleAmount = topVehicles.length > 0 ? topVehicles[0].amount : 1;
 
   const kpis = useMemo(() => {
-    const totalAmount = filteredData.reduce((sum, f) => sum + f.originalAmount, 0);
-    const totalWithDiscount = filteredData.reduce((sum, f) => sum + (f.discountedAmount || f.originalAmount), 0);
-    const indicatedCount = filteredData.filter(f => f.indicatedDriver).length;
-    const indicatedRate = filteredData.length > 0 ? (indicatedCount / filteredData.length) * 100 : 0;
-    const paidFines = filteredData.filter(f => f.status === 'PAID' && f.paymentDate);
-    const paidOnTime = paidFines.filter(f => isBefore(f.paymentDate!, f.dueDate)).length;
-    const paidOnTimeRate = paidFines.length > 0 ? (paidOnTime / paidFines.length) * 100 : 0;
+    const totalAmount = filteredData.reduce((sum, f) => sum + f.amount, 0);
     const avgTicket = filteredData.length > 0 ? totalAmount / filteredData.length : 0;
-    return { count: filteredData.length, totalAmount, totalWithDiscount, indicatedRate, paidOnTimeRate, avgTicket };
+    const paidCount = filteredData.filter(f => f.derivedStatus === 'paid').length;
+    return { count: filteredData.length, totalAmount, avgTicket, paidCount };
   }, [filteredData]);
 
   const clearFilters = () => {
@@ -176,6 +188,10 @@ export function FinesAnalytics() {
   };
 
   const hasActiveFilters = vehicleFilter || severityFilter !== 'ALL';
+
+  if (isLoading) {
+    return <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40" />)}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -201,20 +217,11 @@ export function FinesAnalytics() {
               <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
               <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
             </div>
-            <Select value={vehicleFilter || 'ALL'} onValueChange={(v) => setVehicleFilter(v === 'ALL' ? '' : v)}>
-              <SelectTrigger className="w-48"><SelectValue placeholder="Veículo" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos Veículos</SelectItem>
-                {mockVehicles.filter(v => v.plate).map((v) => (
-                  <SelectItem key={v.id} value={v.id}>{v.plate} - {v.model}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={severityFilter} onValueChange={(v) => setSeverityFilter(v as FineSeverity | 'ALL')}>
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
               <SelectTrigger className="w-40"><SelectValue placeholder="Gravidade" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todas</SelectItem>
-                {Object.entries(fineSeverityLabels).map(([key, label]) => (
+                {Object.entries(severityLabels).map(([key, label]) => (
                   <SelectItem key={key} value={key}>{label}</SelectItem>
                 ))}
               </SelectContent>
@@ -224,7 +231,7 @@ export function FinesAnalytics() {
       </Card>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
@@ -238,7 +245,7 @@ export function FinesAnalytics() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-orange-600" />
-              <p className="text-sm text-muted-foreground">Valor Original</p>
+              <p className="text-sm text-muted-foreground">Valor Total</p>
             </div>
             <p className="text-2xl font-bold mt-1">{formatCurrencyBRL(kpis.totalAmount)}</p>
           </CardContent>
@@ -246,35 +253,25 @@ export function FinesAnalytics() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <p className="text-sm text-muted-foreground">Com Desconto</p>
+              <DollarSign className="h-5 w-5 text-primary" />
+              <p className="text-sm text-muted-foreground">Ticket Médio</p>
             </div>
-            <p className="text-2xl font-bold mt-1">{formatCurrencyBRL(kpis.totalWithDiscount)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-600" />
-              <p className="text-sm text-muted-foreground">% Indicadas</p>
-            </div>
-            <p className="text-2xl font-bold mt-1">{kpis.indicatedRate.toFixed(0)}%</p>
+            <p className="text-2xl font-bold mt-1">{formatCurrencyBRL(kpis.avgTicket)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <p className="text-sm text-muted-foreground">Pagas no prazo</p>
+              <p className="text-sm text-muted-foreground">Pagas</p>
             </div>
-            <p className="text-2xl font-bold mt-1">{kpis.paidOnTimeRate.toFixed(0)}%</p>
+            <p className="text-2xl font-bold mt-1">{kpis.paidCount}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts — 2x3 Grid */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Row 1 */}
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Distribuição por Status</CardTitle>
@@ -305,10 +302,10 @@ export function FinesAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" className="text-xs" />
                 <YAxis type="category" dataKey="name" className="text-xs" width={90} />
-                <ChartTooltip 
+                <ChartTooltip
                   formatter={(value: number, name: string, props: { payload?: { amount?: number } }) => [
                     `${value} multas (${formatCurrencyBRL(props.payload?.amount ?? 0)})`,
-                    name
+                    name,
                   ]}
                 />
                 <Bar dataKey="count" name="Quantidade" radius={[0, 4, 4, 0]}>
@@ -333,13 +330,12 @@ export function FinesAnalytics() {
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" width={40} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} name="Quantidade" />
+                <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))' }} name="Quantidade" />
               </LineChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* Row 2 */}
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Top 5 Veículos por Valor</CardTitle>
@@ -364,14 +360,11 @@ export function FinesAnalytics() {
                   </div>
                 </div>
               ))}
-              {topVehicles.length === 0 && (
-                <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma multa no período.</p>
-              )}
+              {topVehicles.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma multa no período.</p>}
             </div>
           </CardContent>
         </Card>
 
-        {/* NEW: Top 5 Drivers */}
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -399,48 +392,33 @@ export function FinesAnalytics() {
                   </div>
                 </div>
               ))}
-              {topDrivers.length === 0 && (
-                <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma multa no período.</p>
-              )}
+              {topDrivers.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma multa no período.</p>}
             </div>
           </CardContent>
         </Card>
 
-        {/* Aggregate indicator */}
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Indicadores Agregados</CardTitle>
             <CardDescription>Resumo financeiro de multas</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0 flex flex-col justify-center">
-            <div className="space-y-6">
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Ticket Médio</p>
-                <p className="text-3xl font-bold text-primary mt-1">{formatCurrencyBRL(kpis.avgTicket)}</p>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Total de multas</span>
+                <span className="font-bold">{kpis.count}</span>
               </div>
-              <div className="border-t pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Valor Total</p>
-                    <p className="text-lg font-bold text-amber-600">{formatCurrencyBRL(kpis.totalAmount)}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Total c/ Desconto</p>
-                    <p className="text-lg font-bold text-green-600">{formatCurrencyBRL(kpis.totalWithDiscount)}</p>
-                  </div>
-                </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Valor total</span>
+                <span className="font-bold">{formatCurrencyBRL(kpis.totalAmount)}</span>
               </div>
-              <div className="border-t pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Multas</p>
-                    <p className="text-lg font-bold">{kpis.count}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">% Indicadas</p>
-                    <p className="text-lg font-bold text-blue-600">{kpis.indicatedRate.toFixed(0)}%</p>
-                  </div>
-                </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Ticket médio</span>
+                <span className="font-bold">{formatCurrencyBRL(kpis.avgTicket)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Multas pagas</span>
+                <span className="font-bold">{kpis.paidCount}</span>
               </div>
             </div>
           </CardContent>
