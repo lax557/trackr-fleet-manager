@@ -29,6 +29,7 @@ import NewMaintenancePage from "./pages/NewMaintenancePage";
 import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
 import FinesPage from "./pages/FinesPage";
 import FineDetailPage from "./pages/FineDetailPage";
+import NewFinePage from "./pages/NewFinePage";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPermissionsPage from "./pages/UsersPermissionsPage";
 import NotFound from "./pages/NotFound";
