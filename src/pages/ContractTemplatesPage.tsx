@@ -48,6 +48,18 @@ export function ContractTemplatesPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from('contract_templates').update({ is_active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { is_active }) => {
+      queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
+      toast.success(is_active ? 'Modelo ativado.' : 'Modelo desativado.');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const duplicateMutation = useMutation({
     mutationFn: async (template: ContractTemplate) => {
       const { data: { user } } = await supabase.auth.getUser();
