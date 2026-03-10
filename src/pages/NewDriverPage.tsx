@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createDriver } from '@/services/drivers.service';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,8 +49,9 @@ const formatCEP = (value: string) => {
 
 export function NewDriverPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
-  
+
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -61,23 +64,27 @@ export function NewDriverPage() {
   });
 
   const [address, setAddress] = useState({
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    zipCode: '',
+    street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zipCode: '',
   });
 
   const [documents, setDocuments] = useState<{
-    cnh: DocumentUpload;
-    residenceProof: DocumentUpload;
-    appProfile: DocumentUpload;
+    cnh: DocumentUpload; residenceProof: DocumentUpload; appProfile: DocumentUpload;
   }>({
     cnh: { file: null, preview: null },
     residenceProof: { file: null, preview: null },
     appProfile: { file: null, preview: null },
+  });
+
+  const mutation = useMutation({
+    mutationFn: createDriver,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      toast({ title: 'Motorista cadastrado!', description: 'O motorista foi cadastrado como INATIVO. Vincule a um veículo para ativá-lo.' });
+      navigate('/drivers');
+    },
+    onError: (err: any) => {
+      toast({ title: 'Erro ao cadastrar', description: err.message, variant: 'destructive' });
+    },
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -88,54 +95,35 @@ export function NewDriverPage() {
     if (file) {
       setDocuments(prev => ({
         ...prev,
-        [docType]: {
-          file,
-          preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-        },
+        [docType]: { file, preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null },
       }));
     }
   };
 
   const canProceed = (): boolean => {
     switch (currentStep) {
-      case 1:
-        return !!(formData.fullName && formData.phone && formData.cpf && formData.cnh);
-      case 2:
-        return !!(documents.cnh.file && documents.residenceProof.file && documents.appProfile.file);
-      case 3:
-        return !!(address.street && address.number && address.neighborhood && address.city && address.state && address.zipCode);
-      case 4:
-        return true;
-      default:
-        return false;
+      case 1: return !!(formData.fullName && formData.phone && formData.cpf && formData.cnh);
+      case 2: return !!(documents.cnh.file && documents.residenceProof.file && documents.appProfile.file);
+      case 3: return !!(address.street && address.number && address.neighborhood && address.city && address.state && address.zipCode);
+      case 4: return true;
+      default: return false;
     }
   };
 
-  const handleNext = () => {
-    if (currentStep < 4 && canProceed()) {
-      setCurrentStep((prev) => (prev + 1) as WizardStep);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => (prev - 1) as WizardStep);
-    }
-  };
+  const handleNext = () => { if (currentStep < 4 && canProceed()) setCurrentStep((prev) => (prev + 1) as WizardStep); };
+  const handleBack = () => { if (currentStep > 1) setCurrentStep((prev) => (prev - 1) as WizardStep); };
 
   const progressValue = (currentStep / 4) * 100;
 
   const handleSubmit = () => {
     if (!canProceed()) return;
-
-    console.log('Creating driver:', { formData, address, documents });
-    
-    toast({
-      title: 'Motorista cadastrado!',
-      description: 'O motorista foi cadastrado como INATIVO. Vincule a um veículo para ativá-lo.',
+    mutation.mutate({
+      full_name: formData.fullName,
+      phone: formData.phone,
+      cpf: formData.cpf,
+      cnh: formData.cnh,
+      birth_date: formData.birthDate || undefined,
     });
-    
-    navigate('/drivers');
   };
 
   return (
@@ -147,9 +135,7 @@ export function NewDriverPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Novo Motorista</h1>
-          <p className="text-muted-foreground text-sm">
-            Passo {currentStep} de 4: {stepLabels[currentStep]}
-          </p>
+          <p className="text-muted-foreground text-sm">Passo {currentStep} de 4: {stepLabels[currentStep]}</p>
         </div>
       </div>
 
@@ -263,19 +249,12 @@ export function NewDriverPage() {
                   );
                 })}
               </div>
-
-              {/* Profile Analysis */}
               <div className="mt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Shield className="h-5 w-5 text-primary" />
                   <Label>Análise de Perfil</Label>
                 </div>
-                <Textarea
-                  value={formData.profileAnalysis}
-                  onChange={(e) => handleInputChange('profileAnalysis', e.target.value)}
-                  placeholder="Insira aqui observações sobre análise criminal, judicial, histórico geral do motorista..."
-                  className="min-h-[100px]"
-                />
+                <Textarea value={formData.profileAnalysis} onChange={(e) => handleInputChange('profileAnalysis', e.target.value)} placeholder="Insira aqui observações sobre análise criminal, judicial, histórico geral do motorista..." className="min-h-[100px]" />
               </div>
             </div>
           )}
@@ -373,9 +352,9 @@ export function NewDriverPage() {
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         ) : (
-          <Button onClick={handleSubmit}>
+          <Button onClick={handleSubmit} disabled={mutation.isPending}>
             <Check className="h-4 w-4 mr-2" />
-            Cadastrar Motorista
+            {mutation.isPending ? 'Cadastrando...' : 'Cadastrar Motorista'}
           </Button>
         )}
       </div>
