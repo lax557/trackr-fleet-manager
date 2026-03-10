@@ -27,6 +27,7 @@ import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
 import FinesPage from "./pages/FinesPage";
 import FineDetailPage from "./pages/FineDetailPage";
 import SettingsPage from "./pages/SettingsPage";
+import UsersPermissionsPage from "./pages/UsersPermissionsPage";
 import NotFound from "./pages/NotFound";
 import NewVehiclePage from "./pages/NewVehiclePage";
 // Financial module
