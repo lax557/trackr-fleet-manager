@@ -27,6 +27,7 @@ import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
 import FinesPage from "./pages/FinesPage";
 import FineDetailPage from "./pages/FineDetailPage";
 import SettingsPage from "./pages/SettingsPage";
+import UsersPermissionsPage from "./pages/UsersPermissionsPage";
 import NotFound from "./pages/NotFound";
 import NewVehiclePage from "./pages/NewVehiclePage";
 // Financial module
@@ -84,6 +85,7 @@ function AuthenticatedLayout() {
             <Route path="/financial/reconciliation" element={<ReconciliationPage />} />
             <Route path="/financial/ai" element={<FinancialAIPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/users" element={<UsersPermissionsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

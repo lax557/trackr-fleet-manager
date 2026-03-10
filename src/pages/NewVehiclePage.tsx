@@ -61,6 +61,11 @@ export function NewVehiclePage() {
       return;
     }
 
+    if (formData.plate && formData.plate.length !== 7) {
+      toast.error('A placa deve ter exatamente 7 caracteres (ex: ABC1D23).');
+      return;
+    }
+
     mutation.mutate({
       brand: formData.make,
       model: formData.model,

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { fetchVehicleById } from '@/services/vehicles.service';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchVehicleById, markVehicleDelivered } from '@/services/vehicles.service';
 import { StatusBadge } from '@/components/StatusBadge';
 import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
 import { VehicleFinesCard } from '@/components/VehicleFinesCard';
@@ -14,18 +14,31 @@ import {
   Car, 
   Gauge,
   Clock,
+  CheckCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: vehicle, isLoading } = useQuery({
     queryKey: ['vehicle', id],
     queryFn: () => fetchVehicleById(id!),
     enabled: !!id,
+  });
+
+  const deliverMutation = useMutation({
+    mutationFn: () => markVehicleDelivered(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle', id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Veículo marcado como entregue!');
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
   if (isLoading) {
@@ -87,6 +100,12 @@ export function VehicleDetailPage() {
             <Button>
               <UserPlus className="h-4 w-4 mr-2" />
               Nova locação
+            </Button>
+          )}
+          {vehicle.currentStatus === 'EM_LIBERACAO' && !(vehicle as any).deliveredAt && (
+            <Button onClick={() => deliverMutation.mutate()} disabled={deliverMutation.isPending}>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Marcar como Entregue
             </Button>
           )}
           {vehicle.currentStatus === 'ALUGADO' && (
@@ -151,6 +170,14 @@ export function VehicleDetailPage() {
                   <p className="text-sm text-muted-foreground">Cadastrado em</p>
                   <p className="font-medium">
                     {format(vehicle.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Entregue em</p>
+                  <p className="font-medium">
+                    {(vehicle as any).deliveredAt
+                      ? format((vehicle as any).deliveredAt, "dd/MM/yyyy", { locale: ptBR })
+                      : 'Pendente'}
                   </p>
                 </div>
               </div>

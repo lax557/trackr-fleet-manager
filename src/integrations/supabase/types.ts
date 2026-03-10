@@ -876,7 +876,9 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          phone: string | null
           role: Database["public"]["Enums"]["app_role"]
+          theme: string
           user_id: string
         }
         Insert: {
@@ -884,7 +886,9 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          theme?: string
           user_id: string
         }
         Update: {
@@ -892,7 +896,9 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          theme?: string
           user_id?: string
         }
         Relationships: [
@@ -1147,6 +1153,7 @@ export type Database = {
           company_id: string
           created_at: string
           deleted_at: string | null
+          delivered_at: string | null
           id: string
           model: string
           odometer: number | null
@@ -1170,6 +1177,7 @@ export type Database = {
           company_id: string
           created_at?: string
           deleted_at?: string | null
+          delivered_at?: string | null
           id?: string
           model: string
           odometer?: number | null
@@ -1193,6 +1201,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           deleted_at?: string | null
+          delivered_at?: string | null
           id?: string
           model?: string
           odometer?: number | null
