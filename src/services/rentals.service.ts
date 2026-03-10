@@ -176,7 +176,7 @@ export async function changeRentalStatus(
 
   // Conflict check when activating
   if (newStatus === 'active') {
-    const { data: conflict } = await supabase
+    const { data: vehicleConflict } = await supabase
       .from('rentals')
       .select('id')
       .eq('vehicle_id', rental.vehicle_id)
@@ -184,8 +184,21 @@ export async function changeRentalStatus(
       .neq('id', rentalId)
       .limit(1);
 
-    if (conflict && conflict.length > 0) {
+    if (vehicleConflict && vehicleConflict.length > 0) {
       throw new Error('Este veículo já possui outra locação ativa.');
+    }
+
+    // Driver conflict check
+    const { data: driverConflict } = await supabase
+      .from('rentals')
+      .select('id')
+      .eq('driver_id', rental.driver_id)
+      .eq('status', 'active')
+      .neq('id', rentalId)
+      .limit(1);
+
+    if (driverConflict && driverConflict.length > 0) {
+      throw new Error('Este motorista já possui outra locação ativa.');
     }
   }
 
