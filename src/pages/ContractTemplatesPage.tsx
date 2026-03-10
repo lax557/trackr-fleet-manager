@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, MoreHorizontal, Edit, Copy, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Plus, MoreHorizontal, Edit, Copy, Trash2, FileText, Loader2, Power, PowerOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
