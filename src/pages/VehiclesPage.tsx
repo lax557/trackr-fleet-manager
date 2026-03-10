@@ -17,6 +17,7 @@ import { VehicleStats } from '@/types';
 
 export function VehiclesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<VehicleCategory | null>(null);
