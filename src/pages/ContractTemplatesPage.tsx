@@ -189,6 +189,12 @@ export function ContractTemplatesPage() {
                             Duplicar
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onClick={() => toggleActiveMutation.mutate({ id: template.id, is_active: !template.is_active })}
+                          >
+                            {template.is_active ? <PowerOff className="h-4 w-4 mr-2" /> : <Power className="h-4 w-4 mr-2" />}
+                            {template.is_active ? 'Desativar' : 'Ativar'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => setDeleteId(template.id)}
                             className="text-destructive"
                           >

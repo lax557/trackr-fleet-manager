@@ -136,10 +136,12 @@ export function VehiclesPage() {
           <h1 className="text-2xl font-bold text-foreground">Veículos</h1>
           <p className="text-muted-foreground text-sm">Gerencie sua frota de veículos</p>
         </div>
-        <Button className="self-start sm:self-auto" onClick={() => navigate('/vehicles/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Veículo
-        </Button>
+        {can('vehicle:create') && (
+          <Button className="self-start sm:self-auto" onClick={() => navigate('/vehicles/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Veículo
+          </Button>
+        )}
       </div>
 
       <VehicleStatsCards stats={stats} onFilterClick={handleStatusCardClick} activeFilter={statusFilter} />

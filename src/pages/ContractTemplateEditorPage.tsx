@@ -1,85 +1,104 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { mockContractTemplates } from '@/data/mockData';
-import { ContractTemplate } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { fetchContractTemplates, ContractTemplate } from '@/services/contracts.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { ContractEditor } from '@/components/ContractEditor';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 
-type ContractType = 'SEMANAL' | 'MENSAL' | 'PERSONALIZADO';
-
 export function ContractTemplateEditorPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { id } = useParams();
   const isEditing = !!id && id !== 'new';
 
-  const [templates] = useState<ContractTemplate[]>(() => {
-    const saved = localStorage.getItem('trackr_contract_templates');
-    return saved ? JSON.parse(saved, (key, value) => {
-      if (key === 'createdAt') return new Date(value);
-      return value;
-    }) : [...mockContractTemplates];
+  const [name, setName] = useState('');
+  const [isActive, setIsActive] = useState(true);
+  const [content, setContent] = useState('<h1>CONTRATO DE LOCAÇÃO DE VEÍCULO</h1><p>Insira o conteúdo do contrato aqui...</p>');
+  const [showPreview, setShowPreview] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load existing template
+  const { data: existingTemplate, isLoading } = useQuery({
+    queryKey: ['contract-template', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contract_templates')
+        .select('*')
+        .eq('id', id!)
+        .single();
+      if (error) throw error;
+      return data as ContractTemplate;
+    },
+    enabled: isEditing,
   });
 
-  const existingTemplate = useMemo(() => {
-    if (!isEditing) return null;
-    return templates.find(t => t.id === id) || null;
-  }, [id, isEditing, templates]);
-
-  const [name, setName] = useState(existingTemplate?.name || '');
-  const [version, setVersion] = useState(existingTemplate?.version || 'v1.0');
-  const [contractType, setContractType] = useState<ContractType>('SEMANAL');
-  const [defaultDuration, setDefaultDuration] = useState('12');
-  const [allowEditBeforeSend, setAllowEditBeforeSend] = useState(true);
-  const [isActive, setIsActive] = useState(existingTemplate?.status === 'ACTIVE' || !isEditing);
-  const [content, setContent] = useState(existingTemplate?.templateBody || '<h1>CONTRATO DE LOCAÇÃO DE VEÍCULO</h1><p>Insira o conteúdo do contrato aqui...</p>');
-  const [showPreview, setShowPreview] = useState(false);
-
-  const handleSave = () => {
-    if (!name.trim()) {
-      toast.error('Informe o nome do modelo.');
-      return;
+  useEffect(() => {
+    if (existingTemplate && !loaded) {
+      setName(existingTemplate.name);
+      setIsActive(existingTemplate.is_active);
+      setContent(existingTemplate.body);
+      setLoaded(true);
     }
+  }, [existingTemplate, loaded]);
 
-    const savedTemplates: ContractTemplate[] = (() => {
-      const saved = localStorage.getItem('trackr_contract_templates');
-      return saved ? JSON.parse(saved, (key, value) => {
-        if (key === 'createdAt') return new Date(value);
-        return value;
-      }) : [...mockContractTemplates];
-    })();
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!name.trim()) throw new Error('Informe o nome do modelo.');
 
-    const templateData: ContractTemplate = {
-      id: isEditing ? id! : `tpl_${Date.now()}`,
-      name: name.trim(),
-      version,
-      status: isActive ? 'ACTIVE' : 'ARCHIVED',
-      templateBody: content,
-      createdAt: isEditing ? (existingTemplate?.createdAt || new Date()) : new Date(),
-    };
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const { data: profile } = await supabase.from('profiles').select('company_id').eq('user_id', user.id).single();
+      if (!profile) throw new Error('Profile not found');
 
-    let updated: ContractTemplate[];
-    if (isEditing) {
-      updated = savedTemplates.map(t => t.id === id ? templateData : t);
-    } else {
-      updated = [...savedTemplates, templateData];
-    }
+      if (isEditing) {
+        const { error } = await supabase
+          .from('contract_templates')
+          .update({ name: name.trim(), body: content, is_active: isActive })
+          .eq('id', id!);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('contract_templates')
+          .insert({
+            company_id: profile.company_id,
+            name: name.trim(),
+            body: content,
+            is_active: isActive,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-template', id] });
+      toast.success(isEditing ? 'Modelo atualizado!' : 'Modelo criado com sucesso!');
+      navigate('/rentals/templates');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
-    localStorage.setItem('trackr_contract_templates', JSON.stringify(updated));
-    toast.success(isEditing ? 'Modelo atualizado!' : 'Modelo criado com sucesso!');
-    navigate('/rentals/templates');
-  };
+  if (isEditing && isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -100,8 +119,8 @@ export function ContractTemplateEditorPage() {
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            {saveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Salvar
           </Button>
         </div>
@@ -116,29 +135,6 @@ export function ContractTemplateEditorPage() {
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Modelo *</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Contrato padrão motorista app" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="version">Versão</Label>
-              <Input id="version" value={version} onChange={(e) => setVersion(e.target.value)} placeholder="v1.0" />
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de Contrato</Label>
-              <Select value={contractType} onValueChange={(v) => setContractType(v as ContractType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SEMANAL">Semanal</SelectItem>
-                  <SelectItem value="MENSAL">Mensal</SelectItem>
-                  <SelectItem value="PERSONALIZADO">Personalizado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duração Padrão (meses)</Label>
-              <Input id="duration" type="number" value={defaultDuration} onChange={(e) => setDefaultDuration(e.target.value)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="editBeforeSend">Permitir edição antes de enviar</Label>
-              <Switch id="editBeforeSend" checked={allowEditBeforeSend} onCheckedChange={setAllowEditBeforeSend} />
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="activeToggle">Ativo</Label>
@@ -155,7 +151,7 @@ export function ContractTemplateEditorPage() {
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Preview — {name || 'Sem nome'} ({version})</DialogTitle>
+            <DialogTitle>Preview — {name || 'Sem nome'}</DialogTitle>
           </DialogHeader>
           <div className="bg-white text-black p-8 rounded-lg shadow-inner border min-h-[500px]">
             <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
