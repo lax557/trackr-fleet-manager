@@ -97,7 +97,7 @@ export function VehiclesTable({
                 onClick={() => onViewDetails(vehicle.id)}
               >
                 <TableCell className="font-medium text-primary">
-                  {vehicle.id}
+                  {(vehicle as any).vehicleCode || vehicle.id.slice(0, 8)}
                 </TableCell>
                 <TableCell>
                   {vehicle.plate || <span className="text-muted-foreground">—</span>}
