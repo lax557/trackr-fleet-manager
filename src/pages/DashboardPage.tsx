@@ -331,7 +331,7 @@ export function DashboardPage() {
           </div>
 
           {/* Debug: Revenue per rental (admin only) */}
-          {execMetrics && execMetrics.revenueDebug.length > 0 && can('users:manage') && (
+          {execMetrics && execMetrics.revenueDebug.length > 0 && role === 'admin' && (
             <Card className="border-dashed border-amber-500/50">
               <CardHeader className="pb-2 pt-3 px-4">
                 <CardTitle className="text-xs text-amber-600 flex items-center gap-1.5">
