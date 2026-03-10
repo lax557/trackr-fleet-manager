@@ -71,7 +71,7 @@ export function NewRentalPage() {
   });
 
   const availableVehicles = useMemo(
-    () => allVehicles.filter(v => v.status === 'available'),
+    () => allVehicles.filter(v => v.currentStatus === 'DISPONIVEL'),
     [allVehicles]
   );
 
