@@ -216,37 +216,48 @@ export async function getBacklogVehicles(): Promise<BacklogVehicle[]> {
 
 // ── Utility helpers for weekly billing ──
 
-/** Get the Monday (start) of the week containing `date`. */
+/**
+ * Parse a date string into a UTC-noon Date to avoid timezone shift issues.
+ * e.g. "2026-03-09" → Date(2026-03-09T12:00:00Z) so getUTCDay() = Monday.
+ */
+function toUTCDate(d: Date | string): Date {
+  if (typeof d === 'string') {
+    // Date-only strings ("2026-03-09") → treat as UTC noon
+    if (d.length === 10) return new Date(d + 'T12:00:00Z');
+    return new Date(d);
+  }
+  // Already a Date — re-create at UTC noon of the same UTC date
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12));
+}
+
+/** Get the Monday (start) of the week containing `date` (UTC). */
 function getWeekMonday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  const d = toUTCDate(date);
+  const day = d.getUTCDay(); // 0=Sun,1=Mon,...,6=Sat
   const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + diff);
   return d;
 }
 
-/** Get the Sunday (end) of the week containing `date`. */
+/** Get the Sunday (end) of the week containing `date` (UTC). */
 function getWeekSunday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay(); // 0=Sun
+  const d = toUTCDate(date);
+  const day = d.getUTCDay(); // 0=Sun
   const diff = day === 0 ? 0 : 7 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(23, 59, 59, 999);
+  d.setUTCDate(d.getUTCDate() + diff);
   return d;
 }
 
-/** Count of days from `a` to `b` inclusive (both dates at day granularity). */
+/** Count of days from `a` to `b` inclusive (UTC day granularity). */
 function daysBetweenInclusive(a: Date, b: Date): number {
   const msPerDay = 86400000;
-  const startDay = new Date(a.getFullYear(), a.getMonth(), a.getDate());
-  const endDay = new Date(b.getFullYear(), b.getMonth(), b.getDate());
-  return Math.floor((endDay.getTime() - startDay.getTime()) / msPerDay) + 1;
+  const startDay = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate());
+  const endDay = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate());
+  return Math.floor((endDay - startDay) / msPerDay) + 1;
 }
 
 /**
- * Count Mondays in a given month/year that fall within [rangeStart, rangeEnd].
- * Used for counting full weekly billing cycles.
+ * Count Mondays in a given month/year that fall within [rangeStart, rangeEnd] (UTC).
  */
 function countMondaysInMonthWithinRange(
   year: number,
@@ -255,16 +266,37 @@ function countMondaysInMonthWithinRange(
   rangeEnd: Date | null,
 ): number {
   let count = 0;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const rangeStartTime = Date.UTC(rangeStart.getUTCFullYear(), rangeStart.getUTCMonth(), rangeStart.getUTCDate());
+  const rangeEndTime = rangeEnd ? Date.UTC(rangeEnd.getUTCFullYear(), rangeEnd.getUTCMonth(), rangeEnd.getUTCDate()) : null;
   for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month, day);
-    if (d.getDay() !== 1) continue; // not Monday
-    if (d < rangeStart) continue;
-    if (rangeEnd && d > rangeEnd) continue;
+    const d = new Date(Date.UTC(year, month, day, 12));
+    if (d.getUTCDay() !== 1) continue; // not Monday
+    const t = Date.UTC(year, month, day);
+    if (t < rangeStartTime) continue;
+    if (rangeEndTime !== null && t > rangeEndTime) continue;
     count++;
   }
   return count;
 }
+
+/*
+ * ── Validation (debug) ──
+ * March 2026 has Mondays: 2, 9, 16, 23, 30
+ *
+ * Case A: start_ref = 2026-03-09 (Monday), weekly_rate=750, full month
+ *   prorata=0, first_billing_monday=Mar 9
+ *   mondays in [9..31] = 9,16,23,30 = 4 → 750*4 = 3000 ✓
+ *
+ * Case B: start_ref = 2026-03-12 (Thursday), weekly_rate=750, full month
+ *   prorata = Thu-Sun = 4 days → 750/7*4 = 428.57
+ *   first_billing_monday = Mar 16
+ *   mondays in [16..31] = 16,23,30 = 3 → 750*3 = 2250
+ *   total = 2678.57 ✓
+ *
+ * Case C: Two rentals starting Mon 09/03, rates 750+600, full month
+ *   3000 + 2400 = 5400 ✓
+ */
 
 /**
  * Estimate revenue for a single weekly rental in a given month.
