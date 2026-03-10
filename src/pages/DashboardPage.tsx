@@ -117,7 +117,7 @@ export function DashboardPage() {
           <ToggleGroupItem value="operational" className="text-xs px-4">
             Operacional
           </ToggleGroupItem>
-          {can('view_financial') && (
+          {can('dashboard:executive') && (
             <ToggleGroupItem value="executive" className="text-xs px-4">
               Executivo
             </ToggleGroupItem>
