@@ -1,17 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchDrivers } from '@/services/drivers.service';
 import { fetchVehicles } from '@/services/vehicles.service';
 import { createRental } from '@/services/rentals.service';
+import { fetchPricingRules } from '@/services/contracts.service';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import {
-  ArrowLeft, ArrowRight, Check, User, Car, DollarSign, Search, Plus, Loader2,
+  ArrowLeft, ArrowRight, Check, User, Car, DollarSign, Search, Plus, Loader2, Lock,
 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { toast } from 'sonner';
@@ -40,6 +43,9 @@ export function NewRentalPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const preSelectedDriverId = searchParams.get('driverId');
+  const { can } = usePermissions();
+
+  const canEditPricing = can('rental:edit');
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(() =>
     preSelectedDriverId ? 2 : 1
@@ -70,6 +76,17 @@ export function NewRentalPage() {
     queryFn: fetchVehicles,
   });
 
+  const { data: pricingRules = [] } = useQuery({
+    queryKey: ['pricing-rules'],
+    queryFn: fetchPricingRules,
+  });
+
+  // Filter out drivers that already have an active rental
+  const availableDrivers = useMemo(
+    () => drivers.filter(d => d.computedStatus !== 'active'),
+    [drivers]
+  );
+
   const availableVehicles = useMemo(
     () => allVehicles.filter(v => v.currentStatus === 'DISPONIVEL'),
     [allVehicles]
@@ -85,15 +102,30 @@ export function NewRentalPage() {
     [formData.vehicleId, availableVehicles]
   );
 
+  // Auto-fill pricing when vehicle is selected
+  useEffect(() => {
+    if (selectedVehicle && pricingRules.length > 0) {
+      const rule = pricingRules.find(r => r.category === selectedVehicle.category);
+      if (rule) {
+        setFormData(prev => ({
+          ...prev,
+          weeklyRate: String(rule.weekly_rate),
+          deposit: String(rule.deposit_amount),
+        }));
+      }
+    }
+  }, [selectedVehicle?.id, pricingRules]);
+
   const filteredDrivers = useMemo(() => {
-    if (!driverSearch) return drivers;
+    const base = availableDrivers;
+    if (!driverSearch) return base;
     const s = driverSearch.toLowerCase();
-    return drivers.filter(d =>
+    return base.filter(d =>
       d.full_name.toLowerCase().includes(s) ||
       (d.phone && d.phone.includes(s)) ||
       (d.cpf && d.cpf.includes(s))
     );
-  }, [drivers, driverSearch]);
+  }, [availableDrivers, driverSearch]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -108,10 +140,15 @@ export function NewRentalPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rentals'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
       toast.success('Locação criada com sucesso!');
       navigate('/rentals');
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => {
+      console.error('Erro ao criar locação:', err);
+      toast.error(err.message);
+    },
   });
 
   const progressValue = (currentStep / 3) * 100;
@@ -186,7 +223,7 @@ export function NewRentalPage() {
                 <User className="h-6 w-6 text-primary" />
                 <div>
                   <h2 className="text-lg font-semibold">Selecionar Motorista</h2>
-                  <p className="text-sm text-muted-foreground">Escolha um motorista disponível</p>
+                  <p className="text-sm text-muted-foreground">Apenas motoristas sem locação ativa são listados</p>
                 </div>
               </div>
               <div className="relative">
@@ -204,7 +241,7 @@ export function NewRentalPage() {
                 <div className="grid gap-2 max-h-[300px] overflow-y-auto">
                   {filteredDrivers.length === 0 ? (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">Nenhum motorista encontrado</p>
+                      <p className="text-muted-foreground mb-4">Nenhum motorista disponível</p>
                       <Button variant="outline" onClick={() => navigate('/drivers/new')}>
                         <Plus className="h-4 w-4 mr-2" />Cadastrar Motorista
                       </Button>
@@ -293,7 +330,12 @@ export function NewRentalPage() {
                 <DollarSign className="h-6 w-6 text-primary" />
                 <div>
                   <h2 className="text-lg font-semibold">Definir Termos</h2>
-                  <p className="text-sm text-muted-foreground">Configure valor e condições</p>
+                  <p className="text-sm text-muted-foreground">
+                    Valores preenchidos pela categoria do veículo
+                    {selectedVehicle && (
+                      <Badge variant="outline" className="ml-2">{selectedVehicle.category}</Badge>
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -316,19 +358,27 @@ export function NewRentalPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="weeklyRate">Valor Semanal (R$) *</Label>
+                  <Label htmlFor="weeklyRate">
+                    Valor Semanal (R$) *
+                    {!canEditPricing && <Lock className="inline h-3 w-3 ml-1 text-muted-foreground" />}
+                  </Label>
                   <Input
                     id="weeklyRate" type="number" value={formData.weeklyRate}
                     onChange={(e) => setFormData(prev => ({ ...prev, weeklyRate: e.target.value }))}
                     placeholder="600"
+                    disabled={!canEditPricing}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deposit">Caução (R$)</Label>
+                  <Label htmlFor="deposit">
+                    Caução (R$)
+                    {!canEditPricing && <Lock className="inline h-3 w-3 ml-1 text-muted-foreground" />}
+                  </Label>
                   <Input
                     id="deposit" type="number" value={formData.deposit}
                     onChange={(e) => setFormData(prev => ({ ...prev, deposit: e.target.value }))}
                     placeholder="1200"
+                    disabled={!canEditPricing}
                   />
                 </div>
               </div>
@@ -345,11 +395,14 @@ export function NewRentalPage() {
                   <p className="text-sm font-medium mb-2">Resumo</p>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <p>Motorista: <span className="text-foreground font-medium">{selectedDriver?.full_name || '—'}</span></p>
-                    <p>Veículo: <span className="text-foreground font-medium">{selectedVehicle?.plate || selectedVehicle?.vehicleCode || '—'}</span></p>
+                    <p>Veículo: <span className="text-foreground font-medium">{selectedVehicle?.plate || selectedVehicle?.vehicleCode || '—'}</span>
+                      {selectedVehicle && <Badge variant="outline" className="ml-2 text-xs">{selectedVehicle.category}</Badge>}
+                    </p>
                     <p>Período: <span className="text-foreground font-medium">
                       {formData.startDate ? format(new Date(formData.startDate), 'dd/MM/yyyy') : '—'} a {formData.endDate ? format(new Date(formData.endDate), 'dd/MM/yyyy') : '—'}
                     </span></p>
                     <p>Valor: <span className="text-foreground font-medium">R$ {formData.weeklyRate} / semana</span></p>
+                    <p>Caução: <span className="text-foreground font-medium">R$ {formData.deposit}</span></p>
                   </div>
                 </CardContent>
               </Card>
