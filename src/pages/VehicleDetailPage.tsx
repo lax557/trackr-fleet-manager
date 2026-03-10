@@ -23,11 +23,22 @@ import { toast } from 'sonner';
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: vehicle, isLoading } = useQuery({
     queryKey: ['vehicle', id],
     queryFn: () => fetchVehicleById(id!),
     enabled: !!id,
+  });
+
+  const deliverMutation = useMutation({
+    mutationFn: () => markVehicleDelivered(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle', id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Veículo marcado como entregue!');
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
   if (isLoading) {
