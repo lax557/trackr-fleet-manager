@@ -255,7 +255,7 @@ export function RentalDetailPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Término</p>
-                  <p className="font-medium">{rental.end_date ? format(new Date(rental.end_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}</p>
+                  <p className="font-medium">{formatDateOnly(rental.end_date)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Entrega Prevista</p>
