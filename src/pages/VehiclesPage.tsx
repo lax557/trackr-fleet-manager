@@ -84,8 +84,24 @@ export function VehiclesPage() {
     setStageModalOpen(true);
   };
 
-  const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, note: string, driverId?: string) => {
-    console.log('Status change:', { vehicleId, newStatus, note, driverId });
+  const statusMutation = useMutation({
+    mutationFn: ({ vehicleId, newStatus }: { vehicleId: string; newStatus: VehicleStatus }) =>
+      updateVehicleStatus(vehicleId, newStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-fleet-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-executive'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-attention'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-backlog'] });
+      toast.success('Status alterado com sucesso!');
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao alterar status: ${err.message}`);
+    },
+  });
+
+  const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, _note: string, _driverId?: string) => {
+    statusMutation.mutate({ vehicleId, newStatus });
   };
 
   const handleConfirmStageMove = (vehicleId: string, stage: AcquisitionStage, purchaseMode: PurchaseMode, expectedDate: string, notes: string) => {
