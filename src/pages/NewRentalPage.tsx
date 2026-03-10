@@ -268,10 +268,10 @@ export function NewRentalPage() {
                         <div>
                           <p className="font-medium">
                             {vehicle.plate || 'Sem placa'}
-                            <span className="text-muted-foreground ml-2">({vehicle.vehicle_code || vehicle.id.slice(0,8)})</span>
+                            <span className="text-muted-foreground ml-2">({vehicle.vehicleCode || vehicle.id.slice(0,8)})</span>
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {vehicle.brand} {vehicle.model} {vehicle.version || ''}
+                            {vehicle.make} {vehicle.model} {vehicle.version || ''}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
