@@ -330,6 +330,36 @@ export function DashboardPage() {
             ))}
           </div>
 
+          {/* Debug: Revenue per rental (admin only) */}
+          {execMetrics && execMetrics.revenueDebug.length > 0 && can('users:manage') && (
+            <Card className="border-dashed border-amber-500/50">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <CardTitle className="text-xs text-amber-600 flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Debug: Receita por contrato (admin)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-3">
+                <div className="space-y-1.5 text-xs font-mono">
+                  {execMetrics.revenueDebug.map(d => (
+                    <div key={d.rentalId} className="p-2 rounded bg-muted/50 space-y-0.5">
+                      <div className="font-semibold text-foreground">{d.driverName} — {formatCurrencyBRL(d.weeklyRate)}/sem</div>
+                      <div className="text-muted-foreground">
+                        start_ref: {d.startRef} ({d.startRefDayOfWeek}) | segundas: {d.mondayCount} | pró-rata: {d.prorataDays}d
+                      </div>
+                      <div className="text-muted-foreground">
+                        semanal: {formatCurrencyBRL(d.weeklyAmount)} + pró-rata: {formatCurrencyBRL(d.prorataAmount)} = <span className="text-foreground font-semibold">{formatCurrencyBRL(d.estimatedAmount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-1 border-t border-border text-foreground font-semibold">
+                    Total estimado: {formatCurrencyBRL(execMetrics.estimatedMonthlyRevenue)}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* BLOCO 3 — KPIs estratégicos */}
           <div className="grid grid-cols-2 gap-3">
             {strategicKpis.map(({ label, value, icon: Icon, colorClass, tooltip }) => (

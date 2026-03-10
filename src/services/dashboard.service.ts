@@ -360,14 +360,75 @@ function estimateRentalRevenueForMonth(
   return prorataAmount + weeklyAmount;
 }
 
+export interface RentalRevenueDebug {
+  rentalId: string;
+  driverName: string;
+  weeklyRate: number;
+  startRef: string;
+  startRefDayOfWeek: string;
+  mondayCount: number;
+  prorataDays: number;
+  prorataAmount: number;
+  weeklyAmount: number;
+  estimatedAmount: number;
+}
+
+/**
+ * Same logic as estimateRentalRevenueForMonth but returns debug breakdown.
+ */
+function estimateRentalRevenueForMonthDebug(
+  weeklyRate: number,
+  startRef: Date,
+  endRef: Date,
+  year: number,
+  month: number,
+): Omit<RentalRevenueDebug, 'rentalId' | 'driverName' | 'weeklyRate' | 'startRef' | 'startRefDayOfWeek'> {
+  const monthStart = new Date(Date.UTC(year, month, 1, 12));
+  const monthEnd = new Date(Date.UTC(year, month + 1, 0, 12));
+  const sRef = toUTCDate(startRef);
+  const eRef = toUTCDate(endRef);
+  const effectiveStart = sRef > monthStart ? sRef : monthStart;
+  const effectiveEnd = eRef < monthEnd ? eRef : monthEnd;
+
+  if (effectiveStart > effectiveEnd) {
+    return { mondayCount: 0, prorataDays: 0, prorataAmount: 0, weeklyAmount: 0, estimatedAmount: 0 };
+  }
+
+  const dailyRate = weeklyRate / 7;
+  let prorataAmount = 0;
+  let prorataDays = 0;
+  let firstFullWeekMonday: Date;
+  const startDay = effectiveStart.getUTCDay();
+
+  if (startDay === 1) {
+    firstFullWeekMonday = toUTCDate(effectiveStart);
+  } else {
+    const weekSunday = getWeekSunday(effectiveStart);
+    const prorataEnd = weekSunday < effectiveEnd ? weekSunday : effectiveEnd;
+    prorataDays = daysBetweenInclusive(effectiveStart, prorataEnd);
+    prorataAmount = dailyRate * prorataDays;
+    const nextMonday = getWeekMonday(effectiveStart);
+    nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
+    firstFullWeekMonday = nextMonday;
+  }
+
+  const mondayCount = countMondaysInMonthWithinRange(year, month, firstFullWeekMonday, effectiveEnd);
+  const weeklyAmount = weeklyRate * mondayCount;
+
+  return { mondayCount, prorataDays, prorataAmount, weeklyAmount, estimatedAmount: prorataAmount + weeklyAmount };
+}
+
 export interface ExecutiveMetrics {
   estimatedMonthlyRevenue: number;
-  realizedRevenue: number | null; // null = not connected to payment provider
+  realizedRevenue: number | null;
   maintenanceCostMonth: number;
   operationalMargin: number;
   occupancyRate: number;
   unproductiveRate: number;
+  revenueDebug: RentalRevenueDebug[];
 }
+
+const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
   const now = new Date();
@@ -376,20 +437,17 @@ export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
   const monthStart = new Date(year, month, 1).toISOString();
   const monthEnd = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
 
-  // Active rentals for revenue estimation
   const rentalsP = supabase
     .from('rentals')
-    .select('weekly_rate, start_date, delivered_at, returned_at, end_date')
+    .select('id, weekly_rate, start_date, delivered_at, returned_at, end_date, drivers(full_name)')
     .eq('status', 'active');
 
-  // Maintenance cost this month
   const maintP = supabase
     .from('maintenance_orders')
     .select('total_cost')
     .gte('opened_at', monthStart)
     .lte('opened_at', monthEnd);
 
-  // Fleet counts for occupancy/unproductive
   const vehiclesP = supabase
     .from('vehicles')
     .select('status, delivered_at')
@@ -397,23 +455,34 @@ export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
 
   const [rentalsRes, maintRes, vehiclesRes] = await Promise.all([rentalsP, maintP, vehiclesP]);
 
-  // Estimated revenue: pro-rata initial + Monday-based weekly charges
   const lastDayOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
+  const revenueDebug: RentalRevenueDebug[] = [];
+
   const estimatedMonthlyRevenue = (rentalsRes.data || []).reduce((sum, r) => {
     const startRef = new Date(r.delivered_at || r.start_date);
     const endRef = r.returned_at ? new Date(r.returned_at) : (r.end_date ? new Date(r.end_date) : lastDayOfMonth);
-    return sum + estimateRentalRevenueForMonth(r.weekly_rate || 0, startRef, endRef, year, month);
+    const estimated = estimateRentalRevenueForMonth(r.weekly_rate || 0, startRef, endRef, year, month);
+
+    // Debug info
+    const debugInfo = estimateRentalRevenueForMonthDebug(r.weekly_rate || 0, startRef, endRef, year, month);
+    const sRefUTC = toUTCDate(startRef);
+    revenueDebug.push({
+      rentalId: r.id,
+      driverName: (r.drivers as any)?.full_name || '—',
+      weeklyRate: r.weekly_rate || 0,
+      startRef: sRefUTC.toISOString().slice(0, 10),
+      startRefDayOfWeek: DAY_NAMES[sRefUTC.getUTCDay()],
+      ...debugInfo,
+    });
+
+    return sum + estimated;
   }, 0);
 
-  // Maintenance cost
   const maintenanceCostMonth = (maintRes.data || []).reduce((sum, m) => sum + (m.total_cost || 0), 0);
-
-  // Margin
   const operationalMargin = estimatedMonthlyRevenue > 0
     ? ((estimatedMonthlyRevenue - maintenanceCostMonth) / estimatedMonthlyRevenue) * 100
     : 0;
 
-  // Fleet metrics — exclude backlog AND for_sale from operational fleet
   const allVehicles = vehiclesRes.data || [];
   const operationalFleet = allVehicles.filter(
     v => v.delivered_at !== null && v.status !== 'backlog' && v.status !== 'for_sale'
@@ -427,10 +496,11 @@ export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
 
   return {
     estimatedMonthlyRevenue,
-    realizedRevenue: null, // Phase 2: connect to payment provider
+    realizedRevenue: null,
     maintenanceCostMonth,
     operationalMargin,
     occupancyRate,
     unproductiveRate,
+    revenueDebug,
   };
 }
