@@ -172,6 +172,14 @@ export function VehicleDetailPage() {
                     {format(vehicle.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Entregue em</p>
+                  <p className="font-medium">
+                    {(vehicle as any).deliveredAt
+                      ? format((vehicle as any).deliveredAt, "dd/MM/yyyy", { locale: ptBR })
+                      : 'Pendente'}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
