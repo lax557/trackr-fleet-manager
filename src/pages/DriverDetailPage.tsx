@@ -109,8 +109,8 @@ export function DriverDetailPage() {
   const currentVehicle = driver.currentVehicle;
   const vehicleStatus = currentVehicle ? getCurrentStatus(currentVehicle.id) : null;
   
-  const driverFines = useMemo(() => getFinesForDriver(driver.id), [driver.id]);
-  const openFines = driverFines.filter(f => ['OPEN', 'DUE_SOON', 'OVERDUE'].includes(f.status));
+  const driverFines: { id: string; infraction: string | null; due_date: string | null; amount: number; status: string; derivedStatus: string }[] = [];
+  const openFines = driverFines;
   const openFinesCount = openFines.length;
 
   const displayStatus = driver.computedStatus;
