@@ -208,7 +208,12 @@ export async function changeRentalStatus(
   const rentalUpdate: Record<string, any> = { status: newStatus };
 
   if (newStatus === 'active' && !rental.delivered_at) {
-    rentalUpdate.delivered_at = new Date().toISOString();
+    // Use start_date at 12:00 UTC to avoid timezone day-shift issues
+    if (rental.start_date) {
+      rentalUpdate.delivered_at = rental.start_date + 'T12:00:00Z';
+    } else {
+      rentalUpdate.delivered_at = new Date().toISOString();
+    }
   }
   if (newStatus === 'ended' && !rental.returned_at) {
     rentalUpdate.returned_at = new Date().toISOString();
