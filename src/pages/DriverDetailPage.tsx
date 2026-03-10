@@ -44,7 +44,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { fineStatusColors, fineStatusLabels } from '@/types/fines';
+import { fineStatusColors as fineStatusColorsImport, fineStatusLabels as fineStatusLabelsImport } from '@/services/fines.service';
 import { toast } from 'sonner';
 
 const driverDocTypes: DriverDocType[] = [
