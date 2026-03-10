@@ -361,12 +361,12 @@ export async function getExecutiveMetrics(): Promise<ExecutiveMetrics> {
 
   const [rentalsRes, maintRes, vehiclesRes] = await Promise.all([rentalsP, maintP, vehiclesP]);
 
-  // Estimated revenue: count Mondays in current month within each contract's effective period
+  // Estimated revenue: pro-rata initial + Monday-based weekly charges
+  const lastDayOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
   const estimatedMonthlyRevenue = (rentalsRes.data || []).reduce((sum, r) => {
-    const effectiveStart = new Date(r.delivered_at || r.start_date);
-    const effectiveEnd = r.returned_at ? new Date(r.returned_at) : (r.end_date ? new Date(r.end_date) : null);
-    const mondays = countMondaysInMonthWithinRange(year, month, effectiveStart, effectiveEnd);
-    return sum + (r.weekly_rate || 0) * mondays;
+    const startRef = new Date(r.delivered_at || r.start_date);
+    const endRef = r.returned_at ? new Date(r.returned_at) : (r.end_date ? new Date(r.end_date) : lastDayOfMonth);
+    return sum + estimateRentalRevenueForMonth(r.weekly_rate || 0, startRef, endRef, year, month);
   }, 0);
 
   // Maintenance cost
