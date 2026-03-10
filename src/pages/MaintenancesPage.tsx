@@ -175,7 +175,7 @@ export function MaintenancesPage() {
                   <SelectTrigger className="w-48"><SelectValue placeholder="Veículo" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">Todos Veículos</SelectItem>
-                    {vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.plate || v.vehicle_code || v.id.slice(0,8)} - {v.model}</SelectItem>)}
+                    {vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.plate || (v as any).vehicleCode || v.id.slice(0,8)} - {v.model}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

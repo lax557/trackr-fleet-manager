@@ -191,10 +191,10 @@ export function NewMaintenancePage() {
               <CardHeader className="pb-3"><CardTitle className="text-base">Veículo Selecionado</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Código</span><span className="font-medium">{selectedVehicle.vehicle_code || '—'}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Código</span><span className="font-medium">{(selectedVehicle as any).vehicleCode || '—'}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Placa</span><span>{selectedVehicle.plate || '—'}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Modelo</span><span>{selectedVehicle.brand} {selectedVehicle.model}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Ano</span><span>{selectedVehicle.year_model || '—'}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Modelo</span><span>{selectedVehicle.make} {selectedVehicle.model}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Ano</span><span>{selectedVehicle.yearModel || '—'}</span></div>
                 </div>
               </CardContent>
             </Card>
