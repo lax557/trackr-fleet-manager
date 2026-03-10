@@ -68,7 +68,7 @@ export function VehiclesTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold">ID</TableHead>
+            <TableHead className="font-semibold">Código</TableHead>
             <TableHead className="font-semibold">Placa</TableHead>
             <TableHead className="font-semibold">Modelo</TableHead>
             <TableHead className="font-semibold">Cat.</TableHead>
