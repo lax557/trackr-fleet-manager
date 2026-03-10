@@ -1114,6 +1114,29 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_code_sequences: {
+        Row: {
+          company_id: string
+          next_val: number
+        }
+        Insert: {
+          company_id: string
+          next_val?: number
+        }
+        Update: {
+          company_id?: string
+          next_val?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_code_sequences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           acquisition_cost: number | null
@@ -1132,6 +1155,7 @@ export type Database = {
           status: Database["public"]["Enums"]["vehicle_status"]
           status_since: string
           updated_at: string
+          vehicle_code: string | null
           version: string | null
           vin: string | null
           year_mfg: number | null
@@ -1154,6 +1178,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["vehicle_status"]
           status_since?: string
           updated_at?: string
+          vehicle_code?: string | null
           version?: string | null
           vin?: string | null
           year_mfg?: number | null
@@ -1176,6 +1201,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["vehicle_status"]
           status_since?: string
           updated_at?: string
+          vehicle_code?: string | null
           version?: string | null
           vin?: string | null
           year_mfg?: number | null
