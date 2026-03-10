@@ -28,7 +28,13 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   }
 
   if (requiredPermission && !can(requiredPermission)) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <p className="text-lg font-medium text-foreground">Acesso restrito</p>
+        <p className="text-sm text-muted-foreground">Você não tem permissão para acessar este módulo.</p>
+        <Navigate to="/" replace />
+      </div>
+    );
   }
 
   return <>{children}</>;
