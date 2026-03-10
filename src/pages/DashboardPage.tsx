@@ -1,15 +1,20 @@
-import { useMemo, useState } from 'react';
-import { getVehicleStats, getVehiclesWithDetails, getFleetManagementStats, getDashboardFinancialStats, getExpiringContracts } from '@/data/mockData';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchFines, deriveFineStatus } from '@/services/fines.service';
+import {
+  getFleetCounts,
+  getAttentionLists,
+  getFinesSummary,
+  getBacklogVehicles,
+  getExecutiveMetrics,
+} from '@/services/dashboard.service';
 import { FleetStatusChart } from '@/components/FleetStatusChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { StatusBadge, StageBadge } from '@/components/StatusBadge';
+import { StatusBadge } from '@/components/StatusBadge';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowRight, Clock, AlertCircle, Car, CheckCircle2, UserCheck, 
-  Wrench, AlertTriangle, TrendingUp, DollarSign, Receipt, 
+import {
+  ArrowRight, Clock, AlertCircle, Car, CheckCircle2, UserCheck,
+  Wrench, TrendingUp, DollarSign, Receipt,
   FileWarning, CalendarClock, AlertOctagon, Gauge, ShieldAlert, Tag
 } from 'lucide-react';
 import { formatCurrencyBRL } from '@/lib/utils';
@@ -17,81 +22,80 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { HelpCircle } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type DashboardMode = 'operational' | 'executive';
+
+const statusDisplayMap: Record<string, string> = {
+  maintenance: 'MANUTENCAO',
+  incident: 'SINISTRO',
+};
 
 export function DashboardPage() {
   const [mode, setMode] = useState<DashboardMode>('operational');
   const navigate = useNavigate();
-  const stats = useMemo(() => getVehicleStats(), []);
-  const vehicles = useMemo(() => getVehiclesWithDetails(), []);
-  const fleetStats = useMemo(() => getFleetManagementStats(), []);
-  const financialStats = useMemo(() => getDashboardFinancialStats(), []);
-  const { data: rawFines = [] } = useQuery({ queryKey: ['fines'], queryFn: fetchFines });
-  const fineStats = useMemo(() => {
-    const enriched = rawFines.map(f => ({ ...f, derivedStatus: deriveFineStatus(f) }));
-    const openFines = enriched.filter(f => ['open', 'nearing_due', 'overdue'].includes(f.derivedStatus));
-    return {
-      total: enriched.length,
-      open: enriched.filter(f => f.derivedStatus === 'open').length,
-      dueSoon: enriched.filter(f => f.derivedStatus === 'nearing_due').length,
-      overdue: enriched.filter(f => f.derivedStatus === 'overdue').length,
-      paid: enriched.filter(f => f.derivedStatus === 'paid').length,
-      contested: enriched.filter(f => f.derivedStatus === 'disputed').length,
-      totalOpenAmount: openFines.reduce((sum, f) => sum + f.amount, 0),
-    };
-  }, [rawFines]);
-  const expiringContracts = useMemo(() => getExpiringContracts(30), []);
-  
-  // Sort: SINISTRO first, then MANUTENCAO
-  const vehiclesNeedAttention = useMemo(() => {
-    const filtered = vehicles.filter(v => 
-      v.currentStatus === 'MANUTENCAO' || v.currentStatus === 'SINISTRO'
-    );
-    return filtered.sort((a, b) => {
-      const priority: Record<string, number> = { 'SINISTRO': 0, 'MANUTENCAO': 1 };
-      return (priority[a.currentStatus] ?? 2) - (priority[b.currentStatus] ?? 2);
-    });
-  }, [vehicles]);
+  const { can } = usePermissions();
 
-  const backlogVehicles = useMemo(() => 
-    vehicles.filter(v => v.currentStatus === 'EM_LIBERACAO'), [vehicles]
-  );
+  // ── Queries ──
+  const { data: stats, isLoading: loadingStats } = useQuery({
+    queryKey: ['dashboard-fleet-counts'],
+    queryFn: getFleetCounts,
+  });
 
-  // Sorted expiring contracts (soonest first)
-  const sortedExpiringContracts = useMemo(() => 
-    [...expiringContracts].sort((a, b) => a.daysRemaining - b.daysRemaining), [expiringContracts]
-  );
+  const { data: attention, isLoading: loadingAttention } = useQuery({
+    queryKey: ['dashboard-attention'],
+    queryFn: getAttentionLists,
+  });
 
-  // TOP N limits
+  const { data: finesSummary } = useQuery({
+    queryKey: ['dashboard-fines-summary'],
+    queryFn: getFinesSummary,
+  });
+
+  const { data: backlogVehicles = [] } = useQuery({
+    queryKey: ['dashboard-backlog'],
+    queryFn: getBacklogVehicles,
+  });
+
+  const { data: execMetrics } = useQuery({
+    queryKey: ['dashboard-executive'],
+    queryFn: getExecutiveMetrics,
+    enabled: mode === 'executive',
+  });
+
+  const safeStats = stats || { total: 0, disponivel: 0, alugado: 0, manutencao: 0, sinistro: 0, paraVenda: 0, emLiberacao: 0 };
+  const safeFines = finesSummary || { open: 0, dueSoon: 0, overdue: 0, paid: 0, totalOpenAmount: 0 };
+  const vehiclesAttention = attention?.vehiclesAttention || [];
+  const expiringContracts = attention?.expiringContracts || [];
+
   const TOP_ATTENTION = 6;
   const TOP_CONTRACTS = 5;
   const TOP_BACKLOG = 6;
 
-  // ── Shared fleet KPIs (both modes) ──
+  // ── Fleet KPIs (both modes) ──
   const fleetKpis = [
-    { label: 'Total', value: stats.total, icon: Car, colorClass: 'text-primary' },
-    { label: 'Alugados', value: stats.alugado, icon: UserCheck, colorClass: 'text-blue-600' },
-    { label: 'Disponíveis', value: stats.disponivel, icon: CheckCircle2, colorClass: 'text-green-600' },
-    { label: 'Manutenção', value: stats.manutencao, icon: Wrench, colorClass: 'text-amber-600' },
-    { label: 'Sinistro', value: stats.sinistro, icon: ShieldAlert, colorClass: 'text-red-600' },
-    { label: 'Para Venda', value: stats.paraVenda, icon: Tag, colorClass: 'text-purple-600' },
-    { label: 'Backlog', value: stats.emLiberacao, icon: Clock, colorClass: 'text-muted-foreground' },
+    { label: 'Total', value: safeStats.total, icon: Car, colorClass: 'text-primary' },
+    { label: 'Alugados', value: safeStats.alugado, icon: UserCheck, colorClass: 'text-blue-600' },
+    { label: 'Disponíveis', value: safeStats.disponivel, icon: CheckCircle2, colorClass: 'text-green-600' },
+    { label: 'Manutenção', value: safeStats.manutencao, icon: Wrench, colorClass: 'text-amber-600' },
+    { label: 'Sinistro', value: safeStats.sinistro, icon: ShieldAlert, colorClass: 'text-red-600' },
+    { label: 'Para Venda', value: safeStats.paraVenda, icon: Tag, colorClass: 'text-purple-600' },
+    { label: 'Backlog', value: safeStats.emLiberacao, icon: Clock, colorClass: 'text-muted-foreground' },
   ];
 
-  // ── Financial KPIs (executive only) ──
-  const financialKpis = [
-    { label: 'Receita Estimada', value: formatCurrencyBRL(financialStats.estimatedMonthlyRevenue), icon: DollarSign, colorClass: 'text-green-600', tooltip: 'Receita mensal estimada com base nos contratos ativos' },
-    { label: 'Receita Realizada', value: formatCurrencyBRL(financialStats.realizedRevenue), icon: Receipt, colorClass: 'text-blue-600', tooltip: 'Receita efetivamente recebida no mês' },
-    { label: 'Custo Manutenção', value: formatCurrencyBRL(financialStats.maintenanceCostMonth), icon: Wrench, colorClass: 'text-amber-600', tooltip: 'Custo total de manutenções no mês' },
-    { label: 'Margem Operacional', value: `${financialStats.operationalMargin.toFixed(1)}%`, icon: Gauge, colorClass: financialStats.operationalMargin >= 60 ? 'text-green-600' : financialStats.operationalMargin >= 40 ? 'text-amber-600' : 'text-red-600', tooltip: '(Receita - Manutenção) / Receita' },
-  ];
+  // ── Financial KPIs (executive) ──
+  const financialKpis = execMetrics ? [
+    { label: 'Receita Estimada', value: formatCurrencyBRL(execMetrics.estimatedMonthlyRevenue), icon: DollarSign, colorClass: 'text-green-600', tooltip: 'Receita mensal estimada com base nos contratos ativos' },
+    { label: 'Receita Realizada', value: execMetrics.realizedRevenue !== null ? formatCurrencyBRL(execMetrics.realizedRevenue) : '—', icon: Receipt, colorClass: 'text-blue-600', tooltip: execMetrics.realizedRevenue !== null ? 'Receita efetivamente recebida no mês' : 'Conectar provedor de pagamento para exibir' },
+    { label: 'Custo Manutenção', value: formatCurrencyBRL(execMetrics.maintenanceCostMonth), icon: Wrench, colorClass: 'text-amber-600', tooltip: 'Custo total de manutenções no mês' },
+    { label: 'Margem Operacional', value: execMetrics.estimatedMonthlyRevenue > 0 ? `${execMetrics.operationalMargin.toFixed(1)}%` : '—', icon: Gauge, colorClass: execMetrics.operationalMargin >= 60 ? 'text-green-600' : execMetrics.operationalMargin >= 40 ? 'text-amber-600' : 'text-red-600', tooltip: '(Receita - Manutenção) / Receita' },
+  ] : [];
 
-  // ── Strategic KPIs (executive only) ──
-  const strategicKpis = [
-    { label: 'Taxa de Ocupação', value: `${fleetStats.occupancyRate.toFixed(0)}%`, icon: TrendingUp, colorClass: fleetStats.occupancyRate >= 80 ? 'text-green-600' : fleetStats.occupancyRate >= 60 ? 'text-amber-600' : 'text-red-600', tooltip: 'Percentual da frota operacional atualmente alugada' },
-    { label: 'Frota Improdutiva', value: `${fleetStats.unproductiveRate.toFixed(0)}%`, icon: AlertOctagon, colorClass: fleetStats.unproductiveRate <= 10 ? 'text-green-600' : fleetStats.unproductiveRate <= 20 ? 'text-amber-600' : 'text-red-600', tooltip: 'Veículos em manutenção ou sinistro sem gerar receita' },
-  ];
+  const strategicKpis = execMetrics ? [
+    { label: 'Taxa de Ocupação', value: `${execMetrics.occupancyRate.toFixed(0)}%`, icon: TrendingUp, colorClass: execMetrics.occupancyRate >= 80 ? 'text-green-600' : execMetrics.occupancyRate >= 60 ? 'text-amber-600' : 'text-red-600', tooltip: 'Percentual da frota operacional atualmente alugada' },
+    { label: 'Frota Improdutiva', value: `${execMetrics.unproductiveRate.toFixed(0)}%`, icon: AlertOctagon, colorClass: execMetrics.unproductiveRate <= 10 ? 'text-green-600' : execMetrics.unproductiveRate <= 20 ? 'text-amber-600' : 'text-red-600', tooltip: 'Veículos em manutenção ou sinistro sem gerar receita' },
+  ] : [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -113,9 +117,11 @@ export function DashboardPage() {
           <ToggleGroupItem value="operational" className="text-xs px-4">
             Operacional
           </ToggleGroupItem>
-          <ToggleGroupItem value="executive" className="text-xs px-4">
-            Executivo
-          </ToggleGroupItem>
+          {can('view_financial') && (
+            <ToggleGroupItem value="executive" className="text-xs px-4">
+              Executivo
+            </ToggleGroupItem>
+          )}
         </ToggleGroup>
       </div>
 
@@ -126,7 +132,11 @@ export function DashboardPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <Icon className={`h-4 w-4 ${colorClass}`} />
-                <span className={`text-xl font-bold ${colorClass}`}>{value}</span>
+                {loadingStats ? (
+                  <Skeleton className="h-6 w-8" />
+                ) : (
+                  <span className={`text-xl font-bold ${colorClass}`}>{value}</span>
+                )}
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground font-medium truncate">{label}</p>
             </CardContent>
@@ -137,25 +147,23 @@ export function DashboardPage() {
       {/* ══════ MODO OPERACIONAL ══════ */}
       {mode === 'operational' && (
         <>
-          {/* BLOCO 2 — Gráfico + Ações operacionais (alturas alinhadas) */}
+          {/* BLOCO 2 — Gráfico + Ações operacionais */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Distribuição da Frota — 8 colunas, stretch para alinhar com coluna direita */}
             <div className="lg:col-span-8 flex">
               <div className="w-full">
-                <FleetStatusChart stats={stats} stretch />
+                <FleetStatusChart stats={safeStats} stretch />
               </div>
             </div>
 
-            {/* Ações operacionais — 4 colunas, stack com alturas fixas */}
             <div className="lg:col-span-4 flex flex-col gap-4">
-              {/* Requer Atenção — card maior */}
+              {/* Requer Atenção */}
               <Card className="overflow-hidden flex flex-col" style={{ height: '280px' }}>
                 <CardHeader className="pb-2 pt-3 px-4 shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-amber-500" />
                       <CardTitle className="text-sm">Requer Atenção</CardTitle>
-                      <span className="text-xs text-muted-foreground">({vehiclesNeedAttention.length})</span>
+                      <span className="text-xs text-muted-foreground">({vehiclesAttention.length})</span>
                     </div>
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/vehicles')}>
                       Ver todos <ArrowRight className="h-3 w-3 ml-1" />
@@ -165,20 +173,20 @@ export function DashboardPage() {
                 <CardContent className="px-4 pb-3 flex-1 min-h-0 overflow-hidden">
                   <ScrollArea className="h-full">
                     <div className="space-y-1.5 pr-2">
-                      {vehiclesNeedAttention.slice(0, TOP_ATTENTION).map(vehicle => (
-                        <div 
+                      {vehiclesAttention.slice(0, TOP_ATTENTION).map(vehicle => (
+                        <div
                           key={vehicle.id}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
                           onClick={() => navigate(`/vehicles/${vehicle.id}`)}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-medium text-primary text-sm">{vehicle.id}</span>
-                            <span className="text-xs text-muted-foreground truncate">{vehicle.make} {vehicle.model}</span>
+                            <span className="font-medium text-primary text-sm">{vehicle.vehicle_code || vehicle.id.slice(0, 8)}</span>
+                            <span className="text-xs text-muted-foreground truncate">{vehicle.brand} {vehicle.model}</span>
                           </div>
-                          <StatusBadge status={vehicle.currentStatus} size="sm" />
+                          <StatusBadge status={statusDisplayMap[vehicle.status] || vehicle.status.toUpperCase()} size="sm" />
                         </div>
                       ))}
-                      {vehiclesNeedAttention.length === 0 && (
+                      {vehiclesAttention.length === 0 && (
                         <p className="text-xs text-muted-foreground text-center py-6">Nenhum veículo requer atenção agora.</p>
                       )}
                     </div>
@@ -186,14 +194,14 @@ export function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Contratos vencendo — card médio */}
+              {/* Contratos vencendo */}
               <Card className="overflow-hidden flex flex-col" style={{ height: '200px' }}>
                 <CardHeader className="pb-2 pt-3 px-4 shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarClock className="h-4 w-4 text-primary" />
-                       <CardTitle className="text-sm">Contratos Vencendo</CardTitle>
-                      <span className="text-xs text-muted-foreground">({sortedExpiringContracts.length})</span>
+                      <CardTitle className="text-sm">Contratos Vencendo</CardTitle>
+                      <span className="text-xs text-muted-foreground">({expiringContracts.length})</span>
                     </div>
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/rentals')}>
                       Ver todos <ArrowRight className="h-3 w-3 ml-1" />
@@ -203,15 +211,17 @@ export function DashboardPage() {
                 <CardContent className="px-4 pb-3 flex-1 min-h-0 overflow-hidden">
                   <ScrollArea className="h-full">
                     <div className="space-y-1.5 pr-2">
-                      {sortedExpiringContracts.length > 0 ? sortedExpiringContracts.slice(0, TOP_CONTRACTS).map(c => (
-                        <div 
-                          key={c.rentalId}
+                      {expiringContracts.length > 0 ? expiringContracts.slice(0, TOP_CONTRACTS).map(c => (
+                        <div
+                          key={c.id}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                          onClick={() => navigate('/rentals')}
+                          onClick={() => navigate(`/rentals/${c.id}`)}
                         >
                           <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium truncate">{c.driverName}</span>
-                            <span className="text-xs text-muted-foreground truncate">{c.vehicleId} • {c.vehicleModel}</span>
+                            <span className="text-sm font-medium truncate">{c.drivers?.full_name || '—'}</span>
+                            <span className="text-xs text-muted-foreground truncate">
+                              {c.vehicles?.vehicle_code || ''} • {c.vehicles?.brand} {c.vehicles?.model}
+                            </span>
                           </div>
                           <span className={`text-xs font-medium whitespace-nowrap ml-2 ${c.daysRemaining <= 7 ? 'text-red-600' : c.daysRemaining <= 15 ? 'text-amber-600' : 'text-muted-foreground'}`}>
                             {c.daysRemaining}d
@@ -225,7 +235,7 @@ export function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Multas pendentes — card compacto com grid interno alinhado */}
+              {/* Multas pendentes */}
               <Card className="overflow-hidden flex flex-col shrink-0">
                 <CardHeader className="pb-2 pt-3 px-4 shrink-0">
                   <div className="flex items-center justify-between">
@@ -241,15 +251,15 @@ export function DashboardPage() {
                 <CardContent className="px-4 pb-4">
                   <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col items-center justify-center">
-                      <p className="text-xl font-bold text-foreground leading-tight">{fineStats.open + fineStats.dueSoon + fineStats.overdue}</p>
+                      <p className="text-xl font-bold text-foreground leading-tight">{safeFines.open + safeFines.dueSoon + safeFines.overdue}</p>
                       <p className="text-[11px] text-muted-foreground mt-1">Em aberto</p>
                     </div>
                     <div className="flex flex-col items-center justify-center">
-                      <p className="text-xl font-bold text-red-600 leading-tight">{fineStats.overdue}</p>
+                      <p className="text-xl font-bold text-red-600 leading-tight">{safeFines.overdue}</p>
                       <p className="text-[11px] text-muted-foreground mt-1">Vencidas</p>
                     </div>
                     <div className="flex flex-col items-center justify-center">
-                      <p className="text-base font-bold text-amber-600 leading-tight truncate max-w-full">{formatCurrencyBRL(fineStats.totalOpenAmount)}</p>
+                      <p className="text-base font-bold text-amber-600 leading-tight truncate max-w-full">{formatCurrencyBRL(safeFines.totalOpenAmount)}</p>
                       <p className="text-[11px] text-muted-foreground mt-1">Valor total</p>
                     </div>
                   </div>
@@ -276,16 +286,15 @@ export function DashboardPage() {
               {backlogVehicles.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {backlogVehicles.slice(0, TOP_BACKLOG).map(vehicle => (
-                    <div 
+                    <div
                       key={vehicle.id}
                       className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
                       onClick={() => navigate(`/vehicles/${vehicle.id}`)}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-primary text-sm">{vehicle.id}</span>
-                        <span className="text-xs text-muted-foreground truncate">{vehicle.make} {vehicle.model}</span>
+                        <span className="font-medium text-primary text-sm">{vehicle.vehicle_code || vehicle.id.slice(0, 8)}</span>
+                        <span className="text-xs text-muted-foreground truncate">{vehicle.brand} {vehicle.model}</span>
                       </div>
-                      {vehicle.acquisition && <StageBadge stage={vehicle.acquisition.stage} />}
                     </div>
                   ))}
                 </div>
@@ -345,7 +354,7 @@ export function DashboardPage() {
           {/* BLOCO 4 — Gráfico + Backlog resumido */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-8">
-              <FleetStatusChart stats={stats} />
+              <FleetStatusChart stats={safeStats} />
             </div>
             <div className="lg:col-span-4">
               <Card className="h-full flex flex-col">
@@ -360,16 +369,15 @@ export function DashboardPage() {
                   <ScrollArea className="h-[240px]">
                     <div className="space-y-1.5 pr-2">
                       {backlogVehicles.length > 0 ? backlogVehicles.map(vehicle => (
-                        <div 
+                        <div
                           key={vehicle.id}
                           className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
                           onClick={() => navigate(`/vehicles/${vehicle.id}`)}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-medium text-primary text-sm">{vehicle.id}</span>
-                            <span className="text-xs text-muted-foreground truncate">{vehicle.make} {vehicle.model}</span>
+                            <span className="font-medium text-primary text-sm">{vehicle.vehicle_code || vehicle.id.slice(0, 8)}</span>
+                            <span className="text-xs text-muted-foreground truncate">{vehicle.brand} {vehicle.model}</span>
                           </div>
-                          {vehicle.acquisition && <StageBadge stage={vehicle.acquisition.stage} />}
                         </div>
                       )) : (
                         <p className="text-xs text-muted-foreground text-center py-2">Nenhum veículo em aquisição.</p>
