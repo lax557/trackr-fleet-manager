@@ -183,7 +183,7 @@ export function DashboardPage() {
                             <span className="font-medium text-primary text-sm">{vehicle.vehicle_code || vehicle.id.slice(0, 8)}</span>
                             <span className="text-xs text-muted-foreground truncate">{vehicle.brand} {vehicle.model}</span>
                           </div>
-                          <StatusBadge status={statusDisplayMap[vehicle.status] || vehicle.status.toUpperCase()} size="sm" />
+                          <StatusBadge status={(statusDisplayMap[vehicle.status] || vehicle.status.toUpperCase()) as import('@/types').VehicleStatus} size="sm" />
                         </div>
                       ))}
                       {vehiclesAttention.length === 0 && (
