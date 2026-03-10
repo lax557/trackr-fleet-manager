@@ -67,6 +67,7 @@ function AuthenticatedLayout() {
             <Route path="/drivers/:id" element={<DriverDetailPage />} />
             <Route path="/rentals" element={<RentalsPage />} />
             <Route path="/rentals/new" element={<ProtectedRoute requiredPermission="rental:create"><NewRentalPage /></ProtectedRoute>} />
+            <Route path="/rentals/:id" element={<RentalDetailPage />} />
             <Route path="/rentals/templates" element={<ContractTemplatesPage />} />
             <Route path="/rentals/templates/new" element={<ContractTemplateEditorPage />} />
             <Route path="/rentals/templates/:id" element={<ContractTemplateEditorPage />} />
