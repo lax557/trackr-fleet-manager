@@ -35,7 +35,7 @@ const statusDisplayMap: Record<string, string> = {
 export function DashboardPage() {
   const [mode, setMode] = useState<DashboardMode>('operational');
   const navigate = useNavigate();
-  const { can } = usePermissions();
+  const { can, role } = usePermissions();
 
   // ── Queries ──
   const { data: stats, isLoading: loadingStats } = useQuery({
