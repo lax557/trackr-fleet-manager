@@ -103,7 +103,7 @@ export function NewMaintenancePage() {
                     <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                     <SelectContent>
                       {vehicles.map(v => (
-                        <SelectItem key={v.id} value={v.id}>{v.plate || v.vehicle_code || v.id.slice(0,8)} - {v.brand} {v.model}</SelectItem>
+                        <SelectItem key={v.id} value={v.id}>{v.plate || (v as any).vehicleCode || v.id.slice(0,8)} - {v.make} {v.model}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
