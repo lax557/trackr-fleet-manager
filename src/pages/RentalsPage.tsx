@@ -140,7 +140,7 @@ export function RentalsPage() {
                     {formatDateOnly(rental.start_date)}
                   </TableCell>
                   <TableCell>
-                    {rental.end_date ? format(new Date(rental.end_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                    {formatDateOnly(rental.end_date)}
                   </TableCell>
                   <TableCell>
                     {rental.weekly_rate ? (
