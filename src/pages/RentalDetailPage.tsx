@@ -251,7 +251,7 @@ export function RentalDetailPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Início</p>
-                  <p className="font-medium">{format(new Date(rental.start_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  <p className="font-medium">{formatDateOnly(rental.start_date)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Término</p>
