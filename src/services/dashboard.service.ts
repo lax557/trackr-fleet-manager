@@ -214,7 +214,40 @@ export async function getBacklogVehicles(): Promise<BacklogVehicle[]> {
 
 // ── 5. Executive metrics ──
 
-/** Count Mondays in a given month/year that fall within [rangeStart, rangeEnd]. */
+// ── Utility helpers for weekly billing ──
+
+/** Get the Monday (start) of the week containing `date`. */
+function getWeekMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Get the Sunday (end) of the week containing `date`. */
+function getWeekSunday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun
+  const diff = day === 0 ? 0 : 7 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+/** Count of days from `a` to `b` inclusive (both dates at day granularity). */
+function daysBetweenInclusive(a: Date, b: Date): number {
+  const msPerDay = 86400000;
+  const startDay = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+  const endDay = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.floor((endDay.getTime() - startDay.getTime()) / msPerDay) + 1;
+}
+
+/**
+ * Count Mondays in a given month/year that fall within [rangeStart, rangeEnd].
+ * Used for counting full weekly billing cycles.
+ */
 function countMondaysInMonthWithinRange(
   year: number,
   month: number, // 0-indexed
@@ -231,6 +264,64 @@ function countMondaysInMonthWithinRange(
     count++;
   }
   return count;
+}
+
+/**
+ * Estimate revenue for a single weekly rental in a given month.
+ *
+ * Model: prepaid weekly billing, due every Monday.
+ * - If driver starts mid-week (not Monday), they pay pro-rata daily
+ *   from start_ref to Sunday of that week.
+ * - From the next Monday onward, full weekly charges on each Monday.
+ *
+ * Validation cases (March 2026 has 5 Mondays: 2,9,16,23,30):
+ * - Start Mon 09/03: prorata=0, mondays 09,16,23,30 = 4 charges
+ * - Start Thu 12/03: prorata=4 days (Thu-Sun), mondays 16,23,30 = 3 charges
+ * - Active full month start before month: 5 charges (2,9,16,23,30)
+ */
+function estimateRentalRevenueForMonth(
+  weeklyRate: number,
+  startRef: Date,
+  endRef: Date, // last day of month or returned_at
+  year: number,
+  month: number, // 0-indexed
+): number {
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+
+  // Clamp effective range to the month
+  const effectiveStart = startRef > monthStart ? startRef : monthStart;
+  const effectiveEnd = endRef < monthEnd ? endRef : monthEnd;
+
+  if (effectiveStart > effectiveEnd) return 0;
+
+  const dailyRate = weeklyRate / 7;
+  let prorataAmount = 0;
+  let firstFullWeekMonday: Date;
+
+  const startDay = effectiveStart.getDay(); // 0=Sun,1=Mon
+
+  if (startDay === 1) {
+    // Start is Monday — no pro-rata, this Monday counts as first charge
+    firstFullWeekMonday = new Date(effectiveStart);
+  } else {
+    // Pro-rata from effectiveStart to Sunday of that week
+    const weekSunday = getWeekSunday(effectiveStart);
+    const prorataEnd = weekSunday < effectiveEnd ? weekSunday : effectiveEnd;
+    const prorataDays = daysBetweenInclusive(effectiveStart, prorataEnd);
+    prorataAmount = dailyRate * prorataDays;
+
+    // First full-week Monday is the Monday after effectiveStart's week
+    const nextMonday = getWeekMonday(effectiveStart);
+    nextMonday.setDate(nextMonday.getDate() + 7);
+    firstFullWeekMonday = nextMonday;
+  }
+
+  // Count Mondays from firstFullWeekMonday to effectiveEnd within the month
+  const mondayCount = countMondaysInMonthWithinRange(year, month, firstFullWeekMonday, effectiveEnd);
+  const weeklyAmount = weeklyRate * mondayCount;
+
+  return prorataAmount + weeklyAmount;
 }
 
 export interface ExecutiveMetrics {
