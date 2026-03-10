@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { fetchVehicleById } from '@/services/vehicles.service';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchVehicleById, markVehicleDelivered } from '@/services/vehicles.service';
 import { StatusBadge } from '@/components/StatusBadge';
 import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
 import { VehicleFinesCard } from '@/components/VehicleFinesCard';
