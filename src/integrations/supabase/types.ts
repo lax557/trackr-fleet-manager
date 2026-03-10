@@ -454,8 +454,14 @@ export type Database = {
           due_date: string | null
           id: string
           infraction: string | null
+          infraction_code: string | null
           notes: string | null
           occurred_at: string
+          paid_at: string | null
+          payment_reference: string | null
+          points: number | null
+          rental_id: string | null
+          severity: string | null
           status: Database["public"]["Enums"]["fine_status"]
           updated_at: string
           vehicle_id: string
@@ -468,8 +474,14 @@ export type Database = {
           due_date?: string | null
           id?: string
           infraction?: string | null
+          infraction_code?: string | null
           notes?: string | null
           occurred_at: string
+          paid_at?: string | null
+          payment_reference?: string | null
+          points?: number | null
+          rental_id?: string | null
+          severity?: string | null
           status?: Database["public"]["Enums"]["fine_status"]
           updated_at?: string
           vehicle_id: string
@@ -482,8 +494,14 @@ export type Database = {
           due_date?: string | null
           id?: string
           infraction?: string | null
+          infraction_code?: string | null
           notes?: string | null
           occurred_at?: string
+          paid_at?: string | null
+          payment_reference?: string | null
+          points?: number | null
+          rental_id?: string | null
+          severity?: string | null
           status?: Database["public"]["Enums"]["fine_status"]
           updated_at?: string
           vehicle_id?: string
@@ -501,6 +519,13 @@ export type Database = {
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fines_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
             referencedColumns: ["id"]
           },
           {
@@ -1468,7 +1493,13 @@ export type Database = {
       app_role: "operator" | "manager" | "executive" | "admin"
       bill_status: "open" | "paid" | "overdue" | "cancelled"
       depreciation_method: "straight_line"
-      fine_status: "open" | "nearing_due" | "overdue" | "paid" | "disputed"
+      fine_status:
+        | "open"
+        | "nearing_due"
+        | "overdue"
+        | "paid"
+        | "disputed"
+        | "cancelled"
       invoice_status: "open" | "paid" | "overdue" | "cancelled" | "refunded"
       journal_source:
         | "manual"
@@ -1638,7 +1669,14 @@ export const Constants = {
       app_role: ["operator", "manager", "executive", "admin"],
       bill_status: ["open", "paid", "overdue", "cancelled"],
       depreciation_method: ["straight_line"],
-      fine_status: ["open", "nearing_due", "overdue", "paid", "disputed"],
+      fine_status: [
+        "open",
+        "nearing_due",
+        "overdue",
+        "paid",
+        "disputed",
+        "cancelled",
+      ],
       invoice_status: ["open", "paid", "overdue", "cancelled", "refunded"],
       journal_source: [
         "manual",

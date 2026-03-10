@@ -29,6 +29,7 @@ import NewMaintenancePage from "./pages/NewMaintenancePage";
 import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
 import FinesPage from "./pages/FinesPage";
 import FineDetailPage from "./pages/FineDetailPage";
+import NewFinePage from "./pages/NewFinePage";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPermissionsPage from "./pages/UsersPermissionsPage";
 import NotFound from "./pages/NotFound";
@@ -76,6 +77,7 @@ function AuthenticatedLayout() {
             <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
             <Route path="/maintenance/:id/edit" element={<NewMaintenancePage />} />
             <Route path="/fines" element={<FinesPage />} />
+            <Route path="/fines/new" element={<ProtectedRoute requiredPermission="fine:create"><NewFinePage /></ProtectedRoute>} />
             <Route path="/fines/:id" element={<FineDetailPage />} />
             {/* Financial module - protected */}
             <Route path="/financial" element={<ProtectedRoute requiredPermission="finance:view_costs"><FinancialDashboardPage /></ProtectedRoute>} />

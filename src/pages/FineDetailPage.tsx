@@ -1,26 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getFinesWithDetails, mockFinesRecords } from '@/data/finesData';
-import { mockDrivers } from '@/data/mockData';
-import { 
-  fineStatusLabels, 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  getFineById,
+  markFineAsPaid,
+  markFineAsDisputed,
+  cancelFine,
+  deriveFineStatus,
+  fineStatusLabels,
   fineStatusColors,
-  fineSeverityLabels 
-} from '@/types/fines';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+  severityLabels,
+  severityColors,
+} from '@/services/fines.service';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -29,46 +27,88 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { 
-  ArrowLeft, 
-  Car, 
-  User, 
-  Calendar, 
-  MapPin, 
+} from '@/components/ui/dialog';
+import {
+  ArrowLeft,
+  Car,
+  User,
+  Calendar,
   DollarSign,
   AlertTriangle,
-  FileText,
   CheckCircle2,
-  Upload,
-  Edit
+  XCircle,
+  Shield,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-
-const severityColors: Record<string, string> = {
-  LEVE: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  MEDIA: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  GRAVE: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  GRAVISSIMA: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-};
+import { formatCurrencyBRL } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function FineDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const fine = useMemo(() => {
-    return getFinesWithDetails().find(f => f.id === id);
-  }, [id]);
+  const queryClient = useQueryClient();
+  const { can } = usePermissions();
+
+  const { data: fine, isLoading } = useQuery({
+    queryKey: ['fine', id],
+    queryFn: () => getFineById(id!),
+    enabled: !!id,
+  });
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [indicationDialogOpen, setIndicationDialogOpen] = useState(false);
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [paymentAmount, setPaymentAmount] = useState(fine?.discountedAmount?.toFixed(2) || fine?.originalAmount.toFixed(2) || '');
-  const [selectedDriver, setSelectedDriver] = useState(fine?.driverId || '');
-  const [manualDriverName, setManualDriverName] = useState('');
-  const [useManualName, setUseManualName] = useState(false);
+  const [paymentRef, setPaymentRef] = useState('');
+  const [disputeNotes, setDisputeNotes] = useState('');
+  const [cancelNotes, setCancelNotes] = useState('');
+
+  const payMutation = useMutation({
+    mutationFn: () => markFineAsPaid(id!, new Date(paymentDate).toISOString(), paymentRef),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fine', id] });
+      queryClient.invalidateQueries({ queryKey: ['fines'] });
+      toast.success('Multa marcada como paga!');
+      setPaymentDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const disputeMutation = useMutation({
+    mutationFn: () => markFineAsDisputed(id!, disputeNotes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fine', id] });
+      queryClient.invalidateQueries({ queryKey: ['fines'] });
+      toast.success('Multa marcada como contestada!');
+      setDisputeDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: () => cancelFine(id!, cancelNotes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fine', id] });
+      queryClient.invalidateQueries({ queryKey: ['fines'] });
+      toast.success('Multa cancelada!');
+      setCancelDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-2 gap-6">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
+      </div>
+    );
+  }
 
   if (!fine) {
     return (
@@ -82,19 +122,9 @@ export function FineDetailPage() {
     );
   }
 
-  const handleMarkAsPaid = () => {
-    toast.success('Multa marcada como paga!');
-    setPaymentDialogOpen(false);
-  };
-
-  const handleIndicateDriver = () => {
-    const driverName = useManualName 
-      ? manualDriverName 
-      : mockDrivers.find(d => d.id === selectedDriver)?.fullName;
-    
-    toast.success(`Condutor indicado: ${driverName}`);
-    setIndicationDialogOpen(false);
-  };
+  const status = deriveFineStatus(fine);
+  const canEdit = can('fine:edit');
+  const isActionable = canEdit && status !== 'paid' && status !== 'cancelled';
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
@@ -107,20 +137,18 @@ export function FineDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-foreground">
-                Multa - {fine.infractionCode}
+                Multa {fine.infraction_code ? `- ${fine.infraction_code}` : ''}
               </h1>
-              <Badge className={fineStatusColors[fine.status]} variant="secondary">
-                {fineStatusLabels[fine.status]}
+              <Badge className={fineStatusColors[status]} variant="secondary">
+                {fineStatusLabels[status]}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-sm">
-              {fine.infractionDescription}
-            </p>
+            <p className="text-muted-foreground text-sm">{fine.infraction}</p>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          {fine.status !== 'PAID' && fine.status !== 'CANCELED' && (
+        {isActionable && (
+          <div className="flex gap-2">
             <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="default">
@@ -131,107 +159,76 @@ export function FineDetailPage() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Registrar Pagamento</DialogTitle>
-                  <DialogDescription>
-                    Informe os dados do pagamento desta multa.
-                  </DialogDescription>
+                  <DialogDescription>Informe os dados do pagamento.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label>Data do Pagamento</Label>
-                    <Input
-                      type="date"
-                      value={paymentDate}
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                    />
+                    <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Valor Pago (R$)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(e.target.value)}
-                    />
+                    <Label>Referência / Comprovante</Label>
+                    <Input value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} placeholder="ID do pagamento, nº boleto..." />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleMarkAsPaid}>
-                    Confirmar Pagamento
-                  </Button>
+                  <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={() => payMutation.mutate()} disabled={payMutation.isPending}>Confirmar Pagamento</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          )}
 
-          {!fine.indicatedDriver && (
-            <Dialog open={indicationDialogOpen} onOpenChange={setIndicationDialogOpen}>
+            <Dialog open={disputeDialogOpen} onOpenChange={setDisputeDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
-                  <User className="h-4 w-4 mr-2" />
-                  Indicar Condutor
+                  <Shield className="h-4 w-4 mr-2" />
+                  Contestar
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Indicar Condutor</DialogTitle>
-                  <DialogDescription>
-                    Selecione o condutor responsável pela infração.
-                  </DialogDescription>
+                  <DialogTitle>Contestar Multa</DialogTitle>
+                  <DialogDescription>Registre o motivo da contestação.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Inserir nome manualmente</Label>
-                    <Switch
-                      checked={useManualName}
-                      onCheckedChange={setUseManualName}
-                    />
+                  <div className="space-y-2">
+                    <Label>Motivo</Label>
+                    <Textarea value={disputeNotes} onChange={(e) => setDisputeNotes(e.target.value)} placeholder="Descreva o motivo da contestação..." rows={3} />
                   </div>
-
-                  {useManualName ? (
-                    <div className="space-y-2">
-                      <Label>Nome do Condutor</Label>
-                      <Input
-                        value={manualDriverName}
-                        onChange={(e) => setManualDriverName(e.target.value)}
-                        placeholder="Nome completo do condutor"
-                      />
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label>Selecionar Motorista</Label>
-                      <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um motorista" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {mockDrivers.map((d) => (
-                            <SelectItem key={d.id} value={d.id}>
-                              {d.fullName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIndicationDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={handleIndicateDriver}
-                    disabled={useManualName ? !manualDriverName : !selectedDriver}
-                  >
-                    Confirmar Indicação
-                  </Button>
+                  <Button variant="outline" onClick={() => setDisputeDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={() => disputeMutation.mutate()} disabled={disputeMutation.isPending}>Confirmar Contestação</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          )}
-        </div>
+
+            <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="text-destructive">
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Cancelar Multa</DialogTitle>
+                  <DialogDescription>Esta ação não pode ser desfeita.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Motivo</Label>
+                    <Textarea value={cancelNotes} onChange={(e) => setCancelNotes(e.target.value)} placeholder="Motivo do cancelamento..." rows={3} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>Voltar</Button>
+                  <Button variant="destructive" onClick={() => cancelMutation.mutate()} disabled={cancelMutation.isPending}>Confirmar Cancelamento</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -245,48 +242,38 @@ export function FineDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Código</p>
-                <p className="font-medium">{fine.infractionCode}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Gravidade</p>
-                <Badge className={severityColors[fine.severity]} variant="secondary">
-                  {fineSeverityLabels[fine.severity]}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Pontos</p>
-                <p className="font-bold text-lg">{fine.points}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Órgão Autuador</p>
-                <p className="font-medium">{fine.authority}</p>
-              </div>
+              {fine.infraction_code && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Código</p>
+                  <p className="font-medium">{fine.infraction_code}</p>
+                </div>
+              )}
+              {fine.severity && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Gravidade</p>
+                  <Badge className={severityColors[fine.severity] || ''} variant="secondary">
+                    {severityLabels[fine.severity] || fine.severity}
+                  </Badge>
+                </div>
+              )}
+              {fine.points != null && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Pontos</p>
+                  <p className="font-bold text-lg">{fine.points}</p>
+                </div>
+              )}
             </div>
-
             <div>
               <p className="text-sm text-muted-foreground">Descrição</p>
-              <p>{fine.infractionDescription}</p>
+              <p>{fine.infraction || '—'}</p>
             </div>
-
             <div className="flex items-start gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
               <div>
-                <p className="text-sm text-muted-foreground">Data/Hora</p>
-                <p>{format(fine.occurredAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                <p className="text-sm text-muted-foreground">Data da Infração</p>
+                <p>{format(new Date(fine.occurred_at), 'dd/MM/yyyy', { locale: ptBR })}</p>
               </div>
             </div>
-
-            {fine.location && (
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Local</p>
-                  <p>{fine.location}</p>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -295,40 +282,30 @@ export function FineDetailPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Car className="h-5 w-5 text-primary" />
-              <CardTitle>Veículo e Condutor</CardTitle>
+              <CardTitle>Veículo e Motorista</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div 
+            <div
               className="p-4 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
-              onClick={() => navigate(`/vehicles/${fine.vehicleId}`)}
+              onClick={() => navigate(`/vehicles/${fine.vehicle_id}`)}
             >
               <p className="text-sm text-muted-foreground">Veículo</p>
-              <p className="font-bold text-lg">{fine.vehiclePlate}</p>
-              <p className="text-sm text-muted-foreground">{fine.vehicleId} - {fine.vehicleMakeModel}</p>
+              <p className="font-bold text-lg">{fine.vehicles?.plate || '—'}</p>
+              <p className="text-sm text-muted-foreground">{fine.vehicles?.vehicle_code} - {fine.vehicles?.brand} {fine.vehicles?.model}</p>
             </div>
 
-            {fine.indicatedDriver ? (
-              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <p className="text-sm font-medium text-green-700 dark:text-green-400">Condutor Indicado</p>
-                </div>
-                <p className="font-medium">{fine.indicatedDriverName}</p>
-                {fine.indicatedAt && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Indicado em {format(fine.indicatedAt, 'dd/MM/yyyy', { locale: ptBR })}
-                  </p>
-                )}
-              </div>
-            ) : fine.driverName ? (
-              <div 
+            {fine.drivers ? (
+              <div
                 className="p-4 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
-                onClick={() => fine.driverId && navigate(`/drivers/${fine.driverId}`)}
+                onClick={() => fine.driver_id && navigate(`/drivers/${fine.driver_id}`)}
               >
-                <p className="text-sm text-muted-foreground">Motorista Atual</p>
-                <p className="font-medium">{fine.driverName}</p>
-                <p className="text-xs text-amber-600 mt-1">⚠️ Ainda não indicado</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Motorista</p>
+                </div>
+                <p className="font-medium">{fine.drivers.full_name}</p>
+                {fine.rental_id && <p className="text-xs text-muted-foreground">Vinculado via locação</p>}
               </div>
             ) : (
               <div className="p-4 rounded-lg bg-muted/50">
@@ -350,90 +327,39 @@ export function FineDetailPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Valor Original</p>
-                <p className={`font-bold text-lg ${fine.discountAvailable ? 'line-through text-muted-foreground' : ''}`}>
-                  R$ {fine.originalAmount.toFixed(2)}
-                </p>
+                <p className="text-sm text-muted-foreground">Valor</p>
+                <p className="font-bold text-lg">{formatCurrencyBRL(fine.amount)}</p>
               </div>
-              {fine.discountAvailable && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Com Desconto ({fine.discountPercent}%)</p>
-                  <p className="font-bold text-lg text-green-600">
-                    R$ {fine.discountedAmount?.toFixed(2)}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Vencimento</p>
-                <p className="font-medium">{format(fine.dueDate, 'dd/MM/yyyy', { locale: ptBR })}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <Badge className={fineStatusColors[fine.status]} variant="secondary">
-                  {fineStatusLabels[fine.status]}
-                </Badge>
+                <p className="font-medium">{fine.due_date ? format(new Date(fine.due_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}</p>
               </div>
             </div>
 
-            {fine.paymentDate && (
+            {fine.paid_at && (
               <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                 <p className="text-sm font-medium text-green-700 dark:text-green-400">Pagamento Realizado</p>
-                <p className="font-bold text-lg">R$ {fine.paymentAmount?.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
-                  em {format(fine.paymentDate, 'dd/MM/yyyy', { locale: ptBR })}
+                  em {format(new Date(fine.paid_at), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
+                {fine.payment_reference && (
+                  <p className="text-xs text-muted-foreground mt-1">Ref: {fine.payment_reference}</p>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Documents */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <CardTitle>Documentos</CardTitle>
-              </div>
-              <Button variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {fine.documentFileId ? (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <FileText className="h-8 w-8 text-primary" />
-                <div className="flex-1">
-                  <p className="font-medium">Auto de Infração</p>
-                  <p className="text-xs text-muted-foreground">PDF</p>
-                </div>
-                <Button variant="ghost" size="sm">Ver</Button>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm text-center py-4">
-                Nenhum documento anexado.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Notes */}
-      {fine.notes && (
+        {/* Notes */}
         <Card>
           <CardHeader>
             <CardTitle>Observações</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{fine.notes}</p>
+            <p className="text-muted-foreground">{fine.notes || 'Nenhuma observação.'}</p>
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getFinesForVehicle } from '@/data/finesData';
-import { fineStatusLabels, fineStatusColors } from '@/types/fines';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { deriveFineStatus, fineStatusLabels, fineStatusColors } from '@/services/fines.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,11 +16,27 @@ interface VehicleFinesCardProps {
 
 export function VehicleFinesCard({ vehicleId }: VehicleFinesCardProps) {
   const navigate = useNavigate();
-  
-  const fines = useMemo(() => getFinesForVehicle(vehicleId), [vehicleId]);
-  const openFines = fines.filter(f => ['OPEN', 'DUE_SOON', 'OVERDUE'].includes(f.status));
+
+  const { data: rawFines = [] } = useQuery({
+    queryKey: ['fines-vehicle', vehicleId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('fines')
+        .select('id, occurred_at, due_date, infraction, amount, status')
+        .eq('vehicle_id', vehicleId)
+        .order('occurred_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const fines = rawFines.map(f => ({
+    ...f,
+    derivedStatus: deriveFineStatus(f),
+  }));
+
+  const openFines = fines.filter(f => ['open', 'nearing_due', 'overdue'].includes(f.derivedStatus));
   const urgentFines = openFines.slice(0, 3);
-  const totalOpenAmount = openFines.reduce((sum, f) => sum + f.originalAmount, 0);
+  const totalOpenAmount = openFines.reduce((sum, f) => sum + f.amount, 0);
 
   return (
     <Card>
@@ -55,22 +71,22 @@ export function VehicleFinesCard({ vehicleId }: VehicleFinesCardProps) {
             </div>
             <div className="space-y-2">
               {urgentFines.map(fine => (
-                <div 
+                <div
                   key={fine.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
                   onClick={() => navigate(`/fines/${fine.id}`)}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{fine.infractionDescription}</p>
+                    <p className="text-sm font-medium truncate">{fine.infraction || '—'}</p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
-                      <span>Vence: {format(fine.dueDate, 'dd/MM', { locale: ptBR })}</span>
+                      <span>Vence: {fine.due_date ? format(new Date(fine.due_date), 'dd/MM', { locale: ptBR }) : '—'}</span>
                       <span>•</span>
-                      <span className="font-medium">{formatCurrencyBRL(fine.originalAmount)}</span>
+                      <span className="font-medium">{formatCurrencyBRL(fine.amount)}</span>
                     </div>
                   </div>
-                  <Badge className={fineStatusColors[fine.status]} variant="secondary">
-                    {fineStatusLabels[fine.status]}
+                  <Badge className={fineStatusColors[fine.derivedStatus]} variant="secondary">
+                    {fineStatusLabels[fine.derivedStatus]}
                   </Badge>
                 </div>
               ))}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { getVehicleStats, getVehiclesWithDetails, getFleetManagementStats, getDashboardFinancialStats, getExpiringContracts } from '@/data/mockData';
-import { getFineStats } from '@/data/finesData';
+import { useQuery } from '@tanstack/react-query';
+import { fetchFines, deriveFineStatus } from '@/services/fines.service';
 import { FleetStatusChart } from '@/components/FleetStatusChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,20 @@ export function DashboardPage() {
   const vehicles = useMemo(() => getVehiclesWithDetails(), []);
   const fleetStats = useMemo(() => getFleetManagementStats(), []);
   const financialStats = useMemo(() => getDashboardFinancialStats(), []);
-  const fineStats = useMemo(() => getFineStats(), []);
+  const { data: rawFines = [] } = useQuery({ queryKey: ['fines'], queryFn: fetchFines });
+  const fineStats = useMemo(() => {
+    const enriched = rawFines.map(f => ({ ...f, derivedStatus: deriveFineStatus(f) }));
+    const openFines = enriched.filter(f => ['open', 'nearing_due', 'overdue'].includes(f.derivedStatus));
+    return {
+      total: enriched.length,
+      open: enriched.filter(f => f.derivedStatus === 'open').length,
+      dueSoon: enriched.filter(f => f.derivedStatus === 'nearing_due').length,
+      overdue: enriched.filter(f => f.derivedStatus === 'overdue').length,
+      paid: enriched.filter(f => f.derivedStatus === 'paid').length,
+      contested: enriched.filter(f => f.derivedStatus === 'disputed').length,
+      totalOpenAmount: openFines.reduce((sum, f) => sum + f.amount, 0),
+    };
+  }, [rawFines]);
   const expiringContracts = useMemo(() => getExpiringContracts(30), []);
   
   // Sort: SINISTRO first, then MANUTENCAO

@@ -8,7 +8,7 @@ import {
   driverDocTypeLabels,
   mockRentals
 } from '@/data/mockData';
-import { getFinesForDriver } from '@/data/finesData';
+// fines now loaded from DB in dedicated component
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +44,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { fineStatusColors, fineStatusLabels } from '@/types/fines';
+import { fineStatusColors as fineStatusColorsImport, fineStatusLabels as fineStatusLabelsImport } from '@/services/fines.service';
 import { toast } from 'sonner';
 
 const driverDocTypes: DriverDocType[] = [
@@ -109,8 +109,8 @@ export function DriverDetailPage() {
   const currentVehicle = driver.currentVehicle;
   const vehicleStatus = currentVehicle ? getCurrentStatus(currentVehicle.id) : null;
   
-  const driverFines = useMemo(() => getFinesForDriver(driver.id), [driver.id]);
-  const openFines = driverFines.filter(f => ['OPEN', 'DUE_SOON', 'OVERDUE'].includes(f.status));
+  const driverFines: { id: string; infraction: string | null; due_date: string | null; amount: number; status: string; derivedStatus: string }[] = [];
+  const openFines = driverFines;
   const openFinesCount = openFines.length;
 
   const displayStatus = driver.computedStatus;
@@ -573,14 +573,14 @@ export function DriverDetailPage() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {fine.infractionDescription}
+                          {fine.infraction}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Vence: {format(fine.dueDate, 'dd/MM/yyyy', { locale: ptBR })}
+                          Vence: {fine.due_date ? format(new Date(fine.due_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
                         </p>
                       </div>
-                      <Badge className={fineStatusColors[fine.status]} variant="secondary">
-                        {fineStatusLabels[fine.status]}
+                      <Badge className={fineStatusColorsImport[fine.derivedStatus as keyof typeof fineStatusColorsImport] || ''} variant="secondary">
+                        {fineStatusLabelsImport[fine.derivedStatus as keyof typeof fineStatusLabelsImport] || fine.status}
                       </Badge>
                     </div>
                   ))}
