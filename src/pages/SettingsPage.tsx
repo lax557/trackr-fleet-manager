@@ -23,7 +23,7 @@ function formatPhone(value: string): string {
 export function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const { can } = usePermissions();
 
   const [fullName, setFullName] = useState('');
@@ -31,11 +31,10 @@ export function SettingsPage() {
   const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'system'>(theme);
   const [saving, setSaving] = useState(false);
 
-  // Sync from profile when it loads
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '');
-      setPhone((profile as any).phone || '');
+      setPhone(profile.phone || '');
     }
   }, [profile]);
 
@@ -57,6 +56,7 @@ export function SettingsPage() {
         .eq('user_id', user.id);
       if (error) throw error;
       setTheme(selectedTheme);
+      await refreshProfile();
       toast.success('Perfil salvo com sucesso!');
     } catch (err: any) {
       toast.error(`Erro ao salvar: ${err.message}`);
@@ -89,7 +89,6 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* Admin link */}
       {can('settings:manage_users') && (
         <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/settings/users')}>
           <CardContent className="flex items-center gap-4 py-4">
@@ -103,7 +102,6 @@ export function SettingsPage() {
         </Card>
       )}
 
-      {/* Profile */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -171,7 +169,6 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Theme */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -225,7 +222,6 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Actions */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={handleSignOut}>
           <LogOut className="h-4 w-4 mr-2" />
