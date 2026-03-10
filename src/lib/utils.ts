@@ -18,3 +18,24 @@ export function formatCurrencyBRL(value: number | null | undefined): string {
     maximumFractionDigits: 2,
   });
 }
+
+/**
+ * Formata uma string date-only (YYYY-MM-DD) como DD/MM/YYYY sem passar por new Date(),
+ * evitando problemas de timezone que fazem a data "voltar 1 dia".
+ * Se receber datetime ISO ou Date, normaliza para UTC noon antes de formatar.
+ */
+export function formatDateOnly(value: string | null | undefined): string {
+  if (!value) return '—';
+  // Date-only string: "2026-03-09"
+  const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnlyMatch) {
+    return `${dateOnlyMatch[3]}/${dateOnlyMatch[2]}/${dateOnlyMatch[1]}`;
+  }
+  // ISO datetime: parse to UTC noon to avoid day shift
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '—';
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const year = d.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+}
