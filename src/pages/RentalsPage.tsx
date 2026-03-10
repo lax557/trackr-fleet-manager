@@ -137,7 +137,7 @@ export function RentalsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(rental.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+                    {formatDateOnly(rental.start_date)}
                   </TableCell>
                   <TableCell>
                     {rental.end_date ? format(new Date(rental.end_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
