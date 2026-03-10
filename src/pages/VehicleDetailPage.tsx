@@ -1,15 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
-import { VehicleDocType } from '@/types';
-import { 
-  getVehiclesWithDetails, 
-  mockStatusHistory, 
-  getFilesForScope,
-  vehicleDocTypeLabels 
-} from '@/data/mockData';
-import { StatusBadge, StageBadge } from '@/components/StatusBadge';
-import { DocumentsCard } from '@/components/DocumentsCard';
-import { FinanceCard } from '@/components/FinanceCard';
+import { useQuery } from '@tanstack/react-query';
+import { fetchVehicleById } from '@/services/vehicles.service';
+import { StatusBadge } from '@/components/StatusBadge';
 import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
 import { VehicleFinesCard } from '@/components/VehicleFinesCard';
 import { Button } from '@/components/ui/button';
@@ -19,55 +11,30 @@ import {
   ArrowLeft, 
   RefreshCcw, 
   UserPlus, 
-  ArrowRight, 
   Car, 
-  AlertTriangle, 
   Gauge,
-  Package,
   Clock,
-  Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { purchaseModeLabels } from '@/data/mockData';
-
-const vehicleDocTypes: VehicleDocType[] = [
-  'CRLV',
-  'CONTRATO_COMPRA',
-  'ATPV',
-  'VISTORIA',
-  'BOLETO_TRANSFERENCIA',
-  'NOVO_CRLV',
-  'OUTROS'
-];
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const vehicle = useMemo(() => {
-    return getVehiclesWithDetails().find(v => v.id === id);
-  }, [id]);
+  const { data: vehicle, isLoading } = useQuery({
+    queryKey: ['vehicle', id],
+    queryFn: () => fetchVehicleById(id!),
+    enabled: !!id,
+  });
 
-  const statusHistory = useMemo(() => {
-    return mockStatusHistory
-      .filter(sh => sh.vehicleId === id)
-      .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime());
-  }, [id]);
-
-  const documents = useMemo(() => {
-    return id ? getFilesForScope('VEHICLE', id) : [];
-  }, [id]);
-
-  const handleDocumentUpload = (docType: string, file: File) => {
-    console.log('Upload document:', { docType, file, vehicleId: id });
-    // In a real app, this would upload to storage and save metadata
-  };
-
-  const handleDocumentDelete = (fileId: string) => {
-    console.log('Delete document:', { fileId });
-    // In a real app, this would delete from storage
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Carregando veículo...</p>
+      </div>
+    );
+  }
 
   if (!vehicle) {
     return (
@@ -91,7 +58,9 @@ export function VehicleDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-primary">{vehicle.id}</h1>
+              <h1 className="text-2xl font-bold text-primary">
+                {vehicle.vehicleCode || vehicle.id.slice(0, 8)}
+              </h1>
               {vehicle.plate && (
                 <Badge variant="outline" className="text-base px-3 py-1">
                   {vehicle.plate}
@@ -125,19 +94,12 @@ export function VehicleDetailPage() {
               Encerrar locação
             </Button>
           )}
-          {vehicle.currentStatus === 'EM_LIBERACAO' && (
-            <Button>
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Mover etapa
-            </Button>
-          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content - left 2 columns */}
+        {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Vehicle info */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
@@ -148,6 +110,10 @@ export function VehicleDetailPage() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
+                  <p className="text-sm text-muted-foreground">Código</p>
+                  <p className="font-medium">{vehicle.vehicleCode || '—'}</p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">Marca</p>
                   <p className="font-medium">{vehicle.make}</p>
                 </div>
@@ -157,7 +123,7 @@ export function VehicleDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Versão</p>
-                  <p className="font-medium">{vehicle.version}</p>
+                  <p className="font-medium">{vehicle.version || '—'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Ano (Fab/Mod)</p>
@@ -191,7 +157,7 @@ export function VehicleDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Status timeline */}
+          {/* Status timeline placeholder */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
@@ -201,95 +167,25 @@ export function VehicleDetailPage() {
               <CardDescription>Timeline de alterações de status</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {statusHistory.map((entry, index) => (
-                  <div key={entry.id} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className={`h-3 w-3 rounded-full ${index === 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                      {index < statusHistory.length - 1 && (
-                        <div className="w-px h-full bg-border" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={entry.status} size="sm" />
-                        <span className="text-xs text-muted-foreground">
-                          {format(entry.changedAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
-                      {entry.note && (
-                        <p className="text-sm text-muted-foreground mt-1">{entry.note}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        por {entry.changedBy}
-                      </p>
-                    </div>
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <div className="h-3 w-3 rounded-full bg-primary" />
+                </div>
+                <div className="flex-1 pb-4">
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={vehicle.currentStatus} size="sm" />
+                    <span className="text-xs text-muted-foreground">
+                      desde {format(vehicle.statusSince, "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
                   </div>
-                ))}
+                </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Finance info with new component */}
-          {vehicle.finance && (
-            <FinanceCard 
-              finance={vehicle.finance} 
-              onEdit={() => console.log('Edit finance')} 
-            />
-          )}
-
-          {/* Acquisition info (if backlog) */}
-          {vehicle.acquisition && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
-                    <CardTitle>Pipeline de Aquisição</CardTitle>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Etapa</p>
-                    <StageBadge stage={vehicle.acquisition.stage} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Modo de Compra</p>
-                    <p className="font-medium">{purchaseModeLabels[vehicle.acquisition.purchaseMode]}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Fornecedor/Grupo</p>
-                    <p className="font-medium">{vehicle.acquisition.supplierOrGroup || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Previsão de Entrega</p>
-                    <p className="font-medium">
-                      {vehicle.acquisition.expectedDate 
-                        ? format(vehicle.acquisition.expectedDate, 'dd/MM/yyyy', { locale: ptBR })
-                        : '—'}
-                    </p>
-                  </div>
-                </div>
-                {vehicle.acquisition.notes && (
-                  <div className="mt-4 p-3 rounded-lg bg-muted">
-                    <p className="text-sm text-muted-foreground">Notas</p>
-                    <p className="text-sm mt-1">{vehicle.acquisition.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* Sidebar - right column */}
+        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Current driver */}
           {vehicle.currentDriver && (
             <Card>
               <CardHeader className="pb-3">
@@ -309,23 +205,7 @@ export function VehicleDetailPage() {
             </Card>
           )}
 
-          {/* Documentation - Functional now! */}
-          <DocumentsCard
-            title="Documentação"
-            description="Documentos do veículo"
-            scope="VEHICLE"
-            scopeId={vehicle.id}
-            documents={documents}
-            docTypes={vehicleDocTypes}
-            docTypeLabels={vehicleDocTypeLabels}
-            onUpload={handleDocumentUpload}
-            onDelete={handleDocumentDelete}
-          />
-
-          {/* Maintenance Card - Now functional! */}
           <VehicleMaintenanceCard vehicleId={vehicle.id} />
-
-          {/* Fines Card - Now functional! */}
           <VehicleFinesCard vehicleId={vehicle.id} />
 
           <Card className="opacity-60">

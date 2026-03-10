@@ -5,6 +5,7 @@ import { VehicleWithDetails, VehicleStats, VehicleStatus } from '@/types';
 interface VehicleRow {
   id: string;
   company_id: string;
+  vehicle_code: string | null;
   plate: string | null;
   renavam: string | null;
   brand: string;
@@ -39,9 +40,10 @@ const reverseStatusMap: Record<string, string> = Object.fromEntries(
   Object.entries(statusMap).map(([k, v]) => [v, k])
 );
 
-function mapRowToVehicleWithDetails(row: VehicleRow): VehicleWithDetails {
+function mapRowToVehicleWithDetails(row: any): VehicleWithDetails & { vehicleCode: string | null } {
   return {
     id: row.id,
+    vehicleCode: row.vehicle_code || null,
     plate: row.plate,
     make: row.brand,
     model: row.model,
@@ -55,14 +57,14 @@ function mapRowToVehicleWithDetails(row: VehicleRow): VehicleWithDetails {
     updatedAt: new Date(row.updated_at),
     currentStatus: statusMap[row.status] || 'DISPONIVEL',
     statusSince: new Date(row.status_since),
-    currentDriver: null, // Will be populated separately if needed
+    currentDriver: null,
     acquisition: null,
     finance: null,
     openFinesCount: 0,
   };
 }
 
-export async function fetchVehicles(): Promise<VehicleWithDetails[]> {
+export async function fetchVehicles(): Promise<(VehicleWithDetails & { vehicleCode: string | null })[]> {
   const { data, error } = await supabase
     .from('vehicles')
     .select('*')
@@ -71,6 +73,18 @@ export async function fetchVehicles(): Promise<VehicleWithDetails[]> {
 
   if (error) throw error;
   return (data || []).map(mapRowToVehicleWithDetails);
+}
+
+export async function fetchVehicleById(vehicleId: string): Promise<(VehicleWithDetails & { vehicleCode: string | null }) | null> {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('id', vehicleId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+  return mapRowToVehicleWithDetails(data);
 }
 
 export async function fetchVehicleStats(): Promise<VehicleStats> {
