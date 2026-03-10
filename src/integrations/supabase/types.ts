@@ -1023,6 +1023,48 @@ export type Database = {
           },
         ]
       }
+      rental_events: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          payload: Json | null
+          rental_id: string
+          type: Database["public"]["Enums"]["rental_event_type"]
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          rental_id: string
+          type: Database["public"]["Enums"]["rental_event_type"]
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          rental_id?: string
+          type?: Database["public"]["Enums"]["rental_event_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_events_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rentals: {
         Row: {
           company_id: string
@@ -1301,6 +1343,12 @@ export type Database = {
       maintenance_order_status: "open" | "in_progress" | "done" | "cancelled"
       maintenance_type: "preventive" | "corrective"
       payment_method: "pix" | "boleto" | "card" | "transfer" | "cash" | "other"
+      rental_event_type:
+        | "created"
+        | "status_changed"
+        | "delivered"
+        | "returned"
+        | "note"
       rental_status:
         | "draft"
         | "awaiting_signature"
@@ -1460,6 +1508,13 @@ export const Constants = {
       maintenance_order_status: ["open", "in_progress", "done", "cancelled"],
       maintenance_type: ["preventive", "corrective"],
       payment_method: ["pix", "boleto", "card", "transfer", "cash", "other"],
+      rental_event_type: [
+        "created",
+        "status_changed",
+        "delivered",
+        "returned",
+        "note",
+      ],
       rental_status: [
         "draft",
         "awaiting_signature",
