@@ -102,6 +102,12 @@ export function VehicleDetailPage() {
               Nova locação
             </Button>
           )}
+          {vehicle.currentStatus === 'EM_LIBERACAO' && !(vehicle as any).deliveredAt && (
+            <Button onClick={() => deliverMutation.mutate()} disabled={deliverMutation.isPending}>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Marcar como Entregue
+            </Button>
+          )}
           {vehicle.currentStatus === 'ALUGADO' && (
             <Button variant="destructive">
               Encerrar locação
