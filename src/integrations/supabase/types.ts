@@ -773,6 +773,7 @@ export type Database = {
           odometer_at_open: number | null
           opened_at: string
           parts_cost: number | null
+          service_area: Database["public"]["Enums"]["service_area"]
           status: Database["public"]["Enums"]["maintenance_order_status"]
           supplier_name: string | null
           total_cost: number | null
@@ -790,6 +791,7 @@ export type Database = {
           odometer_at_open?: number | null
           opened_at?: string
           parts_cost?: number | null
+          service_area?: Database["public"]["Enums"]["service_area"]
           status?: Database["public"]["Enums"]["maintenance_order_status"]
           supplier_name?: string | null
           total_cost?: number | null
@@ -807,6 +809,7 @@ export type Database = {
           odometer_at_open?: number | null
           opened_at?: string
           parts_cost?: number | null
+          service_area?: Database["public"]["Enums"]["service_area"]
           status?: Database["public"]["Enums"]["maintenance_order_status"]
           supplier_name?: string | null
           total_cost?: number | null
@@ -1530,6 +1533,13 @@ export type Database = {
         | "active"
         | "ended"
         | "cancelled"
+      service_area:
+        | "mechanical"
+        | "electrical"
+        | "bodyshop"
+        | "tires"
+        | "inspection"
+        | "other"
       vehicle_status:
         | "available"
         | "rented"
@@ -1710,6 +1720,14 @@ export const Constants = {
         "active",
         "ended",
         "cancelled",
+      ],
+      service_area: [
+        "mechanical",
+        "electrical",
+        "bodyshop",
+        "tires",
+        "inspection",
+        "other",
       ],
       vehicle_status: [
         "available",
