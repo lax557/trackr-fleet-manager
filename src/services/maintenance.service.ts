@@ -127,9 +127,12 @@ export interface CreateOrderPayload {
 }
 
 export async function createOrder(payload: CreateOrderPayload) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Usuário não autenticado');
   const { data: profile } = await supabase
     .from('profiles')
     .select('company_id')
+    .eq('user_id', user.id)
     .single();
   if (!profile) throw new Error('Perfil não encontrado');
 
@@ -200,7 +203,9 @@ export async function setOrderStatus(id: string, status: MaintenanceOrderStatus)
 // ─── Items ───
 
 export async function addItem(orderId: string, item: { description: string; qty: number; unit_cost: number }) {
-  const { data: profile } = await supabase.from('profiles').select('company_id').single();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Usuário não autenticado');
+  const { data: profile } = await supabase.from('profiles').select('company_id').eq('user_id', user.id).single();
   if (!profile) throw new Error('Perfil não encontrado');
 
   const { data, error } = await supabase
