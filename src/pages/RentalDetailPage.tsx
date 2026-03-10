@@ -339,29 +339,41 @@ export function RentalDetailPage() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Modelo de Contrato</label>
-              <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um modelo..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.filter(t => t.is_active).map(t => (
-                    <SelectItem key={t.id} value={t.id}>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        {t.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {previewHtml && (
-              <div className="border rounded-lg p-6 bg-white text-black max-h-[400px] overflow-auto">
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            {templates.filter(t => t.is_active).length === 0 ? (
+              <div className="text-center py-8 space-y-3">
+                <FileText className="h-10 w-10 mx-auto text-muted-foreground" />
+                <p className="text-muted-foreground">Nenhum modelo de contrato ativo encontrado.</p>
+                <Button variant="outline" onClick={() => { setContractModalOpen(false); navigate('/rentals/templates/new'); }}>
+                  Criar Modelo de Contrato
+                </Button>
               </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Modelo de Contrato *</label>
+                  <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um modelo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.filter(t => t.is_active).map(t => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            {t.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {previewHtml && (
+                  <div className="border rounded-lg p-6 bg-white text-black max-h-[400px] overflow-auto">
+                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                  </div>
+                )}
+              </>
             )}
           </div>
 

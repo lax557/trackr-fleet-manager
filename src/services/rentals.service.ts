@@ -73,6 +73,8 @@ export async function fetchRentalById(rentalId: string): Promise<RentalWithDetai
     ...data,
     driver_name: (data as any).drivers?.full_name || '—',
     driver_phone: (data as any).drivers?.phone || null,
+    driver_cpf: (data as any).drivers?.cpf || null,
+    driver_cnh: (data as any).drivers?.cnh || null,
     vehicle_plate: (data as any).vehicles?.plate || null,
     vehicle_code: (data as any).vehicles?.vehicle_code || null,
     vehicle_brand: (data as any).vehicles?.brand || '',
