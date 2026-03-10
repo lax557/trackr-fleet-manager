@@ -77,6 +77,7 @@ function AuthenticatedLayout() {
             <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
             <Route path="/maintenance/:id/edit" element={<NewMaintenancePage />} />
             <Route path="/fines" element={<FinesPage />} />
+            <Route path="/fines/new" element={<ProtectedRoute requiredPermission="fine:create"><NewFinePage /></ProtectedRoute>} />
             <Route path="/fines/:id" element={<FineDetailPage />} />
             {/* Financial module - protected */}
             <Route path="/financial" element={<ProtectedRoute requiredPermission="finance:view_costs"><FinancialDashboardPage /></ProtectedRoute>} />
