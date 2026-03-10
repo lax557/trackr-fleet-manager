@@ -18,8 +18,8 @@ interface VehicleStatsCardsProps {
 
 const statCards = [
   { key: 'total', label: 'Total', icon: Car, colorClass: 'text-primary' },
-  { key: 'disponivel', label: 'Disponíveis', icon: CheckCircle2, colorClass: 'text-green-600' },
   { key: 'alugado', label: 'Alugados', icon: UserCheck, colorClass: 'text-blue-600' },
+  { key: 'disponivel', label: 'Disponíveis', icon: CheckCircle2, colorClass: 'text-green-600' },
   { key: 'manutencao', label: 'Manutenção', icon: Wrench, colorClass: 'text-amber-600' },
   { key: 'sinistro', label: 'Sinistro', icon: AlertTriangle, colorClass: 'text-red-600' },
   { key: 'paraVenda', label: 'Para Venda', icon: Tag, colorClass: 'text-purple-600' },
