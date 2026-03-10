@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { SystemRole, roleLabels, roleDescriptions } from '@/types/roles';
+import { SystemRole, roleLabels } from '@/types/roles';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -19,6 +18,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const roles: SystemRole[] = ['operator', 'manager', 'executive', 'admin'];
+
+const roleModules: Record<SystemRole, string> = {
+  operator: 'Veículos (status), Motoristas, Locações (criar), Manutenções, Multas, Dashboard operacional',
+  manager: 'Tudo do operador + Edição de veículos, contratos, custos parciais',
+  executive: 'Visualização: KPIs financeiros, receita, margens, dashboards operacional e executivo, auditoria',
+  admin: 'Acesso total: CRUD completo, configurações, gestão de usuários e auditoria',
+};
 
 interface ProfileRow {
   id: string;
@@ -48,12 +54,20 @@ export default function UsersPermissionsPage() {
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ profileId, newRole }: { profileId: string; newRole: SystemRole }) => {
-      const { error } = await supabase
+    mutationFn: async ({ userId, profileId, newRole }: { userId: string; profileId: string; newRole: SystemRole }) => {
+      // Update profile role
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({ role: newRole })
         .eq('id', profileId);
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Update user_roles table
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
+      if (roleError) throw roleError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-profiles'] });
@@ -89,7 +103,7 @@ export default function UsersPermissionsPage() {
           <div className="flex items-center gap-2">
             <Info className="h-4 w-4 text-primary" />
             <CardDescription>
-              Cargos definem as permissões de cada usuário no sistema. Para adicionar um novo usuário, peça que ele crie uma conta com email e senha — depois ajuste o cargo aqui.
+              Cargos definem as permissões de cada usuário. Para adicionar um novo usuário, peça que ele crie uma conta — ele entrará como Operador automaticamente.
             </CardDescription>
           </div>
         </CardHeader>
@@ -142,7 +156,7 @@ export default function UsersPermissionsPage() {
                               toast.error('Você não pode remover seu próprio cargo de admin.');
                               return;
                             }
-                            updateRole.mutate({ profileId: p.id, newRole: v as SystemRole });
+                            updateRole.mutate({ userId: p.user_id, profileId: p.id, newRole: v as SystemRole });
                           }}
                           disabled={isCurrentUser && p.role === 'admin'}
                         >
@@ -175,7 +189,7 @@ export default function UsersPermissionsPage() {
           {roles.map((r) => (
             <div key={r} className="flex gap-3">
               <span className="font-medium text-sm min-w-[100px]">{roleLabels[r]}:</span>
-              <span className="text-sm text-muted-foreground">{roleDescriptions[r]}</span>
+              <span className="text-sm text-muted-foreground">{roleModules[r]}</span>
             </div>
           ))}
         </CardContent>

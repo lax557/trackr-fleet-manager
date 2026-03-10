@@ -22,27 +22,38 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { roleLabels } from '@/types/roles';
+import { roleLabels, PermissionAction } from '@/types/roles';
+import { LucideIcon } from 'lucide-react';
 
-const menuItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Veículos', url: '/vehicles', icon: Car },
-  { title: 'Motoristas', url: '/drivers', icon: Users },
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  permission?: PermissionAction;
+  children?: { title: string; url: string }[];
+}
+
+const menuItems: MenuItem[] = [
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard, permission: 'dashboard:operational' },
+  { title: 'Veículos', url: '/vehicles', icon: Car, permission: 'vehicle:view' },
+  { title: 'Motoristas', url: '/drivers', icon: Users, permission: 'driver:view' },
   {
     title: 'Locações',
     url: '/rentals',
     icon: FileSignature,
+    permission: 'rental:view',
     children: [
       { title: 'Todas as Locações', url: '/rentals' },
       { title: 'Modelos de Contrato', url: '/rentals/templates' },
     ],
   },
-  { title: 'Manutenções', url: '/maintenance', icon: Wrench },
-  { title: 'Multas', url: '/fines', icon: AlertTriangle },
+  { title: 'Manutenções', url: '/maintenance', icon: Wrench, permission: 'maintenance:view' },
+  { title: 'Multas', url: '/fines', icon: AlertTriangle, permission: 'fine:view' },
   {
     title: 'Financeiro',
     url: '/financial',
     icon: DollarSign,
+    permission: 'finance:view_costs',
     children: [
       { title: 'Visão Geral', url: '/financial' },
       { title: 'Transações', url: '/financial/transactions' },
@@ -61,11 +72,13 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
-  const { role } = usePermissions();
+  const { role, can } = usePermissions();
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : 'U';
+
+  const visibleItems = menuItems.filter(item => !item.permission || can(item.permission));
 
   return (
     <Sidebar>
@@ -85,7 +98,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 if (item.children) {
                   const isParentActive = item.url === '/financial' 
                     ? location.pathname.startsWith('/financial')
@@ -158,14 +171,16 @@ export function AppSidebar() {
           </div>
         </div>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <NavLink to="/settings">
-                <Settings className="h-4 w-4" />
-                <span>Configurações</span>
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {can('settings:view') && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <NavLink to="/settings">
+                  <Settings className="h-4 w-4" />
+                  <span>Configurações</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={signOut}>
               <LogOut className="h-4 w-4" />
