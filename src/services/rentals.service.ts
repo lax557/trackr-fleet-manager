@@ -92,15 +92,27 @@ export async function createRental(payload: {
   const companyId = await getCompanyId();
 
   // Validate no active rental for this vehicle
-  const { data: existing } = await supabase
+  const { data: existingVehicle } = await supabase
     .from('rentals')
     .select('id')
     .eq('vehicle_id', payload.vehicle_id)
     .eq('status', 'active')
     .limit(1);
 
-  if (existing && existing.length > 0) {
+  if (existingVehicle && existingVehicle.length > 0) {
     throw new Error('Este veículo já possui uma locação ativa.');
+  }
+
+  // Validate no active rental for this driver
+  const { data: existingDriver } = await supabase
+    .from('rentals')
+    .select('id')
+    .eq('driver_id', payload.driver_id)
+    .eq('status', 'active')
+    .limit(1);
+
+  if (existingDriver && existingDriver.length > 0) {
+    throw new Error('Este motorista já possui uma locação ativa.');
   }
 
   const { data, error } = await supabase
@@ -164,7 +176,7 @@ export async function changeRentalStatus(
 
   // Conflict check when activating
   if (newStatus === 'active') {
-    const { data: conflict } = await supabase
+    const { data: vehicleConflict } = await supabase
       .from('rentals')
       .select('id')
       .eq('vehicle_id', rental.vehicle_id)
@@ -172,8 +184,21 @@ export async function changeRentalStatus(
       .neq('id', rentalId)
       .limit(1);
 
-    if (conflict && conflict.length > 0) {
+    if (vehicleConflict && vehicleConflict.length > 0) {
       throw new Error('Este veículo já possui outra locação ativa.');
+    }
+
+    // Driver conflict check
+    const { data: driverConflict } = await supabase
+      .from('rentals')
+      .select('id')
+      .eq('driver_id', rental.driver_id)
+      .eq('status', 'active')
+      .neq('id', rentalId)
+      .limit(1);
+
+    if (driverConflict && driverConflict.length > 0) {
+      throw new Error('Este motorista já possui outra locação ativa.');
     }
   }
 

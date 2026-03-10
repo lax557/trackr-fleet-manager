@@ -21,6 +21,7 @@ import DriverDetailPage from "./pages/DriverDetailPage";
 import NewDriverPage from "./pages/NewDriverPage";
 import RentalsPage from "./pages/RentalsPage";
 import NewRentalPage from "./pages/NewRentalPage";
+import RentalDetailPage from "./pages/RentalDetailPage";
 import ContractTemplatesPage from "./pages/ContractTemplatesPage";
 import ContractTemplateEditorPage from "./pages/ContractTemplateEditorPage";
 import MaintenancesPage from "./pages/MaintenancesPage";
@@ -66,6 +67,7 @@ function AuthenticatedLayout() {
             <Route path="/drivers/:id" element={<DriverDetailPage />} />
             <Route path="/rentals" element={<RentalsPage />} />
             <Route path="/rentals/new" element={<ProtectedRoute requiredPermission="rental:create"><NewRentalPage /></ProtectedRoute>} />
+            <Route path="/rentals/:id" element={<RentalDetailPage />} />
             <Route path="/rentals/templates" element={<ContractTemplatesPage />} />
             <Route path="/rentals/templates/new" element={<ContractTemplateEditorPage />} />
             <Route path="/rentals/templates/:id" element={<ContractTemplateEditorPage />} />
