@@ -16,10 +16,13 @@ import {
 } from '@/components/ui/sidebar';
 import { 
   Car, Users, Wrench, AlertTriangle, Settings,
-  LayoutDashboard, FileSignature, DollarSign,
+  LayoutDashboard, FileSignature, DollarSign, LogOut,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { roleLabels } from '@/types/roles';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
@@ -57,6 +60,12 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const { profile, signOut } = useAuth();
+  const { role } = usePermissions();
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
 
   return (
     <Sidebar>
@@ -141,11 +150,11 @@ export function AppSidebar() {
           onClick={() => window.location.href = '/settings'}
         >
           <div className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-            LA
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">Lucas de Assis</p>
-            <p className="text-xs text-muted-foreground truncate">Operador</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || 'Usuário'}</p>
+            <p className="text-xs text-muted-foreground truncate">{roleLabels[role]}</p>
           </div>
         </div>
         <SidebarMenu>
@@ -155,6 +164,12 @@ export function AppSidebar() {
                 <Settings className="h-4 w-4" />
                 <span>Configurações</span>
               </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+              <span>Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

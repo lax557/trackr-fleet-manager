@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { VehicleStatus, VehicleCategory, VehicleWithDetails, AcquisitionStage, PurchaseMode } from '@/types';
-import { getVehiclesWithDetails, getVehicleStats } from '@/data/mockData';
+import { fetchVehicles } from '@/services/vehicles.service';
 import { VehicleStatsCards } from '@/components/VehicleStatsCards';
 import { VehicleSearch } from '@/components/VehicleSearch';
 import { VehicleFilters } from '@/components/VehicleFilters';
@@ -12,6 +13,7 @@ import { MoveStageModal } from '@/components/MoveStageModal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, List, LayoutGrid } from 'lucide-react';
+import { VehicleStats } from '@/types';
 
 export function VehiclesPage() {
   const navigate = useNavigate();
@@ -26,13 +28,27 @@ export function VehiclesPage() {
   const [stageModalOpen, setStageModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleWithDetails | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-  const allVehicles = useMemo(() => getVehiclesWithDetails(), []);
-  const stats = useMemo(() => getVehicleStats(), []);
+
+  // Fetch from real DB
+  const { data: allVehicles = [], isLoading } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: fetchVehicles,
+  });
+
+  const stats = useMemo((): VehicleStats => ({
+    total: allVehicles.length,
+    disponivel: allVehicles.filter(v => v.currentStatus === 'DISPONIVEL').length,
+    alugado: allVehicles.filter(v => v.currentStatus === 'ALUGADO').length,
+    manutencao: allVehicles.filter(v => v.currentStatus === 'MANUTENCAO').length,
+    sinistro: allVehicles.filter(v => v.currentStatus === 'SINISTRO').length,
+    paraVenda: allVehicles.filter(v => v.currentStatus === 'PARA_VENDA').length,
+    emLiberacao: allVehicles.filter(v => v.currentStatus === 'EM_LIBERACAO').length,
+  }), [allVehicles]);
+
   const backlogVehicles = useMemo(() => allVehicles.filter(v => v.currentStatus === 'EM_LIBERACAO'), [allVehicles]);
 
   const filteredVehicles = useMemo(() => {
     return allVehicles.filter(v => {
-      // Search
       if (searchQuery) {
         const lowerQuery = searchQuery.toLowerCase();
         const matches = 
@@ -41,34 +57,19 @@ export function VehiclesPage() {
           `${v.make} ${v.model}`.toLowerCase().includes(lowerQuery);
         if (!matches) return false;
       }
-
-      // Status filter
       if (statusFilter && v.currentStatus !== statusFilter) return false;
-
-      // Category filter
       if (categoryFilter && v.category !== categoryFilter) return false;
-
-      // No plate filter
       if (noPlateFilter && v.plate !== null) return false;
-
-      // Backlog filter
       if (backlogFilter && v.currentStatus !== 'EM_LIBERACAO') return false;
-
       return true;
     });
   }, [allVehicles, searchQuery, statusFilter, categoryFilter, noPlateFilter, backlogFilter]);
 
   const handleStatusCardClick = (status: string | null) => {
-    if (status === null) {
-      setStatusFilter(null);
-    } else {
-      setStatusFilter(status as VehicleStatus);
-    }
+    setStatusFilter(status === null ? null : status as VehicleStatus);
   };
 
-  const handleViewDetails = (vehicleId: string) => {
-    navigate(`/vehicles/${vehicleId}`);
-  };
+  const handleViewDetails = (vehicleId: string) => navigate(`/vehicles/${vehicleId}`);
 
   const handleChangeStatus = (vehicleId: string) => {
     const vehicle = allVehicles.find(v => v.id === vehicleId);
@@ -83,12 +84,10 @@ export function VehiclesPage() {
   };
 
   const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, note: string, driverId?: string) => {
-    // In a real app, this would update the database
     console.log('Status change:', { vehicleId, newStatus, note, driverId });
   };
 
   const handleConfirmStageMove = (vehicleId: string, stage: AcquisitionStage, purchaseMode: PurchaseMode, expectedDate: string, notes: string) => {
-    // In a real app, this would update the database
     console.log('Stage move:', { vehicleId, stage, purchaseMode, expectedDate, notes });
   };
 
@@ -100,15 +99,22 @@ export function VehiclesPage() {
     setSearchQuery('');
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center py-20">
+          <p className="text-muted-foreground">Carregando veículos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Veículos</h1>
-          <p className="text-muted-foreground text-sm">
-            Gerencie sua frota de veículos
-          </p>
+          <p className="text-muted-foreground text-sm">Gerencie sua frota de veículos</p>
         </div>
         <Button className="self-start sm:self-auto" onClick={() => navigate('/vehicles/new')}>
           <Plus className="h-4 w-4 mr-2" />
@@ -116,20 +122,10 @@ export function VehiclesPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <VehicleStatsCards 
-        stats={stats} 
-        onFilterClick={handleStatusCardClick}
-        activeFilter={statusFilter}
-      />
+      <VehicleStatsCards stats={stats} onFilterClick={handleStatusCardClick} activeFilter={statusFilter} />
 
-      {/* Search and Filters */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-        <VehicleSearch 
-          vehicles={allVehicles}
-          onSearch={setSearchQuery}
-          onSelectVehicle={handleViewDetails}
-        />
+        <VehicleSearch vehicles={allVehicles} onSearch={setSearchQuery} onSelectVehicle={handleViewDetails} />
         <VehicleFilters
           statusFilter={statusFilter}
           categoryFilter={categoryFilter}
@@ -143,55 +139,26 @@ export function VehiclesPage() {
         />
       </div>
 
-      {/* View Toggle and Results */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Exibindo {filteredVehicles.length} de {allVehicles.length} veículos
         </div>
         <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'kanban')}>
           <TabsList>
-            <TabsTrigger value="list" className="gap-2">
-              <List className="h-4 w-4" />
-              Lista
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="gap-2">
-              <LayoutGrid className="h-4 w-4" />
-              Pipeline
-            </TabsTrigger>
+            <TabsTrigger value="list" className="gap-2"><List className="h-4 w-4" />Lista</TabsTrigger>
+            <TabsTrigger value="kanban" className="gap-2"><LayoutGrid className="h-4 w-4" />Pipeline</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      {/* Table or Kanban View */}
       {viewMode === 'list' ? (
-        <VehiclesTable
-          vehicles={filteredVehicles}
-          onViewDetails={handleViewDetails}
-          onChangeStatus={handleChangeStatus}
-          onMoveStage={handleMoveStage}
-        />
+        <VehiclesTable vehicles={filteredVehicles} onViewDetails={handleViewDetails} onChangeStatus={handleChangeStatus} onMoveStage={handleMoveStage} />
       ) : (
-        <AcquisitionKanban
-          vehicles={backlogVehicles}
-          onMoveStage={handleMoveStage}
-          onViewDetails={handleViewDetails}
-        />
+        <AcquisitionKanban vehicles={backlogVehicles} onMoveStage={handleMoveStage} onViewDetails={handleViewDetails} />
       )}
 
-      {/* Modals */}
-      <ChangeStatusModal
-        vehicle={selectedVehicle}
-        open={statusModalOpen}
-        onOpenChange={setStatusModalOpen}
-        onConfirm={handleConfirmStatusChange}
-      />
-
-      <MoveStageModal
-        vehicle={selectedVehicle}
-        open={stageModalOpen}
-        onOpenChange={setStageModalOpen}
-        onConfirm={handleConfirmStageMove}
-      />
+      <ChangeStatusModal vehicle={selectedVehicle} open={statusModalOpen} onOpenChange={setStatusModalOpen} onConfirm={handleConfirmStatusChange} />
+      <MoveStageModal vehicle={selectedVehicle} open={stageModalOpen} onOpenChange={setStageModalOpen} onConfirm={handleConfirmStageMove} />
     </div>
   );
 }
