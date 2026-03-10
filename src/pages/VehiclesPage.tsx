@@ -20,6 +20,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 export function VehiclesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<VehicleCategory | null>(null);
