@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { VehicleStatus, VehicleCategory, VehicleWithDetails, AcquisitionStage, PurchaseMode } from '@/types';
-import { fetchVehicles } from '@/services/vehicles.service';
+import { fetchVehicles, updateVehicleStatus } from '@/services/vehicles.service';
 import { VehicleStatsCards } from '@/components/VehicleStatsCards';
 import { VehicleSearch } from '@/components/VehicleSearch';
 import { VehicleFilters } from '@/components/VehicleFilters';
@@ -13,10 +13,12 @@ import { MoveStageModal } from '@/components/MoveStageModal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, List, LayoutGrid } from 'lucide-react';
+import { toast } from 'sonner';
 import { VehicleStats } from '@/types';
 
 export function VehiclesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<VehicleCategory | null>(null);
@@ -83,8 +85,24 @@ export function VehiclesPage() {
     setStageModalOpen(true);
   };
 
-  const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, note: string, driverId?: string) => {
-    console.log('Status change:', { vehicleId, newStatus, note, driverId });
+  const statusMutation = useMutation({
+    mutationFn: ({ vehicleId, newStatus }: { vehicleId: string; newStatus: VehicleStatus }) =>
+      updateVehicleStatus(vehicleId, newStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-fleet-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-executive'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-attention'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-backlog'] });
+      toast.success('Status alterado com sucesso!');
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao alterar status: ${err.message}`);
+    },
+  });
+
+  const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, _note: string, _driverId?: string) => {
+    statusMutation.mutate({ vehicleId, newStatus });
   };
 
   const handleConfirmStageMove = (vehicleId: string, stage: AcquisitionStage, purchaseMode: PurchaseMode, expectedDate: string, notes: string) => {
