@@ -93,7 +93,7 @@ export function DashboardPage() {
   ] : [];
 
   const strategicKpis = execMetrics ? [
-    { label: 'Taxa de Ocupação', value: `${execMetrics.occupancyRate.toFixed(0)}%`, icon: TrendingUp, colorClass: execMetrics.occupancyRate >= 80 ? 'text-green-600' : execMetrics.occupancyRate >= 60 ? 'text-amber-600' : 'text-red-600', tooltip: 'Percentual da frota operacional atualmente alugada' },
+    { label: 'Taxa de Ocupação', value: `${execMetrics.occupancyRate.toFixed(0)}%`, icon: TrendingUp, colorClass: execMetrics.occupancyRate >= 80 ? 'text-green-600' : execMetrics.occupancyRate >= 60 ? 'text-amber-600' : 'text-red-600', tooltip: 'Alugados / frota operacional (exclui backlog e para venda)' },
     { label: 'Frota Improdutiva', value: `${execMetrics.unproductiveRate.toFixed(0)}%`, icon: AlertOctagon, colorClass: execMetrics.unproductiveRate <= 10 ? 'text-green-600' : execMetrics.unproductiveRate <= 20 ? 'text-amber-600' : 'text-red-600', tooltip: 'Veículos em manutenção ou sinistro sem gerar receita' },
   ] : [];
 
