@@ -55,6 +55,7 @@ export function NewDriverPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
+    email: '',
     cpf: '',
     cnh: '',
     birthDate: '',
