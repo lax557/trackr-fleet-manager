@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, User, Palette, Save, LogOut, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, User, Palette, Save, LogOut, Users, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { roleLabels } from '@/types/roles';
 
@@ -30,6 +31,11 @@ export function SettingsPage() {
   const [phone, setPhone] = useState('');
   const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'system'>(theme);
   const [saving, setSaving] = useState(false);
+
+  // Reset state
+  const [resetConfirm, setResetConfirm] = useState('');
+  const [deleteTemplates, setDeleteTemplates] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -65,6 +71,30 @@ export function SettingsPage() {
     }
   };
 
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-company-data', {
+        body: { delete_templates: deleteTemplates },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const counts = data?.counts || {};
+      const summary = Object.entries(counts)
+        .filter(([, v]) => (v as number) > 0)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ');
+      toast.success(`Dados resetados! ${summary || 'Nenhum registro encontrado.'}`);
+      setResetConfirm('');
+      setDeleteTemplates(false);
+      navigate('/');
+    } catch (err: any) {
+      toast.error(`Erro: ${err.message}`);
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
@@ -76,6 +106,8 @@ export function SettingsPage() {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+
+  const confirmPhrase = 'RESETAR TARGA';
 
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
@@ -126,44 +158,19 @@ export function SettingsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome completo</Label>
-              <Input
-                id="name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Seu nome completo"
-              />
+              <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome completo" />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={formatPhone(phone)}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                placeholder="(11) 99999-9999"
-                maxLength={15}
-              />
+              <Input id="phone" value={formatPhone(phone)} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="(11) 99999-9999" maxLength={15} />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">E-mail (somente leitura)</Label>
-              <Input
-                id="email"
-                type="email"
-                value={user?.email || ''}
-                disabled
-                className="bg-muted"
-              />
+              <Input id="email" type="email" value={user?.email || ''} disabled className="bg-muted" />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="role">Cargo</Label>
-              <Input
-                id="role"
-                value={roleLabels[profile?.role as keyof typeof roleLabels] || profile?.role || ''}
-                disabled
-                className="bg-muted"
-              />
+              <Input id="role" value={roleLabels[profile?.role as keyof typeof roleLabels] || profile?.role || ''} disabled className="bg-muted" />
             </div>
           </div>
         </CardContent>
@@ -180,47 +187,58 @@ export function SettingsPage() {
         <CardContent>
           <div className="space-y-3">
             <Label>Tema</Label>
-            <RadioGroup
-              value={selectedTheme}
-              onValueChange={(value) => setSelectedTheme(value as 'light' | 'dark' | 'system')}
-              className="grid grid-cols-3 gap-4"
-            >
-              <div>
-                <RadioGroupItem value="light" id="theme-light" className="peer sr-only" />
-                <Label
-                  htmlFor="theme-light"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                >
-                  <div className="mb-2 h-8 w-8 rounded-full bg-white border shadow-sm" />
-                  <span className="text-sm font-medium">Claro</span>
-                </Label>
-              </div>
-
-              <div>
-                <RadioGroupItem value="dark" id="theme-dark" className="peer sr-only" />
-                <Label
-                  htmlFor="theme-dark"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                >
-                  <div className="mb-2 h-8 w-8 rounded-full bg-slate-800 border shadow-sm" />
-                  <span className="text-sm font-medium">Escuro</span>
-                </Label>
-              </div>
-
-              <div>
-                <RadioGroupItem value="system" id="theme-system" className="peer sr-only" />
-                <Label
-                  htmlFor="theme-system"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                >
-                  <div className="mb-2 h-8 w-8 rounded-full bg-gradient-to-br from-white to-slate-800 border shadow-sm" />
-                  <span className="text-sm font-medium">Sistema</span>
-                </Label>
-              </div>
+            <RadioGroup value={selectedTheme} onValueChange={(v) => setSelectedTheme(v as any)} className="grid grid-cols-3 gap-4">
+              {[
+                { value: 'light', label: 'Claro', cls: 'bg-white border shadow-sm' },
+                { value: 'dark', label: 'Escuro', cls: 'bg-slate-800 border shadow-sm' },
+                { value: 'system', label: 'Sistema', cls: 'bg-gradient-to-br from-white to-slate-800 border shadow-sm' },
+              ].map((t) => (
+                <div key={t.value}>
+                  <RadioGroupItem value={t.value} id={`theme-${t.value}`} className="peer sr-only" />
+                  <Label htmlFor={`theme-${t.value}`} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                    <div className={`mb-2 h-8 w-8 rounded-full ${t.cls}`} />
+                    <span className="text-sm font-medium">{t.label}</span>
+                  </Label>
+                </div>
+              ))}
             </RadioGroup>
           </div>
         </CardContent>
       </Card>
+
+      {can('settings:manage_users') && (
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-destructive">Resetar dados da empresa</CardTitle>
+            </div>
+            <CardDescription>
+              Apaga todos os dados operacionais (veículos, motoristas, locações, manutenções, multas). Esta ação é irreversível.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Checkbox id="del-templates" checked={deleteTemplates} onCheckedChange={(v) => setDeleteTemplates(v === true)} />
+              <Label htmlFor="del-templates" className="text-sm">Também apagar modelos de contrato</Label>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">
+                Digite <strong>{confirmPhrase}</strong> para confirmar:
+              </Label>
+              <Input value={resetConfirm} onChange={(e) => setResetConfirm(e.target.value)} placeholder={confirmPhrase} />
+            </div>
+            <Button
+              variant="destructive"
+              disabled={resetConfirm !== confirmPhrase || resetting}
+              onClick={handleReset}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {resetting ? 'Resetando...' : 'Resetar todos os dados'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={handleSignOut}>

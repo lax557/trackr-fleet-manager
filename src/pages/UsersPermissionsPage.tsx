@@ -12,10 +12,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Shield, Users, Info } from 'lucide-react';
+import { ArrowLeft, Shield, Users, Info, UserX, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 
 const roles: SystemRole[] = ['operator', 'manager', 'executive', 'admin'];
 
@@ -33,6 +34,7 @@ interface ProfileRow {
   role: string;
   phone: string | null;
   created_at: string;
+  is_active: boolean;
 }
 
 export default function UsersPermissionsPage() {
@@ -46,7 +48,7 @@ export default function UsersPermissionsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, role, phone, created_at')
+        .select('id, user_id, full_name, role, phone, created_at, is_active')
         .order('created_at', { ascending: true });
       if (error) throw error;
       return data as ProfileRow[];
@@ -55,14 +57,12 @@ export default function UsersPermissionsPage() {
 
   const updateRole = useMutation({
     mutationFn: async ({ userId, profileId, newRole }: { userId: string; profileId: string; newRole: SystemRole }) => {
-      // Update profile role
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ role: newRole })
         .eq('id', profileId);
       if (profileError) throw profileError;
 
-      // Update user_roles table
       const { error: roleError } = await supabase
         .from('user_roles')
         .update({ role: newRole })
@@ -72,6 +72,21 @@ export default function UsersPermissionsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-profiles'] });
       toast.success('Cargo atualizado com sucesso!');
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ profileId, newValue }: { profileId: string; newValue: boolean }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: newValue } as any)
+        .eq('id', profileId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['company-profiles'] });
+      toast.success(vars.newValue ? 'Acesso reativado!' : 'Acesso desativado!');
     },
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
@@ -125,15 +140,18 @@ export default function UsersPermissionsPage() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Cargo</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Criado em</TableHead>
                   <TableHead className="w-[200px]">Alterar cargo</TableHead>
+                  <TableHead className="w-[120px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {profiles.map((p) => {
                   const isCurrentUser = p.user_id === user?.id;
+                  const isActive = p.is_active !== false;
                   return (
-                    <TableRow key={p.id}>
+                    <TableRow key={p.id} className={!isActive ? 'opacity-60' : ''}>
                       <TableCell>
                         <div>
                           <p className="font-medium">{p.full_name}</p>
@@ -144,6 +162,11 @@ export default function UsersPermissionsPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">{roleLabels[p.role as SystemRole] || p.role}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={isActive ? 'default' : 'secondary'}>
+                          {isActive ? 'Ativo' : 'Desativado'}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(p.created_at), 'dd/MM/yyyy', { locale: ptBR })}
@@ -171,6 +194,21 @@ export default function UsersPermissionsPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell>
+                        {!isCurrentUser && (
+                          <Button
+                            variant={isActive ? 'outline' : 'default'}
+                            size="sm"
+                            onClick={() => toggleActive.mutate({ profileId: p.id, newValue: !isActive })}
+                          >
+                            {isActive ? (
+                              <><UserX className="h-3.5 w-3.5 mr-1" /> Desativar</>
+                            ) : (
+                              <><UserCheck className="h-3.5 w-3.5 mr-1" /> Reativar</>
+                            )}
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

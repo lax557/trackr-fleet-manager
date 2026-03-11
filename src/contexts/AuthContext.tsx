@@ -11,6 +11,7 @@ export interface Profile {
   phone: string | null;
   role: SystemRole;
   theme: string;
+  is_active: boolean;
 }
 
 interface AuthContextType {
@@ -35,10 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, user_id, company_id, full_name, phone, role, theme')
+      .select('id, user_id, company_id, full_name, phone, role, theme, is_active')
       .eq('user_id', userId)
       .single();
     if (data) {
+      if (data.is_active === false) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
       setProfile({
         id: data.id,
         user_id: data.user_id,
@@ -47,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: data.phone,
         role: data.role as SystemRole,
         theme: data.theme,
+        is_active: data.is_active ?? true,
       });
     }
   };
