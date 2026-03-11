@@ -33,22 +33,13 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pb-2">
           <img
-            src="/targa-logo-sidebar.png"
+            src="/targa-logo.svg"
             alt="Targa"
-            className="h-16 w-auto object-contain mx-auto mb-4"
-            onError={(e) => {
-              const el = e.currentTarget;
-              el.style.display = 'none';
-              const fallback = document.createElement('div');
-              fallback.className = 'mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xl';
-              fallback.textContent = 'T';
-              el.parentElement?.insertBefore(fallback, el.parentElement.firstChild);
-            }}
+            className="h-16 sm:h-20 w-auto object-contain mx-auto mb-4"
           />
-          <CardTitle className="text-2xl">Criar Conta</CardTitle>
-          <CardDescription>Preencha os dados para acessar o Targa</CardDescription>
+          <CardDescription>Preencha os dados para criar sua conta</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

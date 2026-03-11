@@ -82,20 +82,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <NavLink to="/" className="flex items-center justify-center">
+      <SidebarHeader className="border-b border-sidebar-border">
+        <NavLink to="/" className="flex items-center justify-center py-5">
           <img
-            src="/targa-logo-sidebar.png"
+            src="/targa-logo.svg"
             alt="Targa"
-            className="h-10 w-auto object-contain"
-            onError={(e) => {
-              const el = e.currentTarget;
-              el.style.display = 'none';
-              const fallback = document.createElement('div');
-              fallback.className = 'flex items-center justify-center h-10 w-10 rounded-lg bg-primary text-primary-foreground font-bold text-lg';
-              fallback.textContent = 'T';
-              el.parentElement?.appendChild(fallback);
-            }}
+            className="h-10 sm:h-12 w-auto object-contain"
           />
         </NavLink>
       </SidebarHeader>
