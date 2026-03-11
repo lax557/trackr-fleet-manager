@@ -45,7 +45,7 @@ export function renderTemplate(body: string, rental: RentalWithDetails): string 
     '{{cnh_motorista}}': driver.cnh || (rental as any).driver_cnh || '—',
     '{{telefone_motorista}}': driver.phone || rental.driver_phone || '—',
     '{{email_motorista}}': driver.email || '—',
-    '{{endereco_completo}}': '—',
+    '{{endereco_completo}}': driver.address_full || '—',
     '{{marca}}': rental.vehicle_brand || '—',
     '{{modelo}}': rental.vehicle_model || '—',
     '{{placa}}': rental.vehicle_plate || '—',
@@ -78,7 +78,7 @@ export async function createRentalContract(rentalId: string, templateId: string)
   // Fetch rental details
   const { data: rental, error: rErr } = await supabase
     .from('rentals')
-    .select('*, drivers(full_name, phone, cpf), vehicles(plate, vehicle_code, brand, model)')
+    .select('*, drivers(full_name, phone, cpf, cnh, email, address_full), vehicles(plate, vehicle_code, brand, model)')
     .eq('id', rentalId)
     .single();
   if (rErr || !rental) throw new Error('Locação não encontrada.');

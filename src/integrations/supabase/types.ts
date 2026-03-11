@@ -120,28 +120,40 @@ export type Database = {
       }
       contract_templates: {
         Row: {
+          allow_edit_before_send: boolean | null
           body: string
           company_id: string
+          contract_type: string | null
           created_at: string
+          default_duration_months: number | null
           id: string
           is_active: boolean
           name: string
+          version: string | null
         }
         Insert: {
+          allow_edit_before_send?: boolean | null
           body?: string
           company_id: string
+          contract_type?: string | null
           created_at?: string
+          default_duration_months?: number | null
           id?: string
           is_active?: boolean
           name: string
+          version?: string | null
         }
         Update: {
+          allow_edit_before_send?: boolean | null
           body?: string
           company_id?: string
+          contract_type?: string | null
           created_at?: string
+          default_duration_months?: number | null
           id?: string
           is_active?: boolean
           name?: string
+          version?: string | null
         }
         Relationships: [
           {
@@ -394,6 +406,7 @@ export type Database = {
       }
       drivers: {
         Row: {
+          address_full: string | null
           birth_date: string | null
           cnh: string | null
           company_id: string
@@ -408,6 +421,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address_full?: string | null
           birth_date?: string | null
           cnh?: string | null
           company_id: string
@@ -422,6 +436,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address_full?: string | null
           birth_date?: string | null
           cnh?: string | null
           company_id?: string

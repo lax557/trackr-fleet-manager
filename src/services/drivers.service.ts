@@ -104,6 +104,7 @@ export async function createDriver(driver: {
   birth_date?: string;
   email?: string;
   driver_app?: string;
+  address_full?: string;
 }) {
   const companyId = await getCompanyId();
 
@@ -118,7 +119,8 @@ export async function createDriver(driver: {
       birth_date: driver.birth_date || null,
       email: driver.email || null,
       driver_app: driver.driver_app || null,
-    })
+      address_full: driver.address_full || null,
+    } as any)
     .select()
     .single();
 
@@ -134,6 +136,7 @@ export async function updateDriver(driverId: string, updates: {
   birth_date?: string;
   email?: string;
   driver_app?: string;
+  address_full?: string;
 }) {
   const { error } = await supabase
     .from('drivers')

@@ -186,9 +186,22 @@ export async function updateOrder(id: string, payload: Partial<{
   labor_cost: number;
   opened_at: string;
 }>) {
+  // If labor_cost changed, recalculate total_cost
+  const updatePayload: any = { ...payload };
+  if (payload.labor_cost !== undefined) {
+    // Fetch current parts_cost to recalculate total
+    const { data: current } = await supabase
+      .from('maintenance_orders')
+      .select('parts_cost')
+      .eq('id', id)
+      .single();
+    const partsCost = current?.parts_cost || 0;
+    updatePayload.total_cost = partsCost + payload.labor_cost;
+  }
+
   const { data, error } = await supabase
     .from('maintenance_orders')
-    .update(payload)
+    .update(updatePayload)
     .eq('id', id)
     .select()
     .single();
