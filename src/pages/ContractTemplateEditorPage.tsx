@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ContractEditor } from '@/components/ContractEditor';
 import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { normalizeContractHtml } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
