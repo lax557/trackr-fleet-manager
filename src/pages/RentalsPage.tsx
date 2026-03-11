@@ -42,10 +42,48 @@ export function RentalsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [selectedRental, setSelectedRental] = useState<RentalWithDetails | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [previewHtml, setPreviewHtml] = useState('');
+
   const { data: rentals = [], isLoading } = useQuery({
     queryKey: ['rentals'],
     queryFn: fetchRentals,
   });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['contract-templates'],
+    queryFn: fetchContractTemplates,
+    enabled: contractModalOpen,
+  });
+
+  const contractMutation = useMutation({
+    mutationFn: () => createRentalContract(selectedRental!.id, selectedTemplateId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+      setContractModalOpen(false);
+      toast.success('Contrato gerado e enviado para assinatura!');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const handleOpenSignatureModal = (rental: RentalWithDetails) => {
+    setSelectedRental(rental);
+    setSelectedTemplateId('');
+    setPreviewHtml('');
+    setContractModalOpen(true);
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (selectedRental) {
+      const template = templates.find(t => t.id === templateId);
+      if (template) {
+        setPreviewHtml(renderTemplate(template.body, selectedRental));
+      }
+    }
+  };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: 'awaiting_signature' | 'active' | 'ended' | 'cancelled' }) =>
