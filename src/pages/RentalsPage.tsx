@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, MoreHorizontal, Eye, Play, StopCircle, XCircle, Send, Loader2, CheckCircle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrencyBRL, formatDateOnly } from '@/lib/utils';
+import { formatCurrencyBRL, formatDateOnly, normalizeContractHtml } from '@/lib/utils';
 
 const statusLabels: Record<string, string> = {
   draft: 'Rascunho',
