@@ -85,9 +85,17 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <NavLink to="/" className="flex items-center justify-center py-5">
           <img
-            src="/targa-logo.svg"
+            src="/targa-logo.png"
             alt="Targa"
             className="h-10 sm:h-12 w-auto object-contain"
+            onError={(e) => {
+              const el = e.currentTarget;
+              el.style.display = 'none';
+              const fb = document.createElement('div');
+              fb.className = 'h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg';
+              fb.textContent = 'T';
+              el.parentElement?.appendChild(fb);
+            }}
           />
         </NavLink>
       </SidebarHeader>
