@@ -101,9 +101,10 @@ export function NewMaintenancePage() {
       items: items.filter(i => i.description).map(i => ({ description: i.description, qty: i.qty, unit_cost: i.unitCost })),
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['maintenance-analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-executive'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-analytics'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-executive'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['vehicles-list'] });
       toast.success('Manutenção registrada com sucesso!');
       navigate('/maintenance');
     },
@@ -122,10 +123,11 @@ export function NewMaintenancePage() {
       opened_at: new Date(openedAt).toISOString(),
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', editId] });
-      queryClient.invalidateQueries({ queryKey: ['maintenance-analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-executive'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-analytics'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-executive'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['vehicles-list'] });
       toast.success('Manutenção atualizada com sucesso!');
       navigate('/maintenance');
     },

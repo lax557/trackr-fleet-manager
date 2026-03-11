@@ -55,6 +55,7 @@ export function NewDriverPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
+    email: '',
     cpf: '',
     cnh: '',
     birthDate: '',
@@ -124,7 +125,7 @@ export function NewDriverPage() {
       cpf: formData.cpf,
       cnh: formData.cnh,
       birth_date: formData.birthDate || undefined,
-      email: undefined,
+      email: formData.email || undefined,
       address_full: addressParts.join(', ') || undefined,
     });
   };
@@ -202,6 +203,10 @@ export function NewDriverPage() {
                 <div>
                   <Label htmlFor="cnh">Número da CNH *</Label>
                   <Input id="cnh" value={formData.cnh} onChange={(e) => handleInputChange('cnh', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="00000000000" required />
+                </div>
+                <div>
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} placeholder="motorista@email.com" />
                 </div>
                 <div>
                   <Label htmlFor="birthDate">Data de Nascimento</Label>
@@ -317,6 +322,7 @@ export function NewDriverPage() {
                     <p><span className="text-muted-foreground">Telefone:</span> {formData.phone}</p>
                     <p><span className="text-muted-foreground">CPF:</span> {formData.cpf}</p>
                     <p><span className="text-muted-foreground">CNH:</span> {formData.cnh}</p>
+                    {formData.email && <p><span className="text-muted-foreground">E-mail:</span> {formData.email}</p>}
                     {formData.birthDate && <p><span className="text-muted-foreground">Nascimento:</span> {formData.birthDate}</p>}
                   </CardContent>
                 </Card>

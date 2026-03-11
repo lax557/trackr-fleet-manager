@@ -9,6 +9,7 @@ export interface DriverRow {
   birth_date: string | null;
   email: string | null;
   driver_app: string | null;
+  address_full: string | null;
   company_id: string;
   created_at: string;
   updated_at: string;
