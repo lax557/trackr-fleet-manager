@@ -40,7 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('user_id', userId)
       .single();
     if (data) {
-      if (data.is_active === false) {
+      const row = data as any;
+      if (row.is_active === false) {
         await supabase.auth.signOut();
         setSession(null);
         setUser(null);
@@ -49,14 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       setProfile({
-        id: data.id,
-        user_id: data.user_id,
-        company_id: data.company_id,
-        full_name: data.full_name,
-        phone: data.phone,
-        role: data.role as SystemRole,
-        theme: data.theme,
-        is_active: data.is_active ?? true,
+        id: row.id,
+        user_id: row.user_id,
+        company_id: row.company_id,
+        full_name: row.full_name,
+        phone: row.phone,
+        role: row.role as SystemRole,
+        theme: row.theme,
+        is_active: row.is_active ?? true,
       });
     }
   };
