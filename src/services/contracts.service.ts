@@ -35,20 +35,27 @@ export async function fetchContractTemplates(): Promise<ContractTemplate[]> {
 }
 
 export function renderTemplate(body: string, rental: RentalWithDetails): string {
+  const driver = (rental as any).drivers || {};
+  const weeklyRate = rental.weekly_rate || 0;
+  const deposit = rental.deposit || 0;
+
   const vars: Record<string, string> = {
     '{{nome_motorista}}': rental.driver_name || '—',
-    '{{cpf_motorista}}': (rental as any).drivers?.cpf || (rental as any).driver_cpf || '—',
-    '{{cnh_motorista}}': (rental as any).drivers?.cnh || (rental as any).driver_cnh || '—',
+    '{{cpf_motorista}}': driver.cpf || (rental as any).driver_cpf || '—',
+    '{{cnh_motorista}}': driver.cnh || (rental as any).driver_cnh || '—',
+    '{{telefone_motorista}}': driver.phone || rental.driver_phone || '—',
+    '{{email_motorista}}': driver.email || '—',
+    '{{endereco_completo}}': '—',
     '{{marca}}': rental.vehicle_brand || '—',
     '{{modelo}}': rental.vehicle_model || '—',
-    '{{versao}}': '',
     '{{placa}}': rental.vehicle_plate || '—',
     '{{vehicle_code}}': rental.vehicle_code || '—',
-    '{{categoria}}': '',
-    '{{data_inicio}}': rental.start_date ? format(new Date(rental.start_date), 'dd/MM/yyyy', { locale: ptBR }) : '—',
-    '{{data_fim}}': rental.end_date ? format(new Date(rental.end_date), 'dd/MM/yyyy', { locale: ptBR }) : '—',
-    '{{valor_semanal}}': formatCurrencyBRL(rental.weekly_rate),
-    '{{valor_caucao}}': formatCurrencyBRL(rental.deposit),
+    '{{data_inicio}}': rental.start_date ? formatDateOnly(rental.start_date) : '—',
+    '{{data_fim}}': rental.end_date ? formatDateOnly(rental.end_date) : '—',
+    '{{valor_semanal}}': formatCurrencyBRL(weeklyRate),
+    '{{valor_caucao}}': formatCurrencyBRL(deposit),
+    '{{valor_total}}': formatCurrencyBRL(weeklyRate + deposit),
+    '{{data_hora_envio}}': format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
     '{{data_atual}}': format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }),
   };
 
@@ -57,6 +64,12 @@ export function renderTemplate(body: string, rental: RentalWithDetails): string 
     result = result.split(placeholder).join(value);
   }
   return result;
+}
+
+function formatDateOnly(value: string): string {
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return value;
 }
 
 export async function createRentalContract(rentalId: string, templateId: string): Promise<void> {

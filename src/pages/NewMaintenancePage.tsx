@@ -102,6 +102,8 @@ export function NewMaintenancePage() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-executive'] });
       toast.success('Manutenção registrada com sucesso!');
       navigate('/maintenance');
     },
