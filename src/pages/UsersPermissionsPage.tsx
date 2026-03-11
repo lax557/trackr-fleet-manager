@@ -110,11 +110,20 @@ export default function UsersPermissionsPage() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">Usuários e Permissões</h1>
           <p className="text-muted-foreground text-sm">Gerencie os usuários e seus cargos</p>
         </div>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <UserPlus className="h-4 w-4 mr-2" /> Novo Usuário
+        </Button>
       </div>
+
+      <CreateUserModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['company-profiles'] })}
+      />
 
       <Card>
         <CardHeader>
