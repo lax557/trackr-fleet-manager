@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,11 +13,12 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Shield, Users, Info, UserX, UserCheck } from 'lucide-react';
+import { ArrowLeft, Shield, Users, Info, UserX, UserCheck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
+import { CreateUserModal } from '@/components/CreateUserModal';
 
 const roles: SystemRole[] = ['operator', 'manager', 'executive', 'admin'];
 
@@ -38,6 +40,7 @@ interface ProfileRow {
 }
 
 export default function UsersPermissionsPage() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -107,11 +110,20 @@ export default function UsersPermissionsPage() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">Usuários e Permissões</h1>
           <p className="text-muted-foreground text-sm">Gerencie os usuários e seus cargos</p>
         </div>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <UserPlus className="h-4 w-4 mr-2" /> Novo Usuário
+        </Button>
       </div>
+
+      <CreateUserModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['company-profiles'] })}
+      />
 
       <Card>
         <CardHeader>
