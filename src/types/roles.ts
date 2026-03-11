@@ -36,8 +36,6 @@ export type PermissionAction =
 export const rolePermissions: Record<SystemRole, PermissionAction[]> = {
   operator: [
     'vehicle:view',
-    'vehicle:create',
-    'vehicle:edit',
     'vehicle:change_status',
     'driver:view',
     'driver:create',
