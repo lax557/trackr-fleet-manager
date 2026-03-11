@@ -43,7 +43,6 @@ export default function LoginPage() {
               el.parentElement?.appendChild(fb);
             }}
           />
-          <CardDescription>Faça login para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
