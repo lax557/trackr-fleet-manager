@@ -43,7 +43,7 @@ async function getCompanyId(): Promise<string> {
 export async function fetchRentals(): Promise<RentalWithDetails[]> {
   const { data, error } = await supabase
     .from('rentals')
-    .select('*, drivers(full_name, phone), vehicles(plate, vehicle_code, brand, model)')
+    .select('*, drivers(full_name, phone, cpf, cnh, email, address_full), vehicles(plate, vehicle_code, brand, model)')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
