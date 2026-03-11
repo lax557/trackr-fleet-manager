@@ -117,12 +117,15 @@ export function NewDriverPage() {
 
   const handleSubmit = () => {
     if (!canProceed()) return;
+    const addressParts = [address.street, address.number, address.complement, address.neighborhood, `${address.city}/${address.state}`, address.zipCode].filter(Boolean);
     mutation.mutate({
       full_name: formData.fullName,
       phone: formData.phone,
       cpf: formData.cpf,
       cnh: formData.cnh,
       birth_date: formData.birthDate || undefined,
+      email: undefined,
+      address_full: addressParts.join(', ') || undefined,
     });
   };
 

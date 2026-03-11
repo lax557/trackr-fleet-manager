@@ -78,7 +78,7 @@ export async function createRentalContract(rentalId: string, templateId: string)
   // Fetch rental details
   const { data: rental, error: rErr } = await supabase
     .from('rentals')
-    .select('*, drivers(full_name, phone, cpf), vehicles(plate, vehicle_code, brand, model)')
+    .select('*, drivers(full_name, phone, cpf, cnh, email, address_full), vehicles(plate, vehicle_code, brand, model)')
     .eq('id', rentalId)
     .single();
   if (rErr || !rental) throw new Error('Locação não encontrada.');

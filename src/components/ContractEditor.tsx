@@ -11,6 +11,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useEffect } from 'react';
 import {
   Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2, Heading3,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Table as TableIcon,
@@ -132,6 +133,17 @@ export function ContractEditor({ content, onChange }: ContractEditorProps) {
       onChange(editor.getHTML());
     },
   });
+
+  // Sync external content changes (e.g. when loading from DB) into the editor
+  useEffect(() => {
+    if (editor && content && !editor.isDestroyed) {
+      const currentHTML = editor.getHTML();
+      // Only update if content is meaningfully different (avoid cursor reset)
+      if (currentHTML !== content && content !== '<p></p>') {
+        editor.commands.setContent(content, false);
+      }
+    }
+  }, [editor, content]);
 
   const insertVariable = (variable: string) => {
     if (editor) {

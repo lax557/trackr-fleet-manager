@@ -136,6 +136,7 @@ export async function updateDriver(driverId: string, updates: {
   birth_date?: string;
   email?: string;
   driver_app?: string;
+  address_full?: string;
 }) {
   const { error } = await supabase
     .from('drivers')
