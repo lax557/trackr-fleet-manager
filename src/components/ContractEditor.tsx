@@ -138,9 +138,8 @@ export function ContractEditor({ content, onChange }: ContractEditorProps) {
   useEffect(() => {
     if (editor && content && !editor.isDestroyed) {
       const currentHTML = editor.getHTML();
-      // Only update if content is meaningfully different (avoid cursor reset)
       if (currentHTML !== content && content !== '<p></p>') {
-        editor.commands.setContent(content, false);
+        editor.commands.setContent(content);
       }
     }
   }, [editor, content]);
