@@ -45,7 +45,7 @@ export function renderTemplate(body: string, rental: RentalWithDetails): string 
     '{{cnh_motorista}}': driver.cnh || (rental as any).driver_cnh || '—',
     '{{telefone_motorista}}': driver.phone || rental.driver_phone || '—',
     '{{email_motorista}}': driver.email || '—',
-    '{{endereco_completo}}': '—',
+    '{{endereco_completo}}': driver.address_full || '—',
     '{{marca}}': rental.vehicle_brand || '—',
     '{{modelo}}': rental.vehicle_model || '—',
     '{{placa}}': rental.vehicle_plate || '—',
