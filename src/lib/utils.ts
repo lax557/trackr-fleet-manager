@@ -24,6 +24,23 @@ export function formatCurrencyBRL(value: number | null | undefined): string {
  * evitando problemas de timezone que fazem a data "voltar 1 dia".
  * Se receber datetime ISO ou Date, normaliza para UTC noon antes de formatar.
  */
+/**
+ * Normaliza conteúdo de contrato para renderização HTML.
+ * - Se já contém tags HTML, retorna como está.
+ * - Se é texto puro, converte \n em <br/>.
+ */
+export function normalizeContractHtml(content: string): string {
+  if (!content) return '';
+  const hasHtml = /<[a-z][\s\S]*>/i.test(content);
+  if (hasHtml) return content;
+  // texto puro — escapar e converter \n
+  const escaped = content
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return escaped.replace(/\n/g, '<br/>');
+}
+
 export function formatDateOnly(value: string | null | undefined): string {
   if (!value) return '—';
   // Date-only string: "2026-03-09"

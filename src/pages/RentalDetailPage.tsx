@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchRentalById, changeRentalStatus, fetchRentalEvents } from '@/services/rentals.service';
+import { normalizeContractHtml } from '@/lib/utils';
 import { fetchContractTemplates, createRentalContract, renderTemplate } from '@/services/contracts.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
@@ -370,7 +371,7 @@ export function RentalDetailPage() {
 
                 {previewHtml && (
                   <div className="border rounded-lg p-6 bg-white text-black max-h-[400px] overflow-auto">
-                    <div className="prose prose-sm max-w-none whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    <div className="contract-render prose prose-sm max-w-none break-words" dangerouslySetInnerHTML={{ __html: normalizeContractHtml(previewHtml) }} />
                   </div>
                 )}
               </>

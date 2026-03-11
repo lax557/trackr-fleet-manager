@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ContractEditor } from '@/components/ContractEditor';
 import { ArrowLeft, Save, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { normalizeContractHtml } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -200,7 +201,7 @@ export function ContractTemplateEditorPage() {
             <DialogTitle>Preview — {name || 'Sem nome'}</DialogTitle>
           </DialogHeader>
           <div className="bg-white text-black p-8 rounded-lg shadow-inner border min-h-[500px]">
-            <div className="prose prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: content }} />
+            <div className="contract-render prose prose-sm max-w-none break-words" dangerouslySetInnerHTML={{ __html: normalizeContractHtml(content) }} />
           </div>
         </DialogContent>
       </Dialog>

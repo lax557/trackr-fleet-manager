@@ -156,3 +156,17 @@
     @apply bg-gray-100 text-gray-700 border-gray-200;
   }
 }
+
+/* Contract renderer — ensure paragraphs and breaks are visible */
+.contract-render p {
+  margin-bottom: 0.75em;
+  min-height: 1em;
+}
+.contract-render br {
+  display: block;
+  content: "";
+  margin-top: 0.25em;
+}
+.contract-render p:empty::after {
+  content: "\00a0";
+}

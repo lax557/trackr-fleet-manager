@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, MoreHorizontal, Eye, Play, StopCircle, XCircle, Send, Loader2, CheckCircle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrencyBRL, formatDateOnly } from '@/lib/utils';
+import { formatCurrencyBRL, formatDateOnly, normalizeContractHtml } from '@/lib/utils';
 
 const statusLabels: Record<string, string> = {
   draft: 'Rascunho',
@@ -279,7 +279,7 @@ export function RentalsPage() {
                 </div>
                 {previewHtml && (
                   <div className="border rounded-lg p-6 bg-white text-black max-h-[400px] overflow-auto">
-                    <div className="prose prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    <div className="contract-render prose prose-sm max-w-none break-words" dangerouslySetInnerHTML={{ __html: normalizeContractHtml(previewHtml) }} />
                   </div>
                 )}
               </>
