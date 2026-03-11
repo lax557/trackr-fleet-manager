@@ -52,6 +52,7 @@ export function DriverDetailPage() {
     birth_date: '',
     email: '',
     driver_app: '',
+    address_full: '',
   });
 
   const startEditing = () => {
@@ -64,6 +65,7 @@ export function DriverDetailPage() {
         birth_date: driver.birth_date || '',
         email: driver.email || '',
         driver_app: driver.driver_app || '',
+        address_full: (driver as any).address_full || '',
       });
       setEditing(true);
     }
