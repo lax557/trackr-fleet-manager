@@ -31,9 +31,17 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pb-2">
           <img
-            src="/targa-logo.svg"
+            src="/targa-logo.png"
             alt="Targa"
             className="h-16 sm:h-20 w-auto object-contain mx-auto mb-4"
+            onError={(e) => {
+              const el = e.currentTarget;
+              el.style.display = 'none';
+              const fb = document.createElement('div');
+              fb.className = 'h-16 w-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-2xl mx-auto mb-4';
+              fb.textContent = 'T';
+              el.parentElement?.appendChild(fb);
+            }}
           />
           <CardDescription>Faça login para acessar o sistema</CardDescription>
         </CardHeader>
