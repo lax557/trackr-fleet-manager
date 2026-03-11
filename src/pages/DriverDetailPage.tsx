@@ -302,6 +302,10 @@ export function DriverDetailPage() {
                     <p className="text-sm text-muted-foreground">App de Motorista</p>
                     <p className="font-medium">{driver.driver_app || '—'}</p>
                   </div>
+                  <div className="col-span-2">
+                    <p className="text-sm text-muted-foreground">Endereço</p>
+                    <p className="font-medium">{(driver as any).address_full || '—'}</p>
+                  </div>
                 </div>
               </>
             )}
