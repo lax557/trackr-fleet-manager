@@ -125,7 +125,7 @@ export function NewDriverPage() {
       cpf: formData.cpf,
       cnh: formData.cnh,
       birth_date: formData.birthDate || undefined,
-      email: undefined,
+      email: formData.email || undefined,
       address_full: addressParts.join(', ') || undefined,
     });
   };
