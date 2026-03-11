@@ -62,7 +62,7 @@ export async function fetchRentals(): Promise<RentalWithDetails[]> {
 export async function fetchRentalById(rentalId: string): Promise<RentalWithDetails | null> {
   const { data, error } = await supabase
     .from('rentals')
-    .select('*, drivers(full_name, phone, cpf, cnh), vehicles(plate, vehicle_code, brand, model, status)')
+    .select('*, drivers(full_name, phone, cpf, cnh, email, address_full), vehicles(plate, vehicle_code, brand, model, status)')
     .eq('id', rentalId)
     .maybeSingle();
 
