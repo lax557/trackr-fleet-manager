@@ -200,7 +200,7 @@ export function ContractTemplateEditorPage() {
             <DialogTitle>Preview — {name || 'Sem nome'}</DialogTitle>
           </DialogHeader>
           <div className="bg-white text-black p-8 rounded-lg shadow-inner border min-h-[500px]">
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
+            <div className="prose prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: content }} />
           </div>
         </DialogContent>
       </Dialog>

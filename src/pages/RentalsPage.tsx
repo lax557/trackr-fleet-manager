@@ -279,7 +279,7 @@ export function RentalsPage() {
                 </div>
                 {previewHtml && (
                   <div className="border rounded-lg p-6 bg-white text-black max-h-[400px] overflow-auto">
-                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    <div className="prose prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: previewHtml }} />
                   </div>
                 )}
               </>

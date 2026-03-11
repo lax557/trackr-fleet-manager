@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createOrder, getOrderById, updateOrder, areaLabels, MaintenanceTypeDB, ServiceAreaDB, MaintenanceOrderStatus } from '@/services/maintenance.service';
+import { createOrder, getOrderById, updateOrder, addItem as addItemService, deleteItem as deleteItemService, areaLabels, MaintenanceTypeDB, ServiceAreaDB, MaintenanceOrderStatus } from '@/services/maintenance.service';
+import { supabase } from '@/integrations/supabase/client';
 import { fetchVehicles } from '@/services/vehicles.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,16 +113,46 @@ export function NewMaintenancePage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: () => updateOrder(editId!, {
-      type: maintenanceType,
-      service_area: serviceArea,
-      status,
-      supplier_name: supplierName || null,
-      odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
-      notes: notes || null,
-      labor_cost: parseFloat(laborCost || '0'),
-      opened_at: new Date(openedAt).toISOString(),
-    }),
+    mutationFn: async () => {
+      // 1. Update order fields
+      await updateOrder(editId!, {
+        type: maintenanceType,
+        service_area: serviceArea,
+        status,
+        supplier_name: supplierName || null,
+        odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
+        notes: notes || null,
+        labor_cost: parseFloat(laborCost || '0'),
+        opened_at: new Date(openedAt).toISOString(),
+      });
+
+      // 2. Replace items: delete existing, insert current
+      const existingItems = existingOrder?.maintenance_items || [];
+      for (const item of existingItems) {
+        await deleteItemService(item.id);
+      }
+
+      // 3. Insert current items
+      const validItems = items.filter(i => i.description);
+      if (validItems.length > 0) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+        const { data: profile } = await supabase.from('profiles').select('company_id').eq('user_id', user.id).single();
+        if (!profile) throw new Error('Profile not found');
+
+        const itemsToInsert = validItems.map(i => ({
+          company_id: profile.company_id,
+          maintenance_order_id: editId!,
+          description: i.description,
+          qty: i.qty,
+          unit_cost: i.unitCost,
+          total_cost: i.qty * i.unitCost,
+        }));
+        const { error: itemsErr } = await supabase.from('maintenance_items').insert(itemsToInsert);
+        if (itemsErr) throw itemsErr;
+      }
+      // Note: the DB trigger recalc_maintenance_total will recalculate parts_cost and total_cost automatically
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['maintenance-order', editId] });
