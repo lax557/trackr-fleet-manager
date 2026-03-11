@@ -205,6 +205,10 @@ export function NewDriverPage() {
                   <Input id="cnh" value={formData.cnh} onChange={(e) => handleInputChange('cnh', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="00000000000" required />
                 </div>
                 <div>
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} placeholder="motorista@email.com" />
+                </div>
+                <div>
                   <Label htmlFor="birthDate">Data de Nascimento</Label>
                   <Input id="birthDate" type="date" value={formData.birthDate} onChange={(e) => handleInputChange('birthDate', e.target.value)} />
                 </div>
