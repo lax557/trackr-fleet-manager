@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchRentalById, changeRentalStatus, fetchRentalEvents } from '@/services/rentals.service';
+import { normalizeContractHtml } from '@/lib/utils';
 import { fetchContractTemplates, createRentalContract, renderTemplate } from '@/services/contracts.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
