@@ -19,18 +19,22 @@ import {
 
 const TEMPLATE_VARIABLES = [
   { label: 'Nome do Motorista', value: '{{nome_motorista}}' },
-  { label: 'CPF', value: '{{cpf}}' },
-  { label: 'CNH', value: '{{cnh}}' },
+  { label: 'CPF', value: '{{cpf_motorista}}' },
+  { label: 'CNH', value: '{{cnh_motorista}}' },
+  { label: 'Telefone', value: '{{telefone_motorista}}' },
+  { label: 'E-mail', value: '{{email_motorista}}' },
+  { label: 'Endereço Completo', value: '{{endereco_completo}}' },
   { label: 'Placa', value: '{{placa}}' },
-  { label: 'Vehicle ID', value: '{{vehicle_id}}' },
-  { label: 'Modelo do Veículo', value: '{{modelo_veiculo}}' },
-  { label: 'Valor da Locação', value: '{{valor_locacao}}' },
+  { label: 'Código do Veículo', value: '{{vehicle_code}}' },
+  { label: 'Marca', value: '{{marca}}' },
+  { label: 'Modelo', value: '{{modelo}}' },
+  { label: 'Valor Semanal', value: '{{valor_semanal}}' },
+  { label: 'Valor Caução', value: '{{valor_caucao}}' },
+  { label: 'Valor Total', value: '{{valor_total}}' },
   { label: 'Data de Início', value: '{{data_inicio}}' },
   { label: 'Data de Fim', value: '{{data_fim}}' },
-  { label: 'Dia de Cobrança', value: '{{dia_cobranca}}' },
-  { label: 'Responsável', value: '{{responsavel_locacao}}' },
-  { label: 'Caução', value: '{{caucao}}' },
-  { label: 'Frequência', value: '{{frequencia}}' },
+  { label: 'Data/Hora Envio', value: '{{data_hora_envio}}' },
+  { label: 'Data Atual', value: '{{data_atual}}' },
 ];
 
 interface MenuBarProps {
