@@ -246,6 +246,10 @@ export function DriverDetailPage() {
                     <Label>App de Motorista</Label>
                     <Input value={form.driver_app} onChange={e => setForm(f => ({ ...f, driver_app: e.target.value }))} placeholder="Uber, 99, etc." />
                   </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <Label>Endereço Completo</Label>
+                    <Input value={form.address_full} onChange={e => setForm(f => ({ ...f, address_full: e.target.value }))} placeholder="Rua, número, bairro, cidade/UF, CEP" />
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-2">
                   <Button onClick={() => updateMut.mutate()} disabled={updateMut.isPending}>
