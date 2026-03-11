@@ -40,6 +40,7 @@ interface ProfileRow {
 }
 
 export default function UsersPermissionsPage() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
