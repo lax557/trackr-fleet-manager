@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setIsLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: 'https://targafleet.lovable.app/reset-password',
     });
     setIsLoading(false);
     if (error) {
