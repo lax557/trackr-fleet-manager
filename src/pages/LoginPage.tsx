@@ -58,12 +58,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  Esqueceu a senha?
-                </Link>
-              </div>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -72,17 +67,16 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                  Esqueceu a senha?
+                </Link>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Não tem conta?{' '}
-            <Link to="/signup" className="text-primary hover:underline">
-              Criar conta
-            </Link>
-          </p>
         </CardContent>
       </Card>
     </div>
