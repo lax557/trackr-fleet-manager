@@ -155,10 +155,6 @@ export function ContractTemplateEditorPage() {
           </DialogHeader>
           <div className="bg-white text-black p-8 rounded-lg shadow-inner border min-h-[500px]">
             <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
-            <div className="mt-8 pt-4 border-t text-xs text-gray-400 flex justify-between">
-              <span>Trackr — Gestão de Frota</span>
-              <span>{new Date().toLocaleDateString('pt-BR')}</span>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

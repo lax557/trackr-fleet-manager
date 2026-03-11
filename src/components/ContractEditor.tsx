@@ -19,18 +19,22 @@ import {
 
 const TEMPLATE_VARIABLES = [
   { label: 'Nome do Motorista', value: '{{nome_motorista}}' },
-  { label: 'CPF', value: '{{cpf}}' },
-  { label: 'CNH', value: '{{cnh}}' },
+  { label: 'CPF', value: '{{cpf_motorista}}' },
+  { label: 'CNH', value: '{{cnh_motorista}}' },
+  { label: 'Telefone', value: '{{telefone_motorista}}' },
+  { label: 'E-mail', value: '{{email_motorista}}' },
+  { label: 'Endereço Completo', value: '{{endereco_completo}}' },
   { label: 'Placa', value: '{{placa}}' },
-  { label: 'Vehicle ID', value: '{{vehicle_id}}' },
-  { label: 'Modelo do Veículo', value: '{{modelo_veiculo}}' },
-  { label: 'Valor da Locação', value: '{{valor_locacao}}' },
+  { label: 'Código do Veículo', value: '{{vehicle_code}}' },
+  { label: 'Marca', value: '{{marca}}' },
+  { label: 'Modelo', value: '{{modelo}}' },
+  { label: 'Valor Semanal', value: '{{valor_semanal}}' },
+  { label: 'Valor Caução', value: '{{valor_caucao}}' },
+  { label: 'Valor Total', value: '{{valor_total}}' },
   { label: 'Data de Início', value: '{{data_inicio}}' },
   { label: 'Data de Fim', value: '{{data_fim}}' },
-  { label: 'Dia de Cobrança', value: '{{dia_cobranca}}' },
-  { label: 'Responsável', value: '{{responsavel_locacao}}' },
-  { label: 'Caução', value: '{{caucao}}' },
-  { label: 'Frequência', value: '{{frequencia}}' },
+  { label: 'Data/Hora Envio', value: '{{data_hora_envio}}' },
+  { label: 'Data Atual', value: '{{data_atual}}' },
 ];
 
 interface MenuBarProps {
@@ -142,7 +146,7 @@ export function ContractEditor({ content, onChange }: ContractEditorProps) {
         <div className="flex-1 overflow-auto p-4">
           <EditorContent
             editor={editor}
-            className="prose prose-sm dark:prose-invert max-w-none min-h-[400px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-border [&_.ProseMirror_td]:p-2 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-border [&_.ProseMirror_th]:p-2 [&_.ProseMirror_th]:bg-muted"
+            className="prose prose-sm dark:prose-invert max-w-none min-h-[400px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_h1]:text-2xl [&_.ProseMirror_h1]:font-bold [&_.ProseMirror_h2]:text-xl [&_.ProseMirror_h2]:font-semibold [&_.ProseMirror_h3]:text-lg [&_.ProseMirror_h3]:font-semibold [&_.ProseMirror_strong]:font-bold [&_.ProseMirror_em]:italic [&_.ProseMirror_u]:underline [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-border [&_.ProseMirror_td]:p-2 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-border [&_.ProseMirror_th]:p-2 [&_.ProseMirror_th]:bg-muted [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-6 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-6"
           />
         </div>
       </div>

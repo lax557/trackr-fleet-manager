@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchRentals, changeRentalStatus, RentalWithDetails } from '@/services/rentals.service';
+import { fetchContractTemplates, createRentalContract, renderTemplate } from '@/services/contracts.service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,9 +12,13 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, Eye, Play, StopCircle, XCircle, Send, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Plus, MoreHorizontal, Eye, Play, StopCircle, XCircle, Send, Loader2, CheckCircle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrencyBRL, formatDateOnly } from '@/lib/utils';
 
@@ -37,10 +42,48 @@ export function RentalsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [selectedRental, setSelectedRental] = useState<RentalWithDetails | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [previewHtml, setPreviewHtml] = useState('');
+
   const { data: rentals = [], isLoading } = useQuery({
     queryKey: ['rentals'],
     queryFn: fetchRentals,
   });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['contract-templates'],
+    queryFn: fetchContractTemplates,
+    enabled: contractModalOpen,
+  });
+
+  const contractMutation = useMutation({
+    mutationFn: () => createRentalContract(selectedRental!.id, selectedTemplateId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+      setContractModalOpen(false);
+      toast.success('Contrato gerado e enviado para assinatura!');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const handleOpenSignatureModal = (rental: RentalWithDetails) => {
+    setSelectedRental(rental);
+    setSelectedTemplateId('');
+    setPreviewHtml('');
+    setContractModalOpen(true);
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (selectedRental) {
+      const template = templates.find(t => t.id === templateId);
+      if (template) {
+        setPreviewHtml(renderTemplate(template.body, selectedRental));
+      }
+    }
+  };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: 'awaiting_signature' | 'active' | 'ended' | 'cancelled' }) =>
@@ -163,7 +206,7 @@ export function RentalsPage() {
                           Ver Detalhes
                         </DropdownMenuItem>
                         {rental.status === 'draft' && (
-                          <DropdownMenuItem onClick={() => navigate(`/rentals/${rental.id}`)}>
+                          <DropdownMenuItem onClick={() => handleOpenSignatureModal(rental)}>
                             <Send className="h-4 w-4 mr-2" />
                             Enviar para Assinatura
                           </DropdownMenuItem>
@@ -198,6 +241,60 @@ export function RentalsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Send-to-signature modal */}
+      <Dialog open={contractModalOpen} onOpenChange={setContractModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Gerar Contrato</DialogTitle>
+            <DialogDescription>
+              Selecione um modelo para gerar o contrato de {selectedRental?.driver_name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {templates.filter(t => t.is_active).length === 0 ? (
+              <div className="text-center py-8 space-y-3">
+                <FileText className="h-10 w-10 mx-auto text-muted-foreground" />
+                <p className="text-muted-foreground">Nenhum modelo de contrato ativo encontrado.</p>
+                <Button variant="outline" onClick={() => { setContractModalOpen(false); navigate('/rentals/templates/new'); }}>
+                  Criar Modelo de Contrato
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Modelo de Contrato *</label>
+                  <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+                    <SelectTrigger><SelectValue placeholder="Selecione um modelo..." /></SelectTrigger>
+                    <SelectContent>
+                      {templates.filter(t => t.is_active).map(t => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />{t.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {previewHtml && (
+                  <div className="border rounded-lg p-6 bg-white text-black max-h-[400px] overflow-auto">
+                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContractModalOpen(false)}>Cancelar</Button>
+            <Button onClick={() => contractMutation.mutate()}
+              disabled={!selectedTemplateId || contractMutation.isPending}>
+              {contractMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+              Gerar e Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
