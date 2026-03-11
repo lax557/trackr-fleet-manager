@@ -322,6 +322,7 @@ export function NewDriverPage() {
                     <p><span className="text-muted-foreground">Telefone:</span> {formData.phone}</p>
                     <p><span className="text-muted-foreground">CPF:</span> {formData.cpf}</p>
                     <p><span className="text-muted-foreground">CNH:</span> {formData.cnh}</p>
+                    {formData.email && <p><span className="text-muted-foreground">E-mail:</span> {formData.email}</p>}
                     {formData.birthDate && <p><span className="text-muted-foreground">Nascimento:</span> {formData.birthDate}</p>}
                   </CardContent>
                 </Card>
