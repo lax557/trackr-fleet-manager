@@ -11,6 +11,7 @@ export interface Profile {
   phone: string | null;
   role: SystemRole;
   theme: string;
+  is_active: boolean;
 }
 
 interface AuthContextType {
