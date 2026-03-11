@@ -206,7 +206,7 @@ export function RentalsPage() {
                           Ver Detalhes
                         </DropdownMenuItem>
                         {rental.status === 'draft' && (
-                          <DropdownMenuItem onClick={() => navigate(`/rentals/${rental.id}`)}>
+                          <DropdownMenuItem onClick={() => handleOpenSignatureModal(rental)}>
                             <Send className="h-4 w-4 mr-2" />
                             Enviar para Assinatura
                           </DropdownMenuItem>
