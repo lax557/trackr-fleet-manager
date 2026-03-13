@@ -119,8 +119,9 @@ export interface CreateOrderPayload {
   type: MaintenanceTypeDB;
   service_area: ServiceAreaDB;
   status?: MaintenanceOrderStatus;
+  supplier_id: string;
   supplier_name?: string | null;
-  odometer_at_open?: number | null;
+  odometer_at_open: number;
   notes?: string | null;
   labor_cost?: number;
   items: { description: string; qty: number; unit_cost: number }[];
