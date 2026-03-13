@@ -354,7 +354,22 @@ export function NewMaintenancePage() {
                 </div>
 
                 <div className="space-y-2"><Label>Data/Hora *</Label><Input type="datetime-local" value={openedAt} onChange={e => setOpenedAt(e.target.value)} /></div>
-                <div className="space-y-2"><Label>Odômetro (km)</Label><Input type="number" placeholder="Ex: 45000" value={odometerKm} onChange={e => setOdometerKm(e.target.value)} /></div>
+                <div className="space-y-2">
+                  <Label>Odômetro (km)</Label>
+                  <Input type="number" placeholder="Ex: 45000" value={odometerKm} onChange={e => setOdometerKm(e.target.value)} />
+                  {isOdometerLower && (
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs mt-1">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Odômetro menor que o atual ({vehicleCurrentOdometer.toLocaleString()} km).
+                        {canOverrideOdometer ? ' Será necessária confirmação ao salvar.' : ' Bloqueado — somente gerente/admin pode sobrescrever.'}
+                      </span>
+                    </div>
+                  )}
+                  {selectedVehicle && vehicleCurrentOdometer > 0 && !isOdometerLower && (
+                    <p className="text-xs text-muted-foreground">Atual: {vehicleCurrentOdometer.toLocaleString()} km</p>
+                  )}
+                </div>
 
                 {/* Supplier Combobox */}
                 <div className="space-y-2">
