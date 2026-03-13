@@ -145,9 +145,7 @@ export async function createVehicle(vehicle: {
   vin?: string;
   renavam?: string;
   delivered_at?: string;
-  owner_type?: string;
-  owner_name?: string;
-  owner_document?: string;
+  owner_id?: string;
 }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
