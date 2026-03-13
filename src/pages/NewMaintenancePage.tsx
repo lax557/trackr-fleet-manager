@@ -105,6 +105,24 @@ export function NewMaintenancePage() {
     queryFn: fetchSuppliers,
   });
 
+  const { data: catalogItems = [] } = useQuery({
+    queryKey: ['maintenance-catalog-items'],
+    queryFn: fetchCatalogItems,
+  });
+
+  const { data: existingExecutedItems } = useQuery({
+    queryKey: ['executed-items', editId],
+    queryFn: () => fetchExecutedItems(editId!),
+    enabled: isEditing && !!editId,
+  });
+
+  // Populate executed items when editing
+  useEffect(() => {
+    if (existingExecutedItems && loaded) {
+      setExecutedItemIds(existingExecutedItems.map(e => e.item_id));
+    }
+  }, [existingExecutedItems, loaded]);
+
   const selectedVehicle = useMemo(() => vehicles.find(v => v.id === vehicleId), [vehicles, vehicleId]);
   const selectedSupplier = useMemo(() => suppliers.find(s => s.id === supplierId), [suppliers, supplierId]);
 
