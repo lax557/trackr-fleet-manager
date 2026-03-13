@@ -26,7 +26,9 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { user, profile, signOut, refreshProfile } = useAuth();
-  const { can } = usePermissions();
+  const { can, role } = usePermissions();
+  const canExport = role === 'manager' || role === 'admin';
+  const [exportOpen, setExportOpen] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
