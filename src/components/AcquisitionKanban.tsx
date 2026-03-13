@@ -4,13 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StageBadge } from '@/components/StatusBadge';
 import { AcquisitionStage, VehicleWithDetails } from '@/types';
-import { stageLabels, purchaseModeLabels } from '@/data/mockData';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { ArrowRight, Calendar, CreditCard } from 'lucide-react';
+import { stageLabels } from '@/data/mockData';
+import { ArrowRight } from 'lucide-react';
 
 interface AcquisitionKanbanProps {
-  vehicles: VehicleWithDetails[];
+  vehicles: (VehicleWithDetails & { acquisitionStage?: AcquisitionStage | null })[];
   onMoveStage: (vehicleId: string) => void;
   onViewDetails: (vehicleId: string) => void;
 }
@@ -26,7 +24,7 @@ const stages: AcquisitionStage[] = [
 
 export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: AcquisitionKanbanProps) {
   const groupedByStage = useMemo(() => {
-    const groups: Record<AcquisitionStage, VehicleWithDetails[]> = {
+    const groups: Record<AcquisitionStage, typeof vehicles> = {
       EM_LIBERACAO: [],
       APROVADO: [],
       FATURADO: [],
@@ -36,8 +34,11 @@ export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: Acqu
     };
 
     vehicles.forEach(vehicle => {
-      if (vehicle.acquisition) {
-        groups[vehicle.acquisition.stage].push(vehicle);
+      const stage = (vehicle as any).acquisitionStage || vehicle.acquisition?.stage || 'EM_LIBERACAO';
+      if (groups[stage as AcquisitionStage]) {
+        groups[stage as AcquisitionStage].push(vehicle);
+      } else {
+        groups['EM_LIBERACAO'].push(vehicle);
       }
     });
 
@@ -70,7 +71,7 @@ export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: Acqu
                     <CardContent className="p-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-primary text-sm">
-                          {vehicle.id}
+                          {(vehicle as any).vehicleCode || vehicle.id.slice(0, 8)}
                         </span>
                         <StageBadge stage={stage} />
                       </div>
@@ -79,28 +80,9 @@ export function AcquisitionKanban({ vehicles, onMoveStage, onViewDetails }: Acqu
                         {vehicle.make} {vehicle.model}
                       </div>
 
-                      {vehicle.acquisition && (
-                        <div className="space-y-1 text-xs">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <CreditCard className="h-3 w-3" />
-                            <span>{purchaseModeLabels[vehicle.acquisition.purchaseMode]}</span>
-                          </div>
-                          
-                          {vehicle.acquisition.group && (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <span>Grupo: {vehicle.acquisition.group}</span>
-                              {vehicle.acquisition.quota && <span>• {vehicle.acquisition.quota}</span>}
-                            </div>
-                          )}
-                          
-                          {vehicle.acquisition.expectedDate && (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              <span>
-                                {format(vehicle.acquisition.expectedDate, 'dd/MM/yyyy', { locale: ptBR })}
-                              </span>
-                            </div>
-                          )}
+                      {vehicle.plate && (
+                        <div className="text-xs text-muted-foreground">
+                          Placa: {vehicle.plate}
                         </div>
                       )}
 

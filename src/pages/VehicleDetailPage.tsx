@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchVehicleById, markVehicleDelivered } from '@/services/vehicles.service';
-import { StatusBadge } from '@/components/StatusBadge';
+import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
 import { VehicleFinesCard } from '@/components/VehicleFinesCard';
+import { EditVehicleModal } from '@/components/EditVehicleModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { usePermissions } from '@/hooks/usePermissions';
 import { 
   ArrowLeft, 
   RefreshCcw, 
@@ -15,15 +18,25 @@ import {
   Gauge,
   Clock,
   CheckCircle,
+  Pencil,
+  User,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
+const ownerTypeLabels: Record<string, string> = {
+  TARGA: 'Targa (Próprio)',
+  PF: 'Pessoa Física',
+  PJ: 'Pessoa Jurídica',
+};
+
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: vehicle, isLoading } = useQuery({
     queryKey: ['vehicle', id],
@@ -80,6 +93,9 @@ export function VehicleDetailPage() {
                 </Badge>
               )}
               <StatusBadge status={vehicle.currentStatus} />
+              {vehicle.acquisitionStage && vehicle.currentStatus === 'EM_LIBERACAO' && (
+                <StageBadge stage={vehicle.acquisitionStage} />
+              )}
             </div>
             <p className="text-muted-foreground mt-1">
               {vehicle.make} {vehicle.model} {vehicle.version} • {
@@ -91,7 +107,13 @@ export function VehicleDetailPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {can('vehicle:edit') && (
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          )}
           <Button variant="outline">
             <RefreshCcw className="h-4 w-4 mr-2" />
             Alterar status
@@ -102,7 +124,7 @@ export function VehicleDetailPage() {
               Nova locação
             </Button>
           )}
-          {vehicle.currentStatus === 'EM_LIBERACAO' && !(vehicle as any).deliveredAt && (
+          {vehicle.currentStatus === 'EM_LIBERACAO' && !vehicle.deliveredAt && (
             <Button onClick={() => deliverMutation.mutate()} disabled={deliverMutation.isPending}>
               <CheckCircle className="h-4 w-4 mr-2" />
               Marcar como Entregue
@@ -159,6 +181,10 @@ export function VehicleDetailPage() {
                   </span>
                 </div>
                 <div>
+                  <p className="text-sm text-muted-foreground">Cor</p>
+                  <p className="text-sm">{vehicle.color || '—'}</p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">RENAVAM</p>
                   <p className="text-sm">{vehicle.renavam || '—'}</p>
                 </div>
@@ -175,8 +201,8 @@ export function VehicleDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Entregue em</p>
                   <p className="font-medium">
-                    {(vehicle as any).deliveredAt
-                      ? format((vehicle as any).deliveredAt, "dd/MM/yyyy", { locale: ptBR })
+                    {vehicle.deliveredAt
+                      ? format(vehicle.deliveredAt, "dd/MM/yyyy", { locale: ptBR })
                       : 'Pendente'}
                   </p>
                 </div>
@@ -184,7 +210,35 @@ export function VehicleDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Status timeline placeholder */}
+          {/* Owner Card */}
+          {(vehicle.ownerType || vehicle.ownerName) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  <CardTitle>Proprietário do Veículo</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tipo</p>
+                    <p className="font-medium">{vehicle.ownerType ? ownerTypeLabels[vehicle.ownerType] || vehicle.ownerType : '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Nome</p>
+                    <p className="font-medium">{vehicle.ownerName || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Documento</p>
+                    <p className="font-medium">{vehicle.ownerDocument || '—'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Status timeline */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
@@ -248,6 +302,8 @@ export function VehicleDetailPage() {
           </Card>
         </div>
       </div>
+
+      <EditVehicleModal vehicle={vehicle} open={editOpen} onOpenChange={setEditOpen} />
     </div>
   );
 }

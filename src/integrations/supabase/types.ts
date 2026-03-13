@@ -1424,6 +1424,7 @@ export type Database = {
         Row: {
           acquisition_cost: number | null
           acquisition_date: string | null
+          acquisition_stage: string | null
           brand: string
           category: string
           color: string | null
@@ -1434,6 +1435,9 @@ export type Database = {
           id: string
           model: string
           odometer: number | null
+          owner_document: string | null
+          owner_name: string | null
+          owner_type: string | null
           plate: string | null
           renavam: string | null
           status: Database["public"]["Enums"]["vehicle_status"]
@@ -1448,6 +1452,7 @@ export type Database = {
         Insert: {
           acquisition_cost?: number | null
           acquisition_date?: string | null
+          acquisition_stage?: string | null
           brand: string
           category?: string
           color?: string | null
@@ -1458,6 +1463,9 @@ export type Database = {
           id?: string
           model: string
           odometer?: number | null
+          owner_document?: string | null
+          owner_name?: string | null
+          owner_type?: string | null
           plate?: string | null
           renavam?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"]
@@ -1472,6 +1480,7 @@ export type Database = {
         Update: {
           acquisition_cost?: number | null
           acquisition_date?: string | null
+          acquisition_stage?: string | null
           brand?: string
           category?: string
           color?: string | null
@@ -1482,6 +1491,9 @@ export type Database = {
           id?: string
           model?: string
           odometer?: number | null
+          owner_document?: string | null
+          owner_name?: string | null
+          owner_type?: string | null
           plate?: string | null
           renavam?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"]
