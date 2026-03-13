@@ -20,11 +20,6 @@ function OpenFinesBadge({ count, hasDriver }: { count: number; hasDriver: boolea
   return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">{count}+ abertas</Badge>;
 }
 
-const ownerTypeLabels: Record<string, string> = {
-  TARGA: 'Targa',
-  PF: 'PF',
-  PJ: 'PJ',
-};
 
 interface VehiclesTableProps {
   vehicles: VehicleWithDetails[];
