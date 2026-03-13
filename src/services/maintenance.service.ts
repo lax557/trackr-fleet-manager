@@ -182,6 +182,7 @@ export async function updateOrder(id: string, payload: Partial<{
   type: MaintenanceTypeDB;
   service_area: ServiceAreaDB;
   status: MaintenanceOrderStatus;
+  supplier_id: string;
   supplier_name: string | null;
   odometer_at_open: number | null;
   notes: string | null;
