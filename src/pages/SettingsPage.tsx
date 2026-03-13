@@ -4,13 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
+import { ExportModal } from '@/components/ExportModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, User, Palette, Save, LogOut, Users, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, Palette, Save, LogOut, Users, Trash2, AlertTriangle, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { roleLabels } from '@/types/roles';
 
@@ -25,7 +26,9 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { user, profile, signOut, refreshProfile } = useAuth();
-  const { can } = usePermissions();
+  const { can, role } = usePermissions();
+  const canExport = role === 'manager' || role === 'admin';
+  const [exportOpen, setExportOpen] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -128,6 +131,19 @@ export function SettingsPage() {
             <div className="flex-1">
               <p className="font-medium">Usuários e Permissões</p>
               <p className="text-sm text-muted-foreground">Gerencie cargos e acessos da equipe</p>
+            </div>
+            <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      )}
+
+      {canExport && (
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setExportOpen(true)}>
+          <CardContent className="flex items-center gap-4 py-4">
+            <Download className="h-5 w-5 text-primary" />
+            <div className="flex-1">
+              <p className="font-medium">Exportar Dados</p>
+              <p className="text-sm text-muted-foreground">Exporte veículos, manutenções, contratos e multas em CSV ou Excel</p>
             </div>
             <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
           </CardContent>
@@ -250,6 +266,8 @@ export function SettingsPage() {
           {saving ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </div>
+
+      <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   );
 }
