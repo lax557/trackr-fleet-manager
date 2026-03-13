@@ -257,13 +257,29 @@ export function NewMaintenancePage() {
     onError: (e: any) => toast.error(e.message || 'Erro ao atualizar manutenção'),
   });
 
-  const handleSave = () => {
+  const doSave = () => {
     if (!vehicleId) { toast.error('Selecione um veículo'); return; }
     if (isEditing) {
       updateMut.mutate();
     } else {
       createMut.mutate();
     }
+  };
+
+  const handleSave = () => {
+    if (!vehicleId) { toast.error('Selecione um veículo'); return; }
+    // Odometer validation
+    if (isOdometerLower) {
+      if (!canOverrideOdometer) {
+        toast.error(`Odômetro informado (${enteredOdometer?.toLocaleString()} km) é menor que o atual do veículo (${vehicleCurrentOdometer.toLocaleString()} km). Somente gerentes/admins podem sobrescrever.`);
+        return;
+      }
+      // Show override confirmation
+      setOdometerOverrideOpen(true);
+      setPendingSaveAfterOverride(true);
+      return;
+    }
+    doSave();
   };
 
   const isSaving = createMut.isPending || updateMut.isPending;
