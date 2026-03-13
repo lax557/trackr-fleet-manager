@@ -295,6 +295,7 @@ export function VehicleDetailPage() {
             </Card>
           )}
 
+          <VehiclePreventiveCard vehicleId={vehicle.id} />
           <VehicleMaintenanceCard vehicleId={vehicle.id} />
           <VehicleFinesCard vehicleId={vehicle.id} />
 

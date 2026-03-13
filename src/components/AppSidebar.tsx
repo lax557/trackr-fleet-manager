@@ -48,6 +48,7 @@ const menuItems: MenuItem[] = [
     ],
   },
   { title: 'Manutenções', url: '/maintenance', icon: Wrench, permission: 'maintenance:view' },
+  { title: 'Preventiva', url: '/maintenance/preventive', icon: Bell, permission: 'maintenance:view' },
   { title: 'Multas', url: '/fines', icon: AlertTriangle, permission: 'fine:view' },
   {
     title: 'Financeiro',

@@ -74,6 +74,7 @@ function AuthenticatedLayout() {
             <Route path="/rentals/templates/new" element={<ContractTemplateEditorPage />} />
             <Route path="/rentals/templates/:id" element={<ContractTemplateEditorPage />} />
             <Route path="/maintenance" element={<MaintenancesPage />} />
+            <Route path="/maintenance/preventive" element={<PreventiveAlertsPage />} />
             <Route path="/maintenance/new" element={<ProtectedRoute requiredPermission="maintenance:create"><NewMaintenancePage /></ProtectedRoute>} />
             <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
             <Route path="/maintenance/:id/edit" element={<NewMaintenancePage />} />
