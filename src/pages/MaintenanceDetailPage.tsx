@@ -62,6 +62,17 @@ export function MaintenanceDetailPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: () => deleteOrder(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['preventive-alerts'] });
+      toast.success('Manutenção excluída');
+      navigate('/maintenance');
+    },
+    onError: (e: any) => toast.error(`Erro: ${e.message}`),
+  });
+
   if (isLoading) return <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">Carregando...</div>;
   if (error || !order) {
     return (
