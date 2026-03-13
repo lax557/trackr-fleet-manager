@@ -220,9 +220,7 @@ export async function updateVehicle(vehicleId: string, fields: {
   if (fields.vin !== undefined) updateData.vin = fields.vin || null;
   if (fields.renavam !== undefined) updateData.renavam = fields.renavam || null;
   if (fields.delivered_at !== undefined) updateData.delivered_at = fields.delivered_at;
-  if (fields.owner_type !== undefined) updateData.owner_type = fields.owner_type;
-  if (fields.owner_name !== undefined) updateData.owner_name = fields.owner_name;
-  if (fields.owner_document !== undefined) updateData.owner_document = fields.owner_document;
+  if (fields.owner_id !== undefined) updateData.owner_id = fields.owner_id;
 
   const { error } = await supabase
     .from('vehicles')
