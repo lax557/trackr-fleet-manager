@@ -133,6 +133,11 @@ export function NewMaintenancePage() {
   const selectedVehicle = useMemo(() => vehicles.find(v => v.id === vehicleId), [vehicles, vehicleId]);
   const selectedSupplier = useMemo(() => suppliers.find(s => s.id === supplierId), [suppliers, supplierId]);
 
+  // Odometer validation
+  const enteredOdometer = odometerKm ? parseInt(odometerKm) : null;
+  const vehicleCurrentOdometer = (selectedVehicle as any)?.odometerCurrent ?? 0;
+  const isOdometerLower = enteredOdometer !== null && vehicleCurrentOdometer > 0 && enteredOdometer < vehicleCurrentOdometer;
+
   // Display name for supplier field: prefer selected supplier, fall back to legacy text
   const supplierDisplayName = selectedSupplier?.name || supplierName || '';
 
