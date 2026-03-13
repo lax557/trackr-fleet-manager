@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createOrder, getOrderById, updateOrder, addItem as addItemService, deleteItem as deleteItemService, areaLabels, MaintenanceTypeDB, ServiceAreaDB, MaintenanceOrderStatus } from '@/services/maintenance.service';
+import { fetchCatalogItems, createCatalogItem, saveExecutedItems, fetchExecutedItems, CatalogItem } from '@/services/maintenanceCatalog.service';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchVehicles } from '@/services/vehicles.service';
 import { fetchSuppliers, createSupplier, SupplierRow } from '@/services/suppliers.service';
