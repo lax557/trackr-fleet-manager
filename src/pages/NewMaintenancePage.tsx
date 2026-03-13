@@ -183,8 +183,9 @@ export function NewMaintenancePage() {
         type: maintenanceType,
         service_area: serviceArea,
         status,
+        supplier_id: supplierId!,
         supplier_name: selectedSupplier?.name || supplierName || null,
-        odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
+        odometer_at_open: parseInt(odometerKm),
         notes: notes || null,
         labor_cost: parseFloat(laborCost || '0'),
         items: items.filter(i => i.description).map(i => ({ description: i.description, qty: i.qty, unit_cost: i.unitCost })),
@@ -211,8 +212,9 @@ export function NewMaintenancePage() {
         type: maintenanceType,
         service_area: serviceArea,
         status,
+        supplier_id: supplierId!,
         supplier_name: selectedSupplier?.name || supplierName || null,
-        odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
+        odometer_at_open: parseInt(odometerKm),
         notes: notes || null,
         labor_cost: parseFloat(laborCost || '0'),
         opened_at: new Date(openedAt).toISOString(),
@@ -259,6 +261,8 @@ export function NewMaintenancePage() {
 
   const doSave = () => {
     if (!vehicleId) { toast.error('Selecione um veículo'); return; }
+    if (!odometerKm || parseInt(odometerKm) <= 0) { toast.error('Odômetro (km) é obrigatório'); return; }
+    if (!supplierId) { toast.error('Selecione um fornecedor'); return; }
     if (isEditing) {
       updateMut.mutate();
     } else {
@@ -268,13 +272,14 @@ export function NewMaintenancePage() {
 
   const handleSave = () => {
     if (!vehicleId) { toast.error('Selecione um veículo'); return; }
+    if (!odometerKm || parseInt(odometerKm) <= 0) { toast.error('Odômetro (km) é obrigatório'); return; }
+    if (!supplierId) { toast.error('Selecione um fornecedor'); return; }
     // Odometer validation
     if (isOdometerLower) {
       if (!canOverrideOdometer) {
         toast.error(`Odômetro informado (${enteredOdometer?.toLocaleString()} km) é menor que o atual do veículo (${vehicleCurrentOdometer.toLocaleString()} km). Somente gerentes/admins podem sobrescrever.`);
         return;
       }
-      // Show override confirmation
       setOdometerOverrideOpen(true);
       setPendingSaveAfterOverride(true);
       return;
@@ -355,7 +360,7 @@ export function NewMaintenancePage() {
 
                 <div className="space-y-2"><Label>Data/Hora *</Label><Input type="datetime-local" value={openedAt} onChange={e => setOpenedAt(e.target.value)} /></div>
                 <div className="space-y-2">
-                  <Label>Odômetro (km)</Label>
+                  <Label>Odômetro (km) *</Label>
                   <Input type="number" placeholder="Ex: 45000" value={odometerKm} onChange={e => setOdometerKm(e.target.value)} />
                   {isOdometerLower && (
                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs mt-1">
@@ -373,7 +378,7 @@ export function NewMaintenancePage() {
 
                 {/* Supplier Combobox */}
                 <div className="space-y-2">
-                  <Label>Fornecedor</Label>
+                  <Label>Fornecedor *</Label>
                   <Popover open={supplierOpen} onOpenChange={setSupplierOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" aria-expanded={supplierOpen} className="w-full justify-between font-normal">

@@ -119,8 +119,9 @@ export interface CreateOrderPayload {
   type: MaintenanceTypeDB;
   service_area: ServiceAreaDB;
   status?: MaintenanceOrderStatus;
+  supplier_id: string;
   supplier_name?: string | null;
-  odometer_at_open?: number | null;
+  odometer_at_open: number;
   notes?: string | null;
   labor_cost?: number;
   items: { description: string; qty: number; unit_cost: number }[];
@@ -148,8 +149,9 @@ export async function createOrder(payload: CreateOrderPayload) {
       type: payload.type,
       service_area: payload.service_area,
       status: payload.status || 'open',
+      supplier_id: payload.supplier_id,
       supplier_name: payload.supplier_name || null,
-      odometer_at_open: payload.odometer_at_open || null,
+      odometer_at_open: payload.odometer_at_open,
       notes: payload.notes || null,
       labor_cost: laborCost,
       parts_cost: partsCost,
@@ -180,6 +182,7 @@ export async function updateOrder(id: string, payload: Partial<{
   type: MaintenanceTypeDB;
   service_area: ServiceAreaDB;
   status: MaintenanceOrderStatus;
+  supplier_id: string;
   supplier_name: string | null;
   odometer_at_open: number | null;
   notes: string | null;
