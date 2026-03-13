@@ -37,6 +37,9 @@ export interface VehicleRow {
   ownerName: string | null;
   ownerDocument: string | null;
   ownerId: string | null;
+  odometerCurrent: number;
+  odometerUpdatedAt: Date | null;
+  odometerSource: string | null;
 }
 
 function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
@@ -80,6 +83,9 @@ function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
     ownerName: row.owner_name || null,
     ownerDocument: row.owner_document || null,
     ownerId: row.owner_id || null,
+    odometerCurrent: row.odometer || 0,
+    odometerUpdatedAt: row.odometer_updated_at ? new Date(row.odometer_updated_at) : null,
+    odometerSource: row.odometer_source || null,
   };
 }
 
@@ -282,11 +288,10 @@ export async function markVehicleDelivered(vehicleId: string) {
   if (error) throw error;
 }
 
-export async function deleteVehicle(vehicleId: string) {
-  const { error } = await supabase
-    .from('vehicles')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', vehicleId);
-
+export async function recalculateVehicleOdometer(vehicleId: string) {
+  const { data, error } = await supabase.rpc('recalculate_vehicle_odometer', {
+    p_vehicle_id: vehicleId,
+  });
   if (error) throw error;
+  return data as number;
 }

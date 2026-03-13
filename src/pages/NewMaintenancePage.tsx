@@ -7,6 +7,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchVehicles } from '@/services/vehicles.service';
 import { fetchSuppliers, createSupplier, SupplierRow } from '@/services/suppliers.service';
 import { usePermissions } from '@/hooks/usePermissions';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +23,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Wrench, Car, DollarSign, Save, Search, Check, ChevronsUpDown, Package } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Wrench, Car, DollarSign, Save, Search, Check, ChevronsUpDown, Package, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,8 +43,9 @@ export function NewMaintenancePage() {
   const [searchParams] = useSearchParams();
   const vehicleIdParam = searchParams.get('vehicleId') || '';
   const isEditing = !!editId;
-  const { can } = usePermissions();
+  const { can, role } = usePermissions();
   const canManageSuppliers = can('vehicle:create'); // manager/admin
+  const canOverrideOdometer = role === 'manager' || role === 'admin';
 
   const [vehicleId, setVehicleId] = useState(vehicleIdParam);
   const [vehicleOpen, setVehicleOpen] = useState(false);
@@ -61,7 +66,8 @@ export function NewMaintenancePage() {
   const [showCatalogModal2, setShowCatalogModal2] = useState(false);
   const [newCatalogName, setNewCatalogName] = useState('');
   const [newCatalogDesc, setNewCatalogDesc] = useState('');
-
+  const [odometerOverrideOpen, setOdometerOverrideOpen] = useState(false);
+  const [pendingSaveAfterOverride, setPendingSaveAfterOverride] = useState(false);
   // Supplier modal
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ name: '', document: '', phone: '', email: '', address: '' });
@@ -126,6 +132,11 @@ export function NewMaintenancePage() {
 
   const selectedVehicle = useMemo(() => vehicles.find(v => v.id === vehicleId), [vehicles, vehicleId]);
   const selectedSupplier = useMemo(() => suppliers.find(s => s.id === supplierId), [suppliers, supplierId]);
+
+  // Odometer validation
+  const enteredOdometer = odometerKm ? parseInt(odometerKm) : null;
+  const vehicleCurrentOdometer = (selectedVehicle as any)?.odometerCurrent ?? 0;
+  const isOdometerLower = enteredOdometer !== null && vehicleCurrentOdometer > 0 && enteredOdometer < vehicleCurrentOdometer;
 
   // Display name for supplier field: prefer selected supplier, fall back to legacy text
   const supplierDisplayName = selectedSupplier?.name || supplierName || '';
@@ -246,13 +257,29 @@ export function NewMaintenancePage() {
     onError: (e: any) => toast.error(e.message || 'Erro ao atualizar manutenção'),
   });
 
-  const handleSave = () => {
+  const doSave = () => {
     if (!vehicleId) { toast.error('Selecione um veículo'); return; }
     if (isEditing) {
       updateMut.mutate();
     } else {
       createMut.mutate();
     }
+  };
+
+  const handleSave = () => {
+    if (!vehicleId) { toast.error('Selecione um veículo'); return; }
+    // Odometer validation
+    if (isOdometerLower) {
+      if (!canOverrideOdometer) {
+        toast.error(`Odômetro informado (${enteredOdometer?.toLocaleString()} km) é menor que o atual do veículo (${vehicleCurrentOdometer.toLocaleString()} km). Somente gerentes/admins podem sobrescrever.`);
+        return;
+      }
+      // Show override confirmation
+      setOdometerOverrideOpen(true);
+      setPendingSaveAfterOverride(true);
+      return;
+    }
+    doSave();
   };
 
   const isSaving = createMut.isPending || updateMut.isPending;
@@ -327,7 +354,22 @@ export function NewMaintenancePage() {
                 </div>
 
                 <div className="space-y-2"><Label>Data/Hora *</Label><Input type="datetime-local" value={openedAt} onChange={e => setOpenedAt(e.target.value)} /></div>
-                <div className="space-y-2"><Label>Odômetro (km)</Label><Input type="number" placeholder="Ex: 45000" value={odometerKm} onChange={e => setOdometerKm(e.target.value)} /></div>
+                <div className="space-y-2">
+                  <Label>Odômetro (km)</Label>
+                  <Input type="number" placeholder="Ex: 45000" value={odometerKm} onChange={e => setOdometerKm(e.target.value)} />
+                  {isOdometerLower && (
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs mt-1">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Odômetro menor que o atual ({vehicleCurrentOdometer.toLocaleString()} km).
+                        {canOverrideOdometer ? ' Será necessária confirmação ao salvar.' : ' Bloqueado — somente gerente/admin pode sobrescrever.'}
+                      </span>
+                    </div>
+                  )}
+                  {selectedVehicle && vehicleCurrentOdometer > 0 && !isOdometerLower && (
+                    <p className="text-xs text-muted-foreground">Atual: {vehicleCurrentOdometer.toLocaleString()} km</p>
+                  )}
+                </div>
 
                 {/* Supplier Combobox */}
                 <div className="space-y-2">
@@ -603,6 +645,35 @@ export function NewMaintenancePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Odometer Override Confirmation */}
+      <AlertDialog open={odometerOverrideOpen} onOpenChange={(open) => {
+        setOdometerOverrideOpen(open);
+        if (!open) setPendingSaveAfterOverride(false);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Odômetro menor que o atual
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              O odômetro informado ({enteredOdometer?.toLocaleString()} km) é menor que o atual do veículo ({vehicleCurrentOdometer.toLocaleString()} km). 
+              O odômetro do veículo <strong>não será reduzido</strong> automaticamente. Deseja prosseguir mesmo assim?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setOdometerOverrideOpen(false);
+              setPendingSaveAfterOverride(false);
+              doSave();
+            }}>
+              Prosseguir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

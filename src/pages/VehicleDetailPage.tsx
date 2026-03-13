@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchVehicleById, markVehicleDelivered, updateVehicleStatus } from '@/services/vehicles.service';
+import { fetchVehicleById, markVehicleDelivered, updateVehicleStatus, recalculateVehicleOdometer } from '@/services/vehicles.service';
 import { VehicleStatus } from '@/types';
 import { ChangeStatusModal } from '@/components/ChangeStatusModal';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
@@ -23,10 +23,66 @@ import {
   CheckCircle,
   Pencil,
   User,
+  Calculator,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+
+function OdometerCard({ vehicle }: { vehicle: any }) {
+  const queryClient = useQueryClient();
+  const { can, role } = usePermissions();
+  const canRecalculate = role === 'manager' || role === 'admin';
+
+  const recalcMut = useMutation({
+    mutationFn: () => recalculateVehicleOdometer(vehicle.id),
+    onSuccess: (newOdo: number) => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle', vehicle.id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success(`Odômetro recalculado: ${newOdo.toLocaleString()} km`);
+    },
+    onError: (e: any) => toast.error(`Erro: ${e.message}`),
+  });
+
+  const sourceLabels: Record<string, string> = {
+    maintenance: 'Manutenção',
+    recalculated: 'Recalculado',
+    manual: 'Manual',
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Gauge className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Odômetro</CardTitle>
+          </div>
+          {canRecalculate && (
+            <Button variant="ghost" size="sm" onClick={() => recalcMut.mutate()} disabled={recalcMut.isPending} title="Recalcular odômetro a partir das manutenções">
+              <Calculator className="h-4 w-4 mr-1" />
+              {recalcMut.isPending ? 'Calculando...' : 'Recalcular'}
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="text-2xl font-bold text-primary">
+          {(vehicle.odometerCurrent || 0).toLocaleString()} km
+        </div>
+        {vehicle.odometerUpdatedAt && (
+          <p className="text-xs text-muted-foreground">
+            Atualizado em {format(vehicle.odometerUpdatedAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            {vehicle.odometerSource && ` • Fonte: ${sourceLabels[vehicle.odometerSource] || vehicle.odometerSource}`}
+          </p>
+        )}
+        {!vehicle.odometerUpdatedAt && vehicle.odometerCurrent === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhum registro de odômetro ainda.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -299,17 +355,7 @@ export function VehicleDetailPage() {
           <VehicleMaintenanceCard vehicleId={vehicle.id} />
           <VehicleFinesCard vehicleId={vehicle.id} />
 
-          <Card className="opacity-60">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Gauge className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base text-muted-foreground">Odômetro</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Em breve: histórico de KM via API...</p>
-            </CardContent>
-          </Card>
+          <OdometerCard vehicle={vehicle} />
         </div>
       </div>
 
