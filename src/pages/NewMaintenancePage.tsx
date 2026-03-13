@@ -150,19 +150,38 @@ export function NewMaintenancePage() {
     onError: (e: any) => toast.error(e.message || 'Erro ao cadastrar fornecedor'),
   });
 
+  const createCatalogMut = useMutation({
+    mutationFn: () => createCatalogItem(newCatalogName, newCatalogDesc),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-catalog-items'] });
+      setExecutedItemIds(prev => [...prev, data.id]);
+      setShowCatalogModal2(false);
+      setNewCatalogName('');
+      setNewCatalogDesc('');
+      toast.success('Item cadastrado!');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro'),
+  });
+
   const createMut = useMutation({
-    mutationFn: () => createOrder({
-      vehicle_id: vehicleId,
-      opened_at: new Date(openedAt).toISOString(),
-      type: maintenanceType,
-      service_area: serviceArea,
-      status,
-      supplier_name: selectedSupplier?.name || supplierName || null,
-      odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
-      notes: notes || null,
-      labor_cost: parseFloat(laborCost || '0'),
-      items: items.filter(i => i.description).map(i => ({ description: i.description, qty: i.qty, unit_cost: i.unitCost })),
-    }),
+    mutationFn: async () => {
+      const order = await createOrder({
+        vehicle_id: vehicleId,
+        opened_at: new Date(openedAt).toISOString(),
+        type: maintenanceType,
+        service_area: serviceArea,
+        status,
+        supplier_name: selectedSupplier?.name || supplierName || null,
+        odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
+        notes: notes || null,
+        labor_cost: parseFloat(laborCost || '0'),
+        items: items.filter(i => i.description).map(i => ({ description: i.description, qty: i.qty, unit_cost: i.unitCost })),
+      });
+      // Save executed catalog items
+      if (executedItemIds.length > 0) {
+        await saveExecutedItems(order.id, executedItemIds);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['maintenance-analytics'], exact: false });
