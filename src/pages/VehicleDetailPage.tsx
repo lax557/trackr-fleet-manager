@@ -34,6 +34,7 @@ export function VehicleDetailPage() {
   const queryClient = useQueryClient();
   const { can } = usePermissions();
   const [editOpen, setEditOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
 
   const { data: vehicle, isLoading } = useQuery({
     queryKey: ['vehicle', id],
