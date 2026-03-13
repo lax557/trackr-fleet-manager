@@ -36,6 +36,7 @@ export interface VehicleRow {
   ownerType: string | null;
   ownerName: string | null;
   ownerDocument: string | null;
+  ownerId: string | null;
 }
 
 function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
