@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createOrder, getOrderById, updateOrder, addItem as addItemService, deleteItem as deleteItemService, areaLabels, MaintenanceTypeDB, ServiceAreaDB, MaintenanceOrderStatus } from '@/services/maintenance.service';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchVehicles } from '@/services/vehicles.service';
+import { fetchSuppliers, createSupplier, SupplierRow } from '@/services/suppliers.service';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,10 +14,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Plus, Trash2, Wrench, Car, DollarSign, Save } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ArrowLeft, Plus, Trash2, Wrench, Car, DollarSign, Save, Search, Check, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface ItemForm {
   id: string;
@@ -31,11 +37,16 @@ export function NewMaintenancePage() {
   const [searchParams] = useSearchParams();
   const vehicleIdParam = searchParams.get('vehicleId') || '';
   const isEditing = !!editId;
+  const { can } = usePermissions();
+  const canManageSuppliers = can('manage_vehicles'); // manager/admin
 
   const [vehicleId, setVehicleId] = useState(vehicleIdParam);
+  const [vehicleOpen, setVehicleOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [odometerKm, setOdometerKm] = useState('');
+  const [supplierId, setSupplierId] = useState<string | null>(null);
   const [supplierName, setSupplierName] = useState('');
+  const [supplierOpen, setSupplierOpen] = useState(false);
   const [maintenanceType, setMaintenanceType] = useState<MaintenanceTypeDB>('preventive');
   const [serviceArea, setServiceArea] = useState<ServiceAreaDB>('mechanical');
   const [status, setStatus] = useState<MaintenanceOrderStatus>('done');
@@ -43,6 +54,10 @@ export function NewMaintenancePage() {
   const [laborCost, setLaborCost] = useState('0');
   const [items, setItems] = useState<ItemForm[]>([]);
   const [loaded, setLoaded] = useState(false);
+
+  // Supplier modal
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [newSupplier, setNewSupplier] = useState({ name: '', document: '', phone: '', email: '', address: '' });
 
   // Load existing order for edit mode
   const { data: existingOrder, isLoading: loadingOrder } = useQuery({
@@ -57,6 +72,7 @@ export function NewMaintenancePage() {
       setVehicleId(existingOrder.vehicle_id);
       setOpenedAt(format(new Date(existingOrder.opened_at), "yyyy-MM-dd'T'HH:mm"));
       setOdometerKm(existingOrder.odometer_at_open?.toString() || '');
+      setSupplierId((existingOrder as any).supplier_id || null);
       setSupplierName(existingOrder.supplier_name || '');
       setMaintenanceType(existingOrder.type);
       setServiceArea(existingOrder.service_area);
@@ -78,7 +94,16 @@ export function NewMaintenancePage() {
     queryFn: fetchVehicles,
   });
 
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: fetchSuppliers,
+  });
+
   const selectedVehicle = useMemo(() => vehicles.find(v => v.id === vehicleId), [vehicles, vehicleId]);
+  const selectedSupplier = useMemo(() => suppliers.find(s => s.id === supplierId), [suppliers, supplierId]);
+
+  // Display name for supplier field: prefer selected supplier, fall back to legacy text
+  const supplierDisplayName = selectedSupplier?.name || supplierName || '';
 
   const partsCost = items.reduce((s, i) => s + i.qty * i.unitCost, 0);
   const totalCost = partsCost + parseFloat(laborCost || '0');
@@ -88,6 +113,19 @@ export function NewMaintenancePage() {
   const updateItem = (id: string, field: keyof ItemForm, value: any) =>
     setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
 
+  const createSupplierMut = useMutation({
+    mutationFn: () => createSupplier(newSupplier),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      setSupplierId(data.id);
+      setSupplierName(data.name);
+      setShowSupplierModal(false);
+      setNewSupplier({ name: '', document: '', phone: '', email: '', address: '' });
+      toast.success('Fornecedor cadastrado!');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao cadastrar fornecedor'),
+  });
+
   const createMut = useMutation({
     mutationFn: () => createOrder({
       vehicle_id: vehicleId,
@@ -95,7 +133,7 @@ export function NewMaintenancePage() {
       type: maintenanceType,
       service_area: serviceArea,
       status,
-      supplier_name: supplierName || null,
+      supplier_name: selectedSupplier?.name || supplierName || null,
       odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
       notes: notes || null,
       labor_cost: parseFloat(laborCost || '0'),
@@ -114,25 +152,22 @@ export function NewMaintenancePage() {
 
   const updateMut = useMutation({
     mutationFn: async () => {
-      // 1. Update order fields
       await updateOrder(editId!, {
         type: maintenanceType,
         service_area: serviceArea,
         status,
-        supplier_name: supplierName || null,
+        supplier_name: selectedSupplier?.name || supplierName || null,
         odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
         notes: notes || null,
         labor_cost: parseFloat(laborCost || '0'),
         opened_at: new Date(openedAt).toISOString(),
       });
 
-      // 2. Replace items: delete existing, insert current
       const existingItems = existingOrder?.maintenance_items || [];
       for (const item of existingItems) {
         await deleteItemService(item.id);
       }
 
-      // 3. Insert current items
       const validItems = items.filter(i => i.description);
       if (validItems.length > 0) {
         const { data: { user } } = await supabase.auth.getUser();
@@ -151,7 +186,6 @@ export function NewMaintenancePage() {
         const { error: itemsErr } = await supabase.from('maintenance_items').insert(itemsToInsert);
         if (itemsErr) throw itemsErr;
       }
-      // Note: the DB trigger recalc_maintenance_total will recalculate parts_cost and total_cost automatically
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
@@ -210,20 +244,85 @@ export function NewMaintenancePage() {
             <CardHeader className="pb-3"><div className="flex items-center gap-2"><Car className="h-5 w-5 text-primary" /><CardTitle>Identificação</CardTitle></div><CardDescription>Dados do veículo e serviço</CardDescription></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Vehicle Combobox */}
                 <div className="space-y-2">
                   <Label>Veículo *</Label>
-                  <Select value={vehicleId} onValueChange={setVehicleId} disabled={isEditing}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
-                    <SelectContent>
-                      {vehicles.map(v => (
-                        <SelectItem key={v.id} value={v.id}>{v.plate || (v as any).vehicleCode || v.id.slice(0,8)} - {v.make} {v.model}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={vehicleOpen} onOpenChange={setVehicleOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={vehicleOpen} className="w-full justify-between font-normal" disabled={isEditing}>
+                        {selectedVehicle
+                          ? `${selectedVehicle.plate || (selectedVehicle as any).vehicleCode || selectedVehicle.id.slice(0, 8)} - ${selectedVehicle.make} ${selectedVehicle.model}`
+                          : 'Selecione o veículo'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar por placa ou modelo..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum veículo encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {vehicles.map(v => (
+                              <CommandItem
+                                key={v.id}
+                                value={`${v.plate || ''} ${(v as any).vehicleCode || ''} ${v.make} ${v.model}`}
+                                onSelect={() => { setVehicleId(v.id); setVehicleOpen(false); }}
+                              >
+                                <Check className={cn('mr-2 h-4 w-4', vehicleId === v.id ? 'opacity-100' : 'opacity-0')} />
+                                {v.plate || (v as any).vehicleCode || v.id.slice(0, 8)} - {v.make} {v.model}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
+
                 <div className="space-y-2"><Label>Data/Hora *</Label><Input type="datetime-local" value={openedAt} onChange={e => setOpenedAt(e.target.value)} /></div>
                 <div className="space-y-2"><Label>Odômetro (km)</Label><Input type="number" placeholder="Ex: 45000" value={odometerKm} onChange={e => setOdometerKm(e.target.value)} /></div>
-                <div className="space-y-2"><Label>Fornecedor</Label><Input placeholder="Nome do fornecedor" value={supplierName} onChange={e => setSupplierName(e.target.value)} /></div>
+
+                {/* Supplier Combobox */}
+                <div className="space-y-2">
+                  <Label>Fornecedor</Label>
+                  <Popover open={supplierOpen} onOpenChange={setSupplierOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={supplierOpen} className="w-full justify-between font-normal">
+                        {supplierDisplayName || 'Selecione o fornecedor'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar fornecedor..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum fornecedor encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {suppliers.map(s => (
+                              <CommandItem
+                                key={s.id}
+                                value={s.name}
+                                onSelect={() => { setSupplierId(s.id); setSupplierName(s.name); setSupplierOpen(false); }}
+                              >
+                                <Check className={cn('mr-2 h-4 w-4', supplierId === s.id ? 'opacity-100' : 'opacity-0')} />
+                                {s.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                          {canManageSuppliers && (
+                            <CommandGroup>
+                              <CommandItem onSelect={() => { setSupplierOpen(false); setShowSupplierModal(true); }} className="text-primary">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Cadastrar fornecedor
+                              </CommandItem>
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Tipo *</Label>
                   <Select value={maintenanceType} onValueChange={v => setMaintenanceType(v as MaintenanceTypeDB)}>
@@ -331,6 +430,45 @@ export function NewMaintenancePage() {
           </div>
         </div>
       </div>
+
+      {/* Supplier Creation Modal */}
+      <Dialog open={showSupplierModal} onOpenChange={setShowSupplierModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cadastrar Fornecedor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input value={newSupplier.name} onChange={e => setNewSupplier(p => ({ ...p, name: e.target.value }))} placeholder="Nome do fornecedor" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>CPF/CNPJ</Label>
+                <Input value={newSupplier.document} onChange={e => setNewSupplier(p => ({ ...p, document: e.target.value }))} placeholder="Documento" />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone</Label>
+                <Input value={newSupplier.phone} onChange={e => setNewSupplier(p => ({ ...p, phone: e.target.value }))} placeholder="(11) 99999-9999" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input type="email" value={newSupplier.email} onChange={e => setNewSupplier(p => ({ ...p, email: e.target.value }))} placeholder="email@fornecedor.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Endereço</Label>
+              <Input value={newSupplier.address} onChange={e => setNewSupplier(p => ({ ...p, address: e.target.value }))} placeholder="Endereço completo" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSupplierModal(false)}>Cancelar</Button>
+            <Button onClick={() => createSupplierMut.mutate()} disabled={!newSupplier.name || createSupplierMut.isPending}>
+              {createSupplierMut.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
