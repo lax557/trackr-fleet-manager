@@ -169,6 +169,25 @@ export function MaintenanceDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Executed Catalog Items */}
+          {executedItems.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" /><CardTitle>Itens Trocados</CardTitle></div>
+                <CardDescription>{executedItems.length} item(s) do catálogo</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {executedItems.map(ei => (
+                    <Badge key={ei.id} variant="secondary">
+                      {ei.maintenance_catalog_items?.name || '—'}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {order.notes && (
             <Card>
               <CardHeader className="pb-3"><CardTitle>Observações</CardTitle></CardHeader>
