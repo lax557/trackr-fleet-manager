@@ -1,16 +1,36 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { listOrders, typeLabels } from '@/services/maintenance.service';
+import { fetchExecutedItems } from '@/services/maintenanceCatalog.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wrench, Plus, ArrowRight } from 'lucide-react';
+import { Wrench, Plus, ArrowRight, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrencyBRL } from '@/lib/utils';
 
 interface VehicleMaintenanceCardProps {
   vehicleId: string;
+}
+
+function OrderExecutedItems({ orderId }: { orderId: string }) {
+  const { data: items = [] } = useQuery({
+    queryKey: ['executed-items', orderId],
+    queryFn: () => fetchExecutedItems(orderId),
+  });
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {items.map(ei => (
+        <Badge key={ei.id} variant="outline" className="text-xs py-0 px-1.5">
+          {ei.maintenance_catalog_items?.name || '—'}
+        </Badge>
+      ))}
+    </div>
+  );
 }
 
 export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProps) {
@@ -22,7 +42,7 @@ export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProp
     enabled: !!vehicleId,
   });
 
-  const recent = orders.slice(0, 3);
+  const recent = orders.slice(0, 5);
   const totalSpent = orders.reduce((s, m) => s + (m.total_cost || 0), 0);
 
   return (
@@ -44,14 +64,18 @@ export function VehicleMaintenanceCard({ vehicleId }: VehicleMaintenanceCardProp
             </div>
             <div className="space-y-2">
               {recent.map(m => (
-                <div key={m.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer" onClick={() => navigate(`/maintenance/${m.id}`)}>
-                  <div className="flex items-center gap-3">
-                    <div className="text-xs text-muted-foreground">{format(new Date(m.opened_at), 'dd/MM/yy', { locale: ptBR })}</div>
-                    <Badge variant="outline" className={m.type === 'preventive' ? 'border-blue-500 text-blue-600 text-xs' : 'border-orange-500 text-orange-600 text-xs'}>
-                      {typeLabels[m.type]}
-                    </Badge>
+                <div key={m.id} className="p-2 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer" onClick={() => navigate(`/maintenance/${m.id}`)}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-xs text-muted-foreground">{format(new Date(m.opened_at), 'dd/MM/yy', { locale: ptBR })}</div>
+                      <Badge variant="outline" className={m.type === 'preventive' ? 'border-blue-500 text-blue-600 text-xs' : 'border-orange-500 text-orange-600 text-xs'}>
+                        {typeLabels[m.type]}
+                      </Badge>
+                      {m.odometer_at_open && <span className="text-xs text-muted-foreground">{m.odometer_at_open.toLocaleString()} km</span>}
+                    </div>
+                    <span className="text-sm font-medium">{formatCurrencyBRL(m.total_cost || 0)}</span>
                   </div>
-                  <span className="text-sm font-medium">{formatCurrencyBRL(m.total_cost || 0)}</span>
+                  <OrderExecutedItems orderId={m.id} />
                 </div>
               ))}
             </div>
