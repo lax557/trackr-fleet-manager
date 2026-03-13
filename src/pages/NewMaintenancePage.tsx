@@ -430,7 +430,71 @@ export function NewMaintenancePage() {
             </CardContent>
           </Card>
 
-          {/* Labor */}
+          {/* Executed Catalog Items */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" /><CardTitle>Itens Trocados</CardTitle></div>
+              </div>
+              <CardDescription>Selecione os itens do catálogo que foram trocados nesta manutenção</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Popover open={executedItemOpen} onOpenChange={setExecutedItemOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                    {executedItemIds.length > 0 ? `${executedItemIds.length} item(s) selecionado(s)` : 'Selecione itens trocados...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar item..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum item no catálogo.</CommandEmpty>
+                      <CommandGroup>
+                        {catalogItems.map(ci => {
+                          const isSelected = executedItemIds.includes(ci.id);
+                          return (
+                            <CommandItem
+                              key={ci.id}
+                              value={ci.name}
+                              onSelect={() => {
+                                setExecutedItemIds(prev =>
+                                  isSelected ? prev.filter(x => x !== ci.id) : [...prev, ci.id]
+                                );
+                              }}
+                            >
+                              <Check className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')} />
+                              {ci.name}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                      <CommandGroup>
+                        <CommandItem onSelect={() => { setExecutedItemOpen(false); setShowCatalogModal2(true); }} className="text-primary">
+                          <Plus className="mr-2 h-4 w-4" />Novo item
+                        </CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {executedItemIds.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {executedItemIds.map(id => {
+                    const ci = catalogItems.find(c => c.id === id);
+                    return ci ? (
+                      <Badge key={id} variant="secondary" className="gap-1">
+                        {ci.name}
+                        <button onClick={() => setExecutedItemIds(prev => prev.filter(x => x !== id))} className="ml-1 hover:text-destructive">×</button>
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-3"><CardTitle>Mão de Obra</CardTitle></CardHeader>
             <CardContent><div className="space-y-2"><Label>Custo de Mão de Obra</Label><Input type="number" step="0.01" placeholder="0,00" value={laborCost} onChange={e => setLaborCost(e.target.value)} className="max-w-xs" /></div></CardContent>
