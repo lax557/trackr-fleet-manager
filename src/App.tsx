@@ -27,6 +27,7 @@ import ContractTemplateEditorPage from "./pages/ContractTemplateEditorPage";
 import MaintenancesPage from "./pages/MaintenancesPage";
 import NewMaintenancePage from "./pages/NewMaintenancePage";
 import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
+import PreventiveAlertsPage from "./pages/PreventiveAlertsPage";
 import FinesPage from "./pages/FinesPage";
 import FineDetailPage from "./pages/FineDetailPage";
 import NewFinePage from "./pages/NewFinePage";
