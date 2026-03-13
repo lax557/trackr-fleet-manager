@@ -39,6 +39,7 @@ export function MaintenanceDetailPage() {
   const navigate = useNavigate();
   const { can } = usePermissions();
   const queryClient = useQueryClient();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['maintenance-order', id],
