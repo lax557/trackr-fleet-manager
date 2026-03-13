@@ -259,6 +259,8 @@ export function NewMaintenancePage() {
 
   const doSave = () => {
     if (!vehicleId) { toast.error('Selecione um veículo'); return; }
+    if (!odometerKm || parseInt(odometerKm) <= 0) { toast.error('Odômetro (km) é obrigatório'); return; }
+    if (!supplierId) { toast.error('Selecione um fornecedor'); return; }
     if (isEditing) {
       updateMut.mutate();
     } else {
@@ -268,13 +270,14 @@ export function NewMaintenancePage() {
 
   const handleSave = () => {
     if (!vehicleId) { toast.error('Selecione um veículo'); return; }
+    if (!odometerKm || parseInt(odometerKm) <= 0) { toast.error('Odômetro (km) é obrigatório'); return; }
+    if (!supplierId) { toast.error('Selecione um fornecedor'); return; }
     // Odometer validation
     if (isOdometerLower) {
       if (!canOverrideOdometer) {
         toast.error(`Odômetro informado (${enteredOdometer?.toLocaleString()} km) é menor que o atual do veículo (${vehicleCurrentOdometer.toLocaleString()} km). Somente gerentes/admins podem sobrescrever.`);
         return;
       }
-      // Show override confirmation
       setOdometerOverrideOpen(true);
       setPendingSaveAfterOverride(true);
       return;
