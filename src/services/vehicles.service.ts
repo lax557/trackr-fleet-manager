@@ -170,9 +170,7 @@ export async function createVehicle(vehicle: {
     color: vehicle.color || null,
     vin: vehicle.vin || null,
     renavam: vehicle.renavam || null,
-    owner_type: vehicle.owner_type || null,
-    owner_name: vehicle.owner_name || null,
-    owner_document: vehicle.owner_document || null,
+    owner_id: vehicle.owner_id || null,
   };
 
   // If delivered_at is provided, set it; otherwise vehicle starts as backlog
