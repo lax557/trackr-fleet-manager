@@ -206,9 +206,7 @@ export async function updateVehicle(vehicleId: string, fields: {
   vin?: string;
   renavam?: string;
   delivered_at?: string | null;
-  owner_type?: string | null;
-  owner_name?: string | null;
-  owner_document?: string | null;
+  owner_id?: string | null;
 }) {
   const updateData: any = {};
   if (fields.plate !== undefined) updateData.plate = fields.plate || null;
