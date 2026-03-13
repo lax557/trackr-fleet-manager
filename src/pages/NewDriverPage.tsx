@@ -6,23 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Upload, User, FileText, Shield, AlertCircle, MapPin, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, AlertCircle, MapPin, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-interface DocumentUpload {
-  file: File | null;
-  preview: string | null;
-}
-
-type WizardStep = 1 | 2 | 3 | 4;
+type WizardStep = 1 | 2 | 3;
 
 const stepLabels: Record<WizardStep, string> = {
   1: 'Dados Pessoais',
-  2: 'Documentos',
-  3: 'Endereço',
-  4: 'Revisão',
+  2: 'Endereço',
+  3: 'Revisão',
 };
 
 const formatCPF = (value: string) => {
@@ -61,19 +54,10 @@ export function NewDriverPage() {
     birthDate: '',
     fatherName: '',
     motherName: '',
-    profileAnalysis: '',
   });
 
   const [address, setAddress] = useState({
     street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zipCode: '',
-  });
-
-  const [documents, setDocuments] = useState<{
-    cnh: DocumentUpload; residenceProof: DocumentUpload; appProfile: DocumentUpload;
-  }>({
-    cnh: { file: null, preview: null },
-    residenceProof: { file: null, preview: null },
-    appProfile: { file: null, preview: null },
   });
 
   const mutation = useMutation({
@@ -92,29 +76,20 @@ export function NewDriverPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileChange = (docType: 'cnh' | 'residenceProof' | 'appProfile', file: File | null) => {
-    if (file) {
-      setDocuments(prev => ({
-        ...prev,
-        [docType]: { file, preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null },
-      }));
-    }
-  };
-
   const canProceed = (): boolean => {
     switch (currentStep) {
       case 1: return !!(formData.fullName && formData.phone && formData.cpf && formData.cnh);
-      case 2: return !!(documents.cnh.file && documents.residenceProof.file && documents.appProfile.file);
-      case 3: return !!(address.street && address.number && address.neighborhood && address.city && address.state && address.zipCode);
-      case 4: return true;
+      case 2: return !!(address.street && address.number && address.neighborhood && address.city && address.state && address.zipCode);
+      case 3: return true;
       default: return false;
     }
   };
 
-  const handleNext = () => { if (currentStep < 4 && canProceed()) setCurrentStep((prev) => (prev + 1) as WizardStep); };
+  const totalSteps = 3;
+  const handleNext = () => { if (currentStep < totalSteps && canProceed()) setCurrentStep((prev) => (prev + 1) as WizardStep); };
   const handleBack = () => { if (currentStep > 1) setCurrentStep((prev) => (prev - 1) as WizardStep); };
 
-  const progressValue = (currentStep / 4) * 100;
+  const progressValue = (currentStep / totalSteps) * 100;
 
   const handleSubmit = () => {
     if (!canProceed()) return;
@@ -139,7 +114,7 @@ export function NewDriverPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Novo Motorista</h1>
-          <p className="text-muted-foreground text-sm">Passo {currentStep} de 4: {stepLabels[currentStep]}</p>
+          <p className="text-muted-foreground text-sm">Passo {currentStep} de {totalSteps}: {stepLabels[currentStep]}</p>
         </div>
       </div>
 
@@ -224,51 +199,8 @@ export function NewDriverPage() {
             </div>
           )}
 
-          {/* Step 2: Documents */}
+          {/* Step 2: Address */}
           {currentStep === 2 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Documentos Obrigatórios</h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {(['cnh', 'residenceProof', 'appProfile'] as const).map((docType) => {
-                  const labels = { cnh: 'CNH (com EAR) *', residenceProof: 'Comprovante de Residência *', appProfile: 'Perfil Uber/99 *' };
-                  return (
-                    <div key={docType} className="space-y-2">
-                      <Label>{labels[docType]}</Label>
-                      <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary transition-colors">
-                        <input type="file" accept="image/*,.pdf" onChange={(e) => handleFileChange(docType, e.target.files?.[0] || null)} className="hidden" id={`${docType}-upload`} />
-                        <label htmlFor={`${docType}-upload`} className="cursor-pointer">
-                          {documents[docType].file ? (
-                            <div className="space-y-2">
-                              <div className="text-sm font-medium text-green-600">✓ Arquivo selecionado</div>
-                              <p className="text-xs text-muted-foreground truncate">{documents[docType].file.name}</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-                              <p className="text-sm text-muted-foreground">Clique para upload</p>
-                            </div>
-                          )}
-                        </label>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <Label>Análise de Perfil</Label>
-                </div>
-                <Textarea value={formData.profileAnalysis} onChange={(e) => handleInputChange('profileAnalysis', e.target.value)} placeholder="Insira aqui observações sobre análise criminal, judicial, histórico geral do motorista..." className="min-h-[100px]" />
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Address */}
-          {currentStep === 3 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="h-5 w-5 text-primary" />
@@ -307,8 +239,8 @@ export function NewDriverPage() {
             </div>
           )}
 
-          {/* Step 4: Review */}
-          {currentStep === 4 && (
+          {/* Step 3: Review */}
+          {currentStep === 3 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 <Check className="h-5 w-5 text-primary" />
@@ -327,14 +259,6 @@ export function NewDriverPage() {
                   </CardContent>
                 </Card>
                 <Card className="bg-muted/30">
-                  <CardHeader className="pb-2"><CardTitle className="text-sm">Documentos</CardTitle></CardHeader>
-                  <CardContent className="text-sm space-y-1">
-                    <p className="text-green-600">✓ CNH: {documents.cnh.file?.name}</p>
-                    <p className="text-green-600">✓ Comprovante: {documents.residenceProof.file?.name}</p>
-                    <p className="text-green-600">✓ Perfil App: {documents.appProfile.file?.name}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30 md:col-span-2">
                   <CardHeader className="pb-2"><CardTitle className="text-sm">Endereço</CardTitle></CardHeader>
                   <CardContent className="text-sm">
                     <p>{address.street}, {address.number}{address.complement ? ` - ${address.complement}` : ''}</p>
@@ -355,7 +279,7 @@ export function NewDriverPage() {
           {currentStep === 1 ? 'Cancelar' : 'Voltar'}
         </Button>
 
-        {currentStep < 4 ? (
+        {currentStep < totalSteps ? (
           <Button onClick={handleNext} disabled={!canProceed()}>
             Próximo
             <ArrowRight className="h-4 w-4 ml-2" />

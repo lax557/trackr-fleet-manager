@@ -790,6 +790,7 @@ export type Database = {
           parts_cost: number | null
           service_area: Database["public"]["Enums"]["service_area"]
           status: Database["public"]["Enums"]["maintenance_order_status"]
+          supplier_id: string | null
           supplier_name: string | null
           total_cost: number | null
           type: Database["public"]["Enums"]["maintenance_type"]
@@ -808,6 +809,7 @@ export type Database = {
           parts_cost?: number | null
           service_area?: Database["public"]["Enums"]["service_area"]
           status?: Database["public"]["Enums"]["maintenance_order_status"]
+          supplier_id?: string | null
           supplier_name?: string | null
           total_cost?: number | null
           type?: Database["public"]["Enums"]["maintenance_type"]
@@ -826,6 +828,7 @@ export type Database = {
           parts_cost?: number | null
           service_area?: Database["public"]["Enums"]["service_area"]
           status?: Database["public"]["Enums"]["maintenance_order_status"]
+          supplier_id?: string | null
           supplier_name?: string | null
           total_cost?: number | null
           type?: Database["public"]["Enums"]["maintenance_type"]
@@ -838,6 +841,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
           {
@@ -1324,6 +1334,47 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          company_id: string
+          created_at: string
+          document: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_id: string
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_id?: string
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
