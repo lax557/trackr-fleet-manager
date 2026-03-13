@@ -79,6 +79,7 @@ function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
     ownerType: row.owner_type || null,
     ownerName: row.owner_name || null,
     ownerDocument: row.owner_document || null,
+    ownerId: row.owner_id || null,
   };
 }
 
