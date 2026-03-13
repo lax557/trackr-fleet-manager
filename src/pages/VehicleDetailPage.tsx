@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchVehicleById, markVehicleDelivered } from '@/services/vehicles.service';
+import { fetchVehicleById, markVehicleDelivered, updateVehicleStatus } from '@/services/vehicles.service';
+import { VehicleStatus } from '@/types';
+import { ChangeStatusModal } from '@/components/ChangeStatusModal';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
 import { VehicleFinesCard } from '@/components/VehicleFinesCard';
@@ -25,13 +27,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { can } = usePermissions();
   const [editOpen, setEditOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
 
   const { data: vehicle, isLoading } = useQuery({
     queryKey: ['vehicle', id],
@@ -48,6 +50,21 @@ export function VehicleDetailPage() {
     },
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ vehicleId, newStatus }: { vehicleId: string; newStatus: VehicleStatus }) =>
+      updateVehicleStatus(vehicleId, newStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle', id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-fleet-counts'] });
+    },
+    onError: (err: any) => toast.error(`Erro ao alterar status: ${err.message}`),
+  });
+
+  const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, _note: string, _driverId?: string) => {
+    statusMutation.mutate({ vehicleId, newStatus });
+  };
 
   if (isLoading) {
     return (
@@ -109,7 +126,7 @@ export function VehicleDetailPage() {
               Editar
             </Button>
           )}
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setStatusModalOpen(true)}>
             <RefreshCcw className="h-4 w-4 mr-2" />
             Alterar status
           </Button>
@@ -134,7 +151,6 @@ export function VehicleDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader className="pb-3">
@@ -205,7 +221,6 @@ export function VehicleDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Owner Card */}
           {(vehicle.ownerName) && (
             <Card>
               <CardHeader className="pb-3">
@@ -233,7 +248,6 @@ export function VehicleDetailPage() {
             </Card>
           )}
 
-          {/* Status timeline */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
@@ -260,7 +274,6 @@ export function VehicleDetailPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           {vehicle.currentDriver && (
             <Card>
@@ -299,6 +312,12 @@ export function VehicleDetailPage() {
       </div>
 
       <EditVehicleModal vehicle={vehicle} open={editOpen} onOpenChange={setEditOpen} />
+      <ChangeStatusModal
+        vehicle={vehicle}
+        open={statusModalOpen}
+        onOpenChange={setStatusModalOpen}
+        onConfirm={handleConfirmStatusChange}
+      />
     </div>
   );
 }
