@@ -66,7 +66,8 @@ export function NewMaintenancePage() {
   const [showCatalogModal2, setShowCatalogModal2] = useState(false);
   const [newCatalogName, setNewCatalogName] = useState('');
   const [newCatalogDesc, setNewCatalogDesc] = useState('');
-
+  const [odometerOverrideOpen, setOdometerOverrideOpen] = useState(false);
+  const [pendingSaveAfterOverride, setPendingSaveAfterOverride] = useState(false);
   // Supplier modal
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ name: '', document: '', phone: '', email: '', address: '' });
