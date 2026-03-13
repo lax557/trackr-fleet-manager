@@ -645,6 +645,35 @@ export function NewMaintenancePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Odometer Override Confirmation */}
+      <AlertDialog open={odometerOverrideOpen} onOpenChange={(open) => {
+        setOdometerOverrideOpen(open);
+        if (!open) setPendingSaveAfterOverride(false);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Odômetro menor que o atual
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              O odômetro informado ({enteredOdometer?.toLocaleString()} km) é menor que o atual do veículo ({vehicleCurrentOdometer.toLocaleString()} km). 
+              O odômetro do veículo <strong>não será reduzido</strong> automaticamente. Deseja prosseguir mesmo assim?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setOdometerOverrideOpen(false);
+              setPendingSaveAfterOverride(false);
+              doSave();
+            }}>
+              Prosseguir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

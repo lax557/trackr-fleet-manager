@@ -300,17 +300,7 @@ export function VehicleDetailPage() {
           <VehicleMaintenanceCard vehicleId={vehicle.id} />
           <VehicleFinesCard vehicleId={vehicle.id} />
 
-          <Card className="opacity-60">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Gauge className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-base text-muted-foreground">Odômetro</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Em breve: histórico de KM via API...</p>
-            </CardContent>
-          </Card>
+          <OdometerCard vehicle={vehicle} />
         </div>
       </div>
 
