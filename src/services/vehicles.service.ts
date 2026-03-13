@@ -83,6 +83,9 @@ function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
     ownerName: row.owner_name || null,
     ownerDocument: row.owner_document || null,
     ownerId: row.owner_id || null,
+    odometerCurrent: row.odometer || 0,
+    odometerUpdatedAt: row.odometer_updated_at ? new Date(row.odometer_updated_at) : null,
+    odometerSource: row.odometer_source || null,
   };
 }
 
