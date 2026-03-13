@@ -378,7 +378,7 @@ export function NewMaintenancePage() {
 
                 {/* Supplier Combobox */}
                 <div className="space-y-2">
-                  <Label>Fornecedor</Label>
+                  <Label>Fornecedor *</Label>
                   <Popover open={supplierOpen} onOpenChange={setSupplierOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" aria-expanded={supplierOpen} className="w-full justify-between font-normal">
