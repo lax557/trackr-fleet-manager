@@ -105,13 +105,19 @@ export async function fetchVehicles() {
 export async function fetchVehicleById(vehicleId: string) {
   const { data, error } = await supabase
     .from('vehicles')
-    .select('*')
+    .select('*, vehicle_owners(id, name, type, document)')
     .eq('id', vehicleId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
-  return mapRowToVehicle(data);
+  const v = mapRowToVehicle(data);
+  if ((data as any).vehicle_owners) {
+    v.ownerName = (data as any).vehicle_owners.name;
+    v.ownerType = (data as any).vehicle_owners.type;
+    v.ownerDocument = (data as any).vehicle_owners.document;
+  }
+  return v;
 }
 
 export async function fetchVehicleStats(): Promise<VehicleStats> {
