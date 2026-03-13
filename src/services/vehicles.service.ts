@@ -37,6 +37,9 @@ export interface VehicleRow {
   ownerName: string | null;
   ownerDocument: string | null;
   ownerId: string | null;
+  odometerCurrent: number;
+  odometerUpdatedAt: Date | null;
+  odometerSource: string | null;
 }
 
 function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
