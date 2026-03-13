@@ -41,6 +41,12 @@ export function MaintenanceDetailPage() {
     enabled: !!id,
   });
 
+  const { data: executedItems = [] } = useQuery({
+    queryKey: ['executed-items', id],
+    queryFn: () => fetchExecutedItems(id!),
+    enabled: !!id,
+  });
+
   const statusMut = useMutation({
     mutationFn: ({ status }: { status: MaintenanceOrderStatus }) => setOrderStatus(id!, status),
     onSuccess: () => {
