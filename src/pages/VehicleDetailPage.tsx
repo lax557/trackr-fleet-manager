@@ -6,6 +6,7 @@ import { VehicleStatus } from '@/types';
 import { ChangeStatusModal } from '@/components/ChangeStatusModal';
 import { StatusBadge, StageBadge } from '@/components/StatusBadge';
 import { VehicleMaintenanceCard } from '@/components/VehicleMaintenanceCard';
+import { VehiclePreventiveCard } from '@/components/VehiclePreventiveCard';
 import { VehicleFinesCard } from '@/components/VehicleFinesCard';
 import { EditVehicleModal } from '@/components/EditVehicleModal';
 import { Button } from '@/components/ui/button';
@@ -294,6 +295,7 @@ export function VehicleDetailPage() {
             </Card>
           )}
 
+          <VehiclePreventiveCard vehicleId={vehicle.id} />
           <VehicleMaintenanceCard vehicleId={vehicle.id} />
           <VehicleFinesCard vehicleId={vehicle.id} />
 

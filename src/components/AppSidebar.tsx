@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { 
   Car, Users, Wrench, AlertTriangle, Settings,
-  LayoutDashboard, FileSignature, DollarSign, LogOut,
+  LayoutDashboard, FileSignature, DollarSign, LogOut, Bell,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronRight } from 'lucide-react';
@@ -48,6 +48,7 @@ const menuItems: MenuItem[] = [
     ],
   },
   { title: 'Manutenções', url: '/maintenance', icon: Wrench, permission: 'maintenance:view' },
+  { title: 'Preventiva', url: '/maintenance/preventive', icon: Bell, permission: 'maintenance:view' },
   { title: 'Multas', url: '/fines', icon: AlertTriangle, permission: 'fine:view' },
   {
     title: 'Financeiro',

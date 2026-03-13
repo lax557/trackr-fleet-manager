@@ -27,6 +27,7 @@ import ContractTemplateEditorPage from "./pages/ContractTemplateEditorPage";
 import MaintenancesPage from "./pages/MaintenancesPage";
 import NewMaintenancePage from "./pages/NewMaintenancePage";
 import MaintenanceDetailPage from "./pages/MaintenanceDetailPage";
+import PreventiveAlertsPage from "./pages/PreventiveAlertsPage";
 import FinesPage from "./pages/FinesPage";
 import FineDetailPage from "./pages/FineDetailPage";
 import NewFinePage from "./pages/NewFinePage";
@@ -73,6 +74,7 @@ function AuthenticatedLayout() {
             <Route path="/rentals/templates/new" element={<ContractTemplateEditorPage />} />
             <Route path="/rentals/templates/:id" element={<ContractTemplateEditorPage />} />
             <Route path="/maintenance" element={<MaintenancesPage />} />
+            <Route path="/maintenance/preventive" element={<PreventiveAlertsPage />} />
             <Route path="/maintenance/new" element={<ProtectedRoute requiredPermission="maintenance:create"><NewMaintenancePage /></ProtectedRoute>} />
             <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
             <Route path="/maintenance/:id/edit" element={<NewMaintenancePage />} />

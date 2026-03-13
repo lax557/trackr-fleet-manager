@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   listOrders,
+  deleteOrder,
   statusLabels,
   typeLabels,
   areaLabels,
@@ -25,13 +26,18 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Plus, Search, Eye, Edit, Wrench, BarChart3, Filter, X,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Plus, Search, Eye, Edit, Wrench, BarChart3, Filter, X, Trash2,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MaintenanceAnalytics } from '@/components/MaintenanceAnalytics';
 import { MaintenancePlansPage } from '@/pages/MaintenancePlansPage';
 import { formatCurrencyBRL } from '@/lib/utils';
+import { toast } from 'sonner';
 
 function StatusBadge({ status }: { status: MaintenanceOrderStatus }) {
   const map: Record<string, { variant: 'default' | 'secondary' | 'outline'; className: string }> = {
@@ -56,6 +62,7 @@ function TypeBadge({ type }: { type: MaintenanceTypeDB }) {
 export function MaintenancesPage() {
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const vehicleFilter = searchParams.get('vehicle') || '';
 
@@ -67,6 +74,7 @@ export function MaintenancesPage() {
   const [dateFrom, setDateFrom] = useState(format(subDays(new Date(), 90), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [activeTab, setActiveTab] = useState('list');
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['maintenance-orders', statusFilter, typeFilter, areaFilter, vehicleId, dateFrom, dateTo, search],
@@ -89,6 +97,17 @@ export function MaintenancesPage() {
   };
 
   const hasActiveFilters = search || statusFilter !== 'ALL' || typeFilter !== 'ALL' || areaFilter !== 'ALL' || vehicleId;
+
+  const deleteMut = useMutation({
+    mutationFn: deleteOrder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['preventive-alerts'] });
+      toast.success('Manutenção excluída com sucesso');
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast.error(`Erro ao excluir: ${e.message}`),
+  });
 
   const totalCost = orders.reduce((s, m) => s + (m.total_cost || 0), 0);
   const preventiveCount = orders.filter(m => m.type === 'preventive').length;
@@ -225,6 +244,9 @@ export function MaintenancesPage() {
                             {can('maintenance:create') && (
                               <Button variant="ghost" size="icon" onClick={() => navigate(`/maintenance/${m.id}/edit`)}><Edit className="h-4 w-4" /></Button>
                             )}
+                            {can('maintenance:delete') && (
+                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget(m.id)}><Trash2 className="h-4 w-4" /></Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -244,6 +266,28 @@ export function MaintenancesPage() {
           <MaintenancePlansPage />
         </TabsContent>
       </Tabs>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir manutenção?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. Todos os itens e registros vinculados serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteMut.mutate(deleteTarget)}
+              disabled={deleteMut.isPending}
+            >
+              {deleteMut.isPending ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

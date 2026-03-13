@@ -20,6 +20,7 @@ export type PermissionAction =
   | 'maintenance:view'
   | 'maintenance:create'
   | 'maintenance:edit'
+  | 'maintenance:delete'
   | 'fine:view'
   | 'fine:create'
   | 'fine:edit'
@@ -65,6 +66,7 @@ export const rolePermissions: Record<SystemRole, PermissionAction[]> = {
     'maintenance:view',
     'maintenance:create',
     'maintenance:edit',
+    'maintenance:delete',
     'fine:view',
     'fine:create',
     'fine:edit',
@@ -101,6 +103,7 @@ export const rolePermissions: Record<SystemRole, PermissionAction[]> = {
     'maintenance:view',
     'maintenance:create',
     'maintenance:edit',
+    'maintenance:delete',
     'fine:view',
     'fine:create',
     'fine:edit',

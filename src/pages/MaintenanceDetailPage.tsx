@@ -1,13 +1,18 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getOrderById, setOrderStatus, statusLabels, typeLabels, areaLabels, MaintenanceOrderStatus, MaintenanceTypeDB } from '@/services/maintenance.service';
+import { getOrderById, setOrderStatus, deleteOrder, statusLabels, typeLabels, areaLabels, MaintenanceOrderStatus, MaintenanceTypeDB } from '@/services/maintenance.service';
 import { fetchExecutedItems } from '@/services/maintenanceCatalog.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Edit, Wrench, Car, DollarSign, Calendar, Gauge, Building2, Package } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { ArrowLeft, Edit, Wrench, Car, DollarSign, Calendar, Gauge, Building2, Package, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrencyBRL } from '@/lib/utils';
@@ -34,6 +39,7 @@ export function MaintenanceDetailPage() {
   const navigate = useNavigate();
   const { can } = usePermissions();
   const queryClient = useQueryClient();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['maintenance-order', id],
@@ -54,6 +60,17 @@ export function MaintenanceDetailPage() {
       toast.success('Status atualizado!');
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => deleteOrder(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['preventive-alerts'] });
+      toast.success('Manutenção excluída');
+      navigate('/maintenance');
+    },
+    onError: (e: any) => toast.error(`Erro: ${e.message}`),
   });
 
   if (isLoading) return <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">Carregando...</div>;
@@ -106,6 +123,9 @@ export function MaintenanceDetailPage() {
           )}
           {can('maintenance:create') && (
             <Button variant="outline" onClick={() => navigate(`/maintenance/${id}/edit`)}><Edit className="h-4 w-4 mr-2" />Editar</Button>
+          )}
+          {can('maintenance:delete') && (
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4 mr-2" />Excluir</Button>
           )}
         </div>
       </div>
@@ -215,6 +235,27 @@ export function MaintenanceDetailPage() {
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir manutenção?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. Todos os itens e registros vinculados serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteMut.mutate()}
+              disabled={deleteMut.isPending}
+            >
+              {deleteMut.isPending ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

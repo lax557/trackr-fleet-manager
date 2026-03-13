@@ -260,3 +260,14 @@ export async function deleteItem(itemId: string) {
     .eq('id', itemId);
   if (error) throw error;
 }
+
+// ─── Delete Order ───
+
+export async function deleteOrder(orderId: string) {
+  // CASCADE will handle maintenance_items and maintenance_executed_items
+  const { error } = await supabase
+    .from('maintenance_orders')
+    .delete()
+    .eq('id', orderId);
+  if (error) throw error;
+}
