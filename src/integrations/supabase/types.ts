@@ -729,6 +729,87 @@ export type Database = {
           },
         ]
       }
+      maintenance_catalog_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_catalog_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_executed_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          item_id: string
+          maintenance_order_id: string
+          notes: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          maintenance_order_id: string
+          notes?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          maintenance_order_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_executed_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_executed_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_executed_items_maintenance_order_id_fkey"
+            columns: ["maintenance_order_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_items: {
         Row: {
           company_id: string
@@ -855,6 +936,57 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_maintenance_plans: {
+        Row: {
+          active: boolean
+          alert_before_km: number | null
+          company_id: string
+          created_at: string
+          id: string
+          interval_days: number | null
+          interval_km: number | null
+          item_id: string
+          vehicle_model: string
+        }
+        Insert: {
+          active?: boolean
+          alert_before_km?: number | null
+          company_id: string
+          created_at?: string
+          id?: string
+          interval_days?: number | null
+          interval_km?: number | null
+          item_id: string
+          vehicle_model: string
+        }
+        Update: {
+          active?: boolean
+          alert_before_km?: number | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          interval_days?: number | null
+          interval_km?: number | null
+          item_id?: string
+          vehicle_model?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_maintenance_plans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_maintenance_plans_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_catalog_items"
             referencedColumns: ["id"]
           },
         ]
