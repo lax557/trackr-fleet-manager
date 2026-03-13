@@ -124,6 +124,9 @@ export function MaintenanceDetailPage() {
           {can('maintenance:create') && (
             <Button variant="outline" onClick={() => navigate(`/maintenance/${id}/edit`)}><Edit className="h-4 w-4 mr-2" />Editar</Button>
           )}
+          {can('maintenance:delete') && (
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4 mr-2" />Excluir</Button>
+          )}
         </div>
       </div>
 
