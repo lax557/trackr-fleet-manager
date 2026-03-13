@@ -137,6 +137,19 @@ export function SettingsPage() {
         </Card>
       )}
 
+      {canExport && (
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setExportOpen(true)}>
+          <CardContent className="flex items-center gap-4 py-4">
+            <Download className="h-5 w-5 text-primary" />
+            <div className="flex-1">
+              <p className="font-medium">Exportar Dados</p>
+              <p className="text-sm text-muted-foreground">Exporte veículos, manutenções, contratos e multas em CSV ou Excel</p>
+            </div>
+            <ArrowLeft className="h-4 w-4 rotate-180 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
