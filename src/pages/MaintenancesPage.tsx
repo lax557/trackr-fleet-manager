@@ -62,6 +62,7 @@ function TypeBadge({ type }: { type: MaintenanceTypeDB }) {
 export function MaintenancesPage() {
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const vehicleFilter = searchParams.get('vehicle') || '';
 
@@ -73,6 +74,7 @@ export function MaintenancesPage() {
   const [dateFrom, setDateFrom] = useState(format(subDays(new Date(), 90), 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [activeTab, setActiveTab] = useState('list');
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['maintenance-orders', statusFilter, typeFilter, areaFilter, vehicleId, dateFrom, dateTo, search],
