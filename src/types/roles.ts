@@ -66,6 +66,7 @@ export const rolePermissions: Record<SystemRole, PermissionAction[]> = {
     'maintenance:view',
     'maintenance:create',
     'maintenance:edit',
+    'maintenance:delete',
     'fine:view',
     'fine:create',
     'fine:edit',
