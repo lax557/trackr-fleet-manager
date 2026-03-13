@@ -1602,6 +1602,8 @@ export type Database = {
           id: string
           model: string
           odometer: number | null
+          odometer_source: string | null
+          odometer_updated_at: string | null
           owner_document: string | null
           owner_id: string | null
           owner_name: string | null
@@ -1631,6 +1633,8 @@ export type Database = {
           id?: string
           model: string
           odometer?: number | null
+          odometer_source?: string | null
+          odometer_updated_at?: string | null
           owner_document?: string | null
           owner_id?: string | null
           owner_name?: string | null
@@ -1660,6 +1664,8 @@ export type Database = {
           id?: string
           model?: string
           odometer?: number | null
+          odometer_source?: string | null
+          odometer_updated_at?: string | null
           owner_document?: string | null
           owner_id?: string | null
           owner_name?: string | null
@@ -1746,6 +1752,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      recalculate_vehicle_odometer: {
+        Args: { p_vehicle_id: string }
+        Returns: number
       }
     }
     Enums: {
