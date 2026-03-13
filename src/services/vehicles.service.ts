@@ -86,12 +86,20 @@ function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
 export async function fetchVehicles() {
   const { data, error } = await supabase
     .from('vehicles')
-    .select('*')
+    .select('*, vehicle_owners(id, name, type, document)')
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data || []).map(mapRowToVehicle);
+  return (data || []).map((row: any) => {
+    const v = mapRowToVehicle(row);
+    if (row.vehicle_owners) {
+      v.ownerName = row.vehicle_owners.name;
+      v.ownerType = row.vehicle_owners.type;
+      v.ownerDocument = row.vehicle_owners.document;
+    }
+    return v;
+  });
 }
 
 export async function fetchVehicleById(vehicleId: string) {
