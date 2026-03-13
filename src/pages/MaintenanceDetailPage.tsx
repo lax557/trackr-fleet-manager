@@ -1,12 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOrderById, setOrderStatus, statusLabels, typeLabels, areaLabels, MaintenanceOrderStatus, MaintenanceTypeDB } from '@/services/maintenance.service';
+import { fetchExecutedItems } from '@/services/maintenanceCatalog.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Edit, Wrench, Car, DollarSign, Calendar, Gauge, Building2 } from 'lucide-react';
+import { ArrowLeft, Edit, Wrench, Car, DollarSign, Calendar, Gauge, Building2, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrencyBRL } from '@/lib/utils';
@@ -37,6 +38,12 @@ export function MaintenanceDetailPage() {
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['maintenance-order', id],
     queryFn: () => getOrderById(id!),
+    enabled: !!id,
+  });
+
+  const { data: executedItems = [] } = useQuery({
+    queryKey: ['executed-items', id],
+    queryFn: () => fetchExecutedItems(id!),
     enabled: !!id,
   });
 
@@ -161,6 +168,25 @@ export function MaintenanceDetailPage() {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Executed Catalog Items */}
+          {executedItems.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" /><CardTitle>Itens Trocados</CardTitle></div>
+                <CardDescription>{executedItems.length} item(s) do catálogo</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {executedItems.map(ei => (
+                    <Badge key={ei.id} variant="secondary">
+                      {ei.maintenance_catalog_items?.name || '—'}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {order.notes && (
             <Card>

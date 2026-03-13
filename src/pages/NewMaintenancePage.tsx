@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createOrder, getOrderById, updateOrder, addItem as addItemService, deleteItem as deleteItemService, areaLabels, MaintenanceTypeDB, ServiceAreaDB, MaintenanceOrderStatus } from '@/services/maintenance.service';
+import { fetchCatalogItems, createCatalogItem, saveExecutedItems, fetchExecutedItems, CatalogItem } from '@/services/maintenanceCatalog.service';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchVehicles } from '@/services/vehicles.service';
 import { fetchSuppliers, createSupplier, SupplierRow } from '@/services/suppliers.service';
@@ -11,13 +12,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Wrench, Car, DollarSign, Save, Search, Check, ChevronsUpDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Wrench, Car, DollarSign, Save, Search, Check, ChevronsUpDown, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -54,6 +56,11 @@ export function NewMaintenancePage() {
   const [laborCost, setLaborCost] = useState('0');
   const [items, setItems] = useState<ItemForm[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [executedItemIds, setExecutedItemIds] = useState<string[]>([]);
+  const [executedItemOpen, setExecutedItemOpen] = useState(false);
+  const [showCatalogModal2, setShowCatalogModal2] = useState(false);
+  const [newCatalogName, setNewCatalogName] = useState('');
+  const [newCatalogDesc, setNewCatalogDesc] = useState('');
 
   // Supplier modal
   const [showSupplierModal, setShowSupplierModal] = useState(false);
@@ -99,6 +106,24 @@ export function NewMaintenancePage() {
     queryFn: fetchSuppliers,
   });
 
+  const { data: catalogItems = [] } = useQuery({
+    queryKey: ['maintenance-catalog-items'],
+    queryFn: fetchCatalogItems,
+  });
+
+  const { data: existingExecutedItems } = useQuery({
+    queryKey: ['executed-items', editId],
+    queryFn: () => fetchExecutedItems(editId!),
+    enabled: isEditing && !!editId,
+  });
+
+  // Populate executed items when editing
+  useEffect(() => {
+    if (existingExecutedItems && loaded) {
+      setExecutedItemIds(existingExecutedItems.map(e => e.item_id));
+    }
+  }, [existingExecutedItems, loaded]);
+
   const selectedVehicle = useMemo(() => vehicles.find(v => v.id === vehicleId), [vehicles, vehicleId]);
   const selectedSupplier = useMemo(() => suppliers.find(s => s.id === supplierId), [suppliers, supplierId]);
 
@@ -126,19 +151,38 @@ export function NewMaintenancePage() {
     onError: (e: any) => toast.error(e.message || 'Erro ao cadastrar fornecedor'),
   });
 
+  const createCatalogMut = useMutation({
+    mutationFn: () => createCatalogItem(newCatalogName, newCatalogDesc),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-catalog-items'] });
+      setExecutedItemIds(prev => [...prev, data.id]);
+      setShowCatalogModal2(false);
+      setNewCatalogName('');
+      setNewCatalogDesc('');
+      toast.success('Item cadastrado!');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro'),
+  });
+
   const createMut = useMutation({
-    mutationFn: () => createOrder({
-      vehicle_id: vehicleId,
-      opened_at: new Date(openedAt).toISOString(),
-      type: maintenanceType,
-      service_area: serviceArea,
-      status,
-      supplier_name: selectedSupplier?.name || supplierName || null,
-      odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
-      notes: notes || null,
-      labor_cost: parseFloat(laborCost || '0'),
-      items: items.filter(i => i.description).map(i => ({ description: i.description, qty: i.qty, unit_cost: i.unitCost })),
-    }),
+    mutationFn: async () => {
+      const order = await createOrder({
+        vehicle_id: vehicleId,
+        opened_at: new Date(openedAt).toISOString(),
+        type: maintenanceType,
+        service_area: serviceArea,
+        status,
+        supplier_name: selectedSupplier?.name || supplierName || null,
+        odometer_at_open: odometerKm ? parseInt(odometerKm) : null,
+        notes: notes || null,
+        labor_cost: parseFloat(laborCost || '0'),
+        items: items.filter(i => i.description).map(i => ({ description: i.description, qty: i.qty, unit_cost: i.unitCost })),
+      });
+      // Save executed catalog items
+      if (executedItemIds.length > 0) {
+        await saveExecutedItems(order.id, executedItemIds);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['maintenance-analytics'], exact: false });
@@ -186,6 +230,9 @@ export function NewMaintenancePage() {
         const { error: itemsErr } = await supabase.from('maintenance_items').insert(itemsToInsert);
         if (itemsErr) throw itemsErr;
       }
+
+      // Save executed catalog items
+      await saveExecutedItems(editId!, executedItemIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
@@ -384,7 +431,71 @@ export function NewMaintenancePage() {
             </CardContent>
           </Card>
 
-          {/* Labor */}
+          {/* Executed Catalog Items */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" /><CardTitle>Itens Trocados</CardTitle></div>
+              </div>
+              <CardDescription>Selecione os itens do catálogo que foram trocados nesta manutenção</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Popover open={executedItemOpen} onOpenChange={setExecutedItemOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                    {executedItemIds.length > 0 ? `${executedItemIds.length} item(s) selecionado(s)` : 'Selecione itens trocados...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar item..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum item no catálogo.</CommandEmpty>
+                      <CommandGroup>
+                        {catalogItems.map(ci => {
+                          const isSelected = executedItemIds.includes(ci.id);
+                          return (
+                            <CommandItem
+                              key={ci.id}
+                              value={ci.name}
+                              onSelect={() => {
+                                setExecutedItemIds(prev =>
+                                  isSelected ? prev.filter(x => x !== ci.id) : [...prev, ci.id]
+                                );
+                              }}
+                            >
+                              <Check className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')} />
+                              {ci.name}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                      <CommandGroup>
+                        <CommandItem onSelect={() => { setExecutedItemOpen(false); setShowCatalogModal2(true); }} className="text-primary">
+                          <Plus className="mr-2 h-4 w-4" />Novo item
+                        </CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {executedItemIds.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {executedItemIds.map(id => {
+                    const ci = catalogItems.find(c => c.id === id);
+                    return ci ? (
+                      <Badge key={id} variant="secondary" className="gap-1">
+                        {ci.name}
+                        <button onClick={() => setExecutedItemIds(prev => prev.filter(x => x !== id))} className="ml-1 hover:text-destructive">×</button>
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-3"><CardTitle>Mão de Obra</CardTitle></CardHeader>
             <CardContent><div className="space-y-2"><Label>Custo de Mão de Obra</Label><Input type="number" step="0.01" placeholder="0,00" value={laborCost} onChange={e => setLaborCost(e.target.value)} className="max-w-xs" /></div></CardContent>
@@ -465,6 +576,29 @@ export function NewMaintenancePage() {
             <Button variant="outline" onClick={() => setShowSupplierModal(false)}>Cancelar</Button>
             <Button onClick={() => createSupplierMut.mutate()} disabled={!newSupplier.name || createSupplierMut.isPending}>
               {createSupplierMut.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Catalog Item Modal */}
+      <Dialog open={showCatalogModal2} onOpenChange={setShowCatalogModal2}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Novo Item de Manutenção</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input value={newCatalogName} onChange={e => setNewCatalogName(e.target.value)} placeholder="Ex: Troca de óleo" />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input value={newCatalogDesc} onChange={e => setNewCatalogDesc(e.target.value)} placeholder="Descrição opcional" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCatalogModal2(false)}>Cancelar</Button>
+            <Button onClick={() => createCatalogMut.mutate()} disabled={!newCatalogName || createCatalogMut.isPending}>
+              {createCatalogMut.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>

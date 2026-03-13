@@ -30,6 +30,7 @@ import {
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MaintenanceAnalytics } from '@/components/MaintenanceAnalytics';
+import { MaintenancePlansPage } from '@/pages/MaintenancePlansPage';
 import { formatCurrencyBRL } from '@/lib/utils';
 
 function StatusBadge({ status }: { status: MaintenanceOrderStatus }) {
@@ -116,6 +117,7 @@ export function MaintenancesPage() {
         <TabsList>
           <TabsTrigger value="list" className="flex items-center gap-2"><Wrench className="h-4 w-4" />Registros</TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2"><BarChart3 className="h-4 w-4" />Análise</TabsTrigger>
+          <TabsTrigger value="plans" className="flex items-center gap-2"><Filter className="h-4 w-4" />Planos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4 mt-4">
@@ -236,6 +238,10 @@ export function MaintenancesPage() {
 
         <TabsContent value="analytics" className="mt-4">
           <MaintenanceAnalytics />
+        </TabsContent>
+
+        <TabsContent value="plans" className="mt-4">
+          <MaintenancePlansPage />
         </TabsContent>
       </Tabs>
     </div>
