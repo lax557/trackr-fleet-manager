@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { VehicleCategory } from '@/types';
 import { categoryLabels, categoryDescriptions } from '@/data/mockData';
 import { createVehicle } from '@/services/vehicles.service';
+import { OwnerCombobox } from '@/components/OwnerCombobox';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,11 +34,8 @@ export function NewVehiclePage() {
     vin: '',
     renavam: '',
     deliveredAt: '',
-    ownerType: '',
-    ownerName: '',
-    ownerDocument: '',
   });
-
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const mutation = useMutation({
@@ -59,14 +57,12 @@ export function NewVehiclePage() {
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
-
     if (!formData.plate || formData.plate.length !== 7) e.plate = 'Placa deve ter exatamente 7 caracteres';
     if (!formData.make.trim()) e.make = 'Marca é obrigatória';
     if (!formData.model.trim()) e.model = 'Modelo é obrigatório';
     if (!formData.version.trim()) e.version = 'Versão é obrigatória';
     if (!formData.category) e.category = 'Categoria é obrigatória';
     if (!formData.color.trim()) e.color = 'Cor é obrigatória';
-
     const yMfg = parseInt(formData.yearMfg);
     if (!formData.yearMfg || isNaN(yMfg) || yMfg < 1990 || yMfg > currentYear + 1) {
       e.yearMfg = `Ano fabricação entre 1990 e ${currentYear + 1}`;
@@ -75,14 +71,12 @@ export function NewVehiclePage() {
     if (!formData.yearModel || isNaN(yMod) || yMod < 1990 || yMod > currentYear + 1) {
       e.yearModel = `Ano modelo entre 1990 e ${currentYear + 1}`;
     }
-
     if (!formData.vin || !/^[A-Za-z0-9]{17}$/.test(formData.vin)) {
       e.vin = 'Chassi deve ter exatamente 17 caracteres alfanuméricos';
     }
     if (!formData.renavam || !/^\d{11}$/.test(formData.renavam)) {
       e.renavam = 'RENAVAM deve ter exatamente 11 dígitos numéricos';
     }
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -93,7 +87,6 @@ export function NewVehiclePage() {
       toast.error('Corrija os campos destacados antes de prosseguir.');
       return;
     }
-
     mutation.mutate({
       brand: formData.make,
       model: formData.model,
@@ -106,9 +99,7 @@ export function NewVehiclePage() {
       vin: formData.vin.toUpperCase(),
       renavam: formData.renavam,
       delivered_at: formData.deliveredAt || undefined,
-      owner_type: formData.ownerType || undefined,
-      owner_name: formData.ownerName || undefined,
-      owner_document: formData.ownerDocument || undefined,
+      owner_id: ownerId || undefined,
     });
   };
 
@@ -204,36 +195,18 @@ export function NewVehiclePage() {
           </CardContent>
         </Card>
 
-        {/* Owner Card */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
               <CardTitle>Proprietário do Veículo</CardTitle>
             </div>
-            <CardDescription>Opcional. Informações sobre o proprietário do veículo.</CardDescription>
+            <CardDescription>Opcional. Selecione ou cadastre o proprietário.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="ownerType">Tipo de Proprietário</Label>
-              <Select value={formData.ownerType} onValueChange={(v) => handleChange('ownerType', v)}>
-                <SelectTrigger id="ownerType">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TARGA">Targa (Próprio)</SelectItem>
-                  <SelectItem value="PF">Pessoa Física</SelectItem>
-                  <SelectItem value="PJ">Pessoa Jurídica</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="ownerName">Nome do Proprietário</Label>
-              <Input id="ownerName" value={formData.ownerName} onChange={(e) => handleChange('ownerName', e.target.value)} placeholder="Nome completo ou razão social" />
-            </div>
-            <div>
-              <Label htmlFor="ownerDocument">CPF/CNPJ</Label>
-              <Input id="ownerDocument" value={formData.ownerDocument} onChange={(e) => handleChange('ownerDocument', e.target.value)} placeholder="Documento do proprietário" />
+          <CardContent>
+            <div className="max-w-md">
+              <Label>Proprietário</Label>
+              <OwnerCombobox value={ownerId} onValueChange={setOwnerId} />
             </div>
           </CardContent>
         </Card>
