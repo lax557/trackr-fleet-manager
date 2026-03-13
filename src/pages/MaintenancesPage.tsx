@@ -239,6 +239,10 @@ export function MaintenancesPage() {
         <TabsContent value="analytics" className="mt-4">
           <MaintenanceAnalytics />
         </TabsContent>
+
+        <TabsContent value="plans" className="mt-4">
+          <MaintenancePlansPage />
+        </TabsContent>
       </Tabs>
     </div>
   );
