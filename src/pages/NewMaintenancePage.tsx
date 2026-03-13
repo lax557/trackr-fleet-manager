@@ -229,6 +229,9 @@ export function NewMaintenancePage() {
         const { error: itemsErr } = await supabase.from('maintenance_items').insert(itemsToInsert);
         if (itemsErr) throw itemsErr;
       }
+
+      // Save executed catalog items
+      await saveExecutedItems(editId!, executedItemIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'], exact: false });
