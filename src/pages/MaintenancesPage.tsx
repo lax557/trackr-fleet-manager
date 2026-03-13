@@ -98,6 +98,17 @@ export function MaintenancesPage() {
 
   const hasActiveFilters = search || statusFilter !== 'ALL' || typeFilter !== 'ALL' || areaFilter !== 'ALL' || vehicleId;
 
+  const deleteMut = useMutation({
+    mutationFn: deleteOrder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['preventive-alerts'] });
+      toast.success('Manutenção excluída com sucesso');
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast.error(`Erro ao excluir: ${e.message}`),
+  });
+
   const totalCost = orders.reduce((s, m) => s + (m.total_cost || 0), 0);
   const preventiveCount = orders.filter(m => m.type === 'preventive').length;
   const correctiveCount = orders.filter(m => m.type === 'corrective').length;
