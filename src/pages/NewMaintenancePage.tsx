@@ -43,8 +43,9 @@ export function NewMaintenancePage() {
   const [searchParams] = useSearchParams();
   const vehicleIdParam = searchParams.get('vehicleId') || '';
   const isEditing = !!editId;
-  const { can } = usePermissions();
+  const { can, role } = usePermissions();
   const canManageSuppliers = can('vehicle:create'); // manager/admin
+  const canOverrideOdometer = role === 'manager' || role === 'admin';
 
   const [vehicleId, setVehicleId] = useState(vehicleIdParam);
   const [vehicleOpen, setVehicleOpen] = useState(false);
