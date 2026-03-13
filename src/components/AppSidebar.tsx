@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { 
   Car, Users, Wrench, AlertTriangle, Settings,
-  LayoutDashboard, FileSignature, DollarSign, LogOut,
+  LayoutDashboard, FileSignature, DollarSign, LogOut, Bell,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronRight } from 'lucide-react';
