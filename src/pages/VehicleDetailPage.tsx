@@ -27,20 +27,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-  const statusMutation = useMutation({
-    mutationFn: ({ vehicleId, newStatus }: { vehicleId: string; newStatus: VehicleStatus }) =>
-      updateVehicleStatus(vehicleId, newStatus),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicle', id] });
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-fleet-counts'] });
-    },
-    onError: (err: any) => toast.error(`Erro ao alterar status: ${err.message}`),
-  });
-
-  const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, _note: string, _driverId?: string) => {
-    statusMutation.mutate({ vehicleId, newStatus });
-  };
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
