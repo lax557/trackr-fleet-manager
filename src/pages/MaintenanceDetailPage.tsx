@@ -1,12 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOrderById, setOrderStatus, statusLabels, typeLabels, areaLabels, MaintenanceOrderStatus, MaintenanceTypeDB } from '@/services/maintenance.service';
+import { fetchExecutedItems } from '@/services/maintenanceCatalog.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Edit, Wrench, Car, DollarSign, Calendar, Gauge, Building2 } from 'lucide-react';
+import { ArrowLeft, Edit, Wrench, Car, DollarSign, Calendar, Gauge, Building2, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrencyBRL } from '@/lib/utils';

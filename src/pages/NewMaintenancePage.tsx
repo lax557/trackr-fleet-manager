@@ -580,6 +580,29 @@ export function NewMaintenancePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Catalog Item Modal */}
+      <Dialog open={showCatalogModal2} onOpenChange={setShowCatalogModal2}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Novo Item de Manutenção</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input value={newCatalogName} onChange={e => setNewCatalogName(e.target.value)} placeholder="Ex: Troca de óleo" />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input value={newCatalogDesc} onChange={e => setNewCatalogDesc(e.target.value)} placeholder="Descrição opcional" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCatalogModal2(false)}>Cancelar</Button>
+            <Button onClick={() => createCatalogMut.mutate()} disabled={!newCatalogName || createCatalogMut.isPending}>
+              {createCatalogMut.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
