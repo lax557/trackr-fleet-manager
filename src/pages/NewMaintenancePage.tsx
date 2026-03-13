@@ -38,7 +38,7 @@ export function NewMaintenancePage() {
   const vehicleIdParam = searchParams.get('vehicleId') || '';
   const isEditing = !!editId;
   const { can } = usePermissions();
-  const canManageSuppliers = can('manage_vehicles'); // manager/admin
+  const canManageSuppliers = can('vehicle:create'); // manager/admin
 
   const [vehicleId, setVehicleId] = useState(vehicleIdParam);
   const [vehicleOpen, setVehicleOpen] = useState(false);
