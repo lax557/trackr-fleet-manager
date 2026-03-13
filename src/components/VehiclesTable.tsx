@@ -84,7 +84,7 @@ export function VehiclesTable({ vehicles, onViewDetails, onChangeStatus, onMoveS
                   {(vehicle as any).ownerName ? (
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">{(vehicle as any).ownerName}</span>
-                      <span className="text-xs text-muted-foreground">{ownerTypeLabels[(vehicle as any).ownerType] || ''}</span>
+                      <span className="text-xs text-muted-foreground">{(vehicle as any).ownerType || ''}</span>
                     </div>
                   ) : (
                     <span className="text-muted-foreground">—</span>

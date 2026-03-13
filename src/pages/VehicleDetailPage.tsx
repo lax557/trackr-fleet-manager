@@ -206,7 +206,7 @@ export function VehicleDetailPage() {
           </Card>
 
           {/* Owner Card */}
-          {(vehicle.ownerType || vehicle.ownerName) && (
+          {(vehicle.ownerName) && (
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export function VehicleDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Tipo</p>
-                    <p className="font-medium">{vehicle.ownerType ? ownerTypeLabels[vehicle.ownerType] || vehicle.ownerType : '—'}</p>
+                    <p className="font-medium">{vehicle.ownerType || '—'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Nome</p>
