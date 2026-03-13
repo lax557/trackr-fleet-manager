@@ -117,6 +117,7 @@ export function MaintenancesPage() {
         <TabsList>
           <TabsTrigger value="list" className="flex items-center gap-2"><Wrench className="h-4 w-4" />Registros</TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2"><BarChart3 className="h-4 w-4" />Análise</TabsTrigger>
+          <TabsTrigger value="plans" className="flex items-center gap-2"><Filter className="h-4 w-4" />Planos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4 mt-4">
