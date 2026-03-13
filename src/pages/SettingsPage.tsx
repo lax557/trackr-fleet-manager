@@ -4,13 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
+import { ExportModal } from '@/components/ExportModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, User, Palette, Save, LogOut, Users, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, Palette, Save, LogOut, Users, Trash2, AlertTriangle, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { roleLabels } from '@/types/roles';
 
