@@ -288,11 +288,10 @@ export async function markVehicleDelivered(vehicleId: string) {
   if (error) throw error;
 }
 
-export async function deleteVehicle(vehicleId: string) {
-  const { error } = await supabase
-    .from('vehicles')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', vehicleId);
-
+export async function recalculateVehicleOdometer(vehicleId: string) {
+  const { data, error } = await supabase.rpc('recalculate_vehicle_odometer', {
+    p_vehicle_id: vehicleId,
+  });
   if (error) throw error;
+  return data as number;
 }
