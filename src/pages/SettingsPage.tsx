@@ -266,6 +266,8 @@ export function SettingsPage() {
           {saving ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </div>
+
+      <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   );
 }
