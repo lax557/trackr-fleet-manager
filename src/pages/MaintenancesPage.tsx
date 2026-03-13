@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   listOrders,
+  deleteOrder,
   statusLabels,
   typeLabels,
   areaLabels,
@@ -25,13 +26,18 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Plus, Search, Eye, Edit, Wrench, BarChart3, Filter, X,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Plus, Search, Eye, Edit, Wrench, BarChart3, Filter, X, Trash2,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MaintenanceAnalytics } from '@/components/MaintenanceAnalytics';
 import { MaintenancePlansPage } from '@/pages/MaintenancePlansPage';
 import { formatCurrencyBRL } from '@/lib/utils';
+import { toast } from 'sonner';
 
 function StatusBadge({ status }: { status: MaintenanceOrderStatus }) {
   const map: Record<string, { variant: 'default' | 'secondary' | 'outline'; className: string }> = {
