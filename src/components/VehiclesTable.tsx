@@ -4,51 +4,27 @@ import { CategoryBadge } from '@/components/CategoryBadge';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Eye, RefreshCcw, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 function OpenFinesBadge({ count, hasDriver }: { count: number; hasDriver: boolean }) {
-  if (!hasDriver) {
-    return <span className="text-muted-foreground">—</span>;
-  }
-
-  if (count === 0) {
-    return (
-      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
-        Nenhuma
-      </Badge>
-    );
-  }
-
-  if (count === 1) {
-    return (
-      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800">
-        1 aberta
-      </Badge>
-    );
-  }
-
-  return (
-    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
-      {count}+ abertas
-    </Badge>
-  );
+  if (!hasDriver) return <span className="text-muted-foreground">—</span>;
+  if (count === 0) return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">Nenhuma</Badge>;
+  if (count === 1) return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800">1 aberta</Badge>;
+  return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">{count}+ abertas</Badge>;
 }
+
+const ownerTypeLabels: Record<string, string> = {
+  TARGA: 'Targa',
+  PF: 'PF',
+  PJ: 'PJ',
+};
 
 interface VehiclesTableProps {
   vehicles: VehicleWithDetails[];
@@ -57,12 +33,7 @@ interface VehiclesTableProps {
   onMoveStage: (vehicleId: string) => void;
 }
 
-export function VehiclesTable({ 
-  vehicles, 
-  onViewDetails, 
-  onChangeStatus, 
-  onMoveStage 
-}: VehiclesTableProps) {
+export function VehiclesTable({ vehicles, onViewDetails, onChangeStatus, onMoveStage }: VehiclesTableProps) {
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
       <Table>
@@ -73,11 +44,11 @@ export function VehiclesTable({
             <TableHead className="font-semibold">Modelo</TableHead>
             <TableHead className="font-semibold">Cat.</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">Proprietário</TableHead>
             <TableHead className="font-semibold">Locatário</TableHead>
             <TableHead className="font-semibold">Multas Abertas</TableHead>
             <TableHead className="font-semibold">Desde</TableHead>
             <TableHead className="font-semibold">Etapa</TableHead>
-            <TableHead className="font-semibold">Prev. Entrega</TableHead>
             <TableHead className="w-[60px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -115,6 +86,16 @@ export function VehiclesTable({
                   <StatusBadge status={vehicle.currentStatus} size="sm" />
                 </TableCell>
                 <TableCell>
+                  {(vehicle as any).ownerName ? (
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{(vehicle as any).ownerName}</span>
+                      <span className="text-xs text-muted-foreground">{ownerTypeLabels[(vehicle as any).ownerType] || ''}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   {vehicle.currentDriver ? (
                     <div className="flex flex-col">
                       <span className="font-medium text-sm">{vehicle.currentDriver.fullName}</span>
@@ -125,10 +106,7 @@ export function VehiclesTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  <OpenFinesBadge 
-                    count={vehicle.openFinesCount} 
-                    hasDriver={!!vehicle.currentDriver} 
-                  />
+                  <OpenFinesBadge count={vehicle.openFinesCount} hasDriver={!!vehicle.currentDriver} />
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {(vehicle as any).deliveredAt
@@ -137,15 +115,8 @@ export function VehiclesTable({
                   }
                 </TableCell>
                 <TableCell>
-                  {vehicle.acquisition ? (
-                    <StageBadge stage={vehicle.acquisition.stage} />
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {vehicle.acquisition?.expectedDate ? (
-                    format(vehicle.acquisition.expectedDate, 'dd/MM/yyyy', { locale: ptBR })
+                  {vehicle.currentStatus === 'EM_LIBERACAO' && (vehicle as any).acquisitionStage ? (
+                    <StageBadge stage={(vehicle as any).acquisitionStage} />
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}

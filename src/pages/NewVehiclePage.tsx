@@ -9,13 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Car, Loader2 } from 'lucide-react';
+import { ArrowLeft, Car, Loader2, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 const categories: VehicleCategory[] = ['A', 'B', 'C', 'D', 'EV'];
@@ -36,6 +32,10 @@ export function NewVehiclePage() {
     color: '',
     vin: '',
     renavam: '',
+    deliveredAt: '',
+    ownerType: '',
+    ownerName: '',
+    ownerDocument: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -105,6 +105,10 @@ export function NewVehiclePage() {
       color: formData.color,
       vin: formData.vin.toUpperCase(),
       renavam: formData.renavam,
+      delivered_at: formData.deliveredAt || undefined,
+      owner_type: formData.ownerType || undefined,
+      owner_name: formData.ownerName || undefined,
+      owner_document: formData.ownerDocument || undefined,
     });
   };
 
@@ -130,52 +134,27 @@ export function NewVehiclePage() {
               <Car className="h-5 w-5 text-primary" />
               <CardTitle>Dados do Veículo</CardTitle>
             </div>
-            <CardDescription>O código (TRG-XXXX) será gerado automaticamente. Todos os campos são obrigatórios.</CardDescription>
+            <CardDescription>O código (TRG-XXXX) será gerado automaticamente.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="plate">Placa *</Label>
-              <Input
-                id="plate"
-                value={formData.plate}
-                onChange={(e) => handleChange('plate', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))}
-                placeholder="ABC1D23"
-                maxLength={7}
-                className={errors.plate ? 'border-destructive' : ''}
-              />
+              <Input id="plate" value={formData.plate} onChange={(e) => handleChange('plate', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7))} placeholder="ABC1D23" maxLength={7} className={errors.plate ? 'border-destructive' : ''} />
               {fieldError('plate')}
             </div>
             <div>
               <Label htmlFor="make">Marca *</Label>
-              <Input
-                id="make"
-                value={formData.make}
-                onChange={(e) => handleChange('make', e.target.value)}
-                placeholder="Ex: Chevrolet"
-                className={errors.make ? 'border-destructive' : ''}
-              />
+              <Input id="make" value={formData.make} onChange={(e) => handleChange('make', e.target.value)} placeholder="Ex: Chevrolet" className={errors.make ? 'border-destructive' : ''} />
               {fieldError('make')}
             </div>
             <div>
               <Label htmlFor="model">Modelo *</Label>
-              <Input
-                id="model"
-                value={formData.model}
-                onChange={(e) => handleChange('model', e.target.value)}
-                placeholder="Ex: Onix Plus"
-                className={errors.model ? 'border-destructive' : ''}
-              />
+              <Input id="model" value={formData.model} onChange={(e) => handleChange('model', e.target.value)} placeholder="Ex: Onix Plus" className={errors.model ? 'border-destructive' : ''} />
               {fieldError('model')}
             </div>
             <div>
               <Label htmlFor="version">Versão *</Label>
-              <Input
-                id="version"
-                value={formData.version}
-                onChange={(e) => handleChange('version', e.target.value)}
-                placeholder="Ex: 1.0 Turbo LTZ"
-                className={errors.version ? 'border-destructive' : ''}
-              />
+              <Input id="version" value={formData.version} onChange={(e) => handleChange('version', e.target.value)} placeholder="Ex: 1.0 Turbo LTZ" className={errors.version ? 'border-destructive' : ''} />
               {fieldError('version')}
             </div>
             <div>
@@ -186,9 +165,7 @@ export function NewVehiclePage() {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {categoryLabels[cat]} — {categoryDescriptions[cat]}
-                    </SelectItem>
+                    <SelectItem key={cat} value={cat}>{categoryLabels[cat]} — {categoryDescriptions[cat]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -196,66 +173,67 @@ export function NewVehiclePage() {
             </div>
             <div>
               <Label htmlFor="color">Cor *</Label>
-              <Input
-                id="color"
-                value={formData.color}
-                onChange={(e) => handleChange('color', e.target.value)}
-                placeholder="Ex: Branco"
-                className={errors.color ? 'border-destructive' : ''}
-              />
+              <Input id="color" value={formData.color} onChange={(e) => handleChange('color', e.target.value)} placeholder="Ex: Branco" className={errors.color ? 'border-destructive' : ''} />
               {fieldError('color')}
             </div>
             <div>
               <Label htmlFor="yearMfg">Ano Fabricação *</Label>
-              <Input
-                id="yearMfg"
-                type="number"
-                value={formData.yearMfg}
-                onChange={(e) => handleChange('yearMfg', e.target.value)}
-                placeholder="2024"
-                min={1990}
-                max={currentYear + 1}
-                className={errors.yearMfg ? 'border-destructive' : ''}
-              />
+              <Input id="yearMfg" type="number" value={formData.yearMfg} onChange={(e) => handleChange('yearMfg', e.target.value)} placeholder="2024" min={1990} max={currentYear + 1} className={errors.yearMfg ? 'border-destructive' : ''} />
               {fieldError('yearMfg')}
             </div>
             <div>
               <Label htmlFor="yearModel">Ano Modelo *</Label>
-              <Input
-                id="yearModel"
-                type="number"
-                value={formData.yearModel}
-                onChange={(e) => handleChange('yearModel', e.target.value)}
-                placeholder="2025"
-                min={1990}
-                max={currentYear + 1}
-                className={errors.yearModel ? 'border-destructive' : ''}
-              />
+              <Input id="yearModel" type="number" value={formData.yearModel} onChange={(e) => handleChange('yearModel', e.target.value)} placeholder="2025" min={1990} max={currentYear + 1} className={errors.yearModel ? 'border-destructive' : ''} />
               {fieldError('yearModel')}
             </div>
             <div>
               <Label htmlFor="vin">Chassi (VIN) *</Label>
-              <Input
-                id="vin"
-                value={formData.vin}
-                onChange={(e) => handleChange('vin', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17))}
-                placeholder="17 caracteres alfanuméricos"
-                maxLength={17}
-                className={errors.vin ? 'border-destructive' : ''}
-              />
+              <Input id="vin" value={formData.vin} onChange={(e) => handleChange('vin', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17))} placeholder="17 caracteres alfanuméricos" maxLength={17} className={errors.vin ? 'border-destructive' : ''} />
               {fieldError('vin')}
             </div>
             <div>
               <Label htmlFor="renavam">RENAVAM *</Label>
-              <Input
-                id="renavam"
-                value={formData.renavam}
-                onChange={(e) => handleChange('renavam', e.target.value.replace(/\D/g, '').slice(0, 11))}
-                placeholder="11 dígitos numéricos"
-                maxLength={11}
-                className={errors.renavam ? 'border-destructive' : ''}
-              />
+              <Input id="renavam" value={formData.renavam} onChange={(e) => handleChange('renavam', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="11 dígitos numéricos" maxLength={11} className={errors.renavam ? 'border-destructive' : ''} />
               {fieldError('renavam')}
+            </div>
+            <div>
+              <Label htmlFor="deliveredAt">Data de Entrega (opcional)</Label>
+              <Input id="deliveredAt" type="date" value={formData.deliveredAt} onChange={(e) => handleChange('deliveredAt', e.target.value)} />
+              <p className="text-xs text-muted-foreground mt-1">Se vazio, o veículo entra como "Em Liberação"</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Owner Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              <CardTitle>Proprietário do Veículo</CardTitle>
+            </div>
+            <CardDescription>Opcional. Informações sobre o proprietário do veículo.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="ownerType">Tipo de Proprietário</Label>
+              <Select value={formData.ownerType} onValueChange={(v) => handleChange('ownerType', v)}>
+                <SelectTrigger id="ownerType">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TARGA">Targa (Próprio)</SelectItem>
+                  <SelectItem value="PF">Pessoa Física</SelectItem>
+                  <SelectItem value="PJ">Pessoa Jurídica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="ownerName">Nome do Proprietário</Label>
+              <Input id="ownerName" value={formData.ownerName} onChange={(e) => handleChange('ownerName', e.target.value)} placeholder="Nome completo ou razão social" />
+            </div>
+            <div>
+              <Label htmlFor="ownerDocument">CPF/CNPJ</Label>
+              <Input id="ownerDocument" value={formData.ownerDocument} onChange={(e) => handleChange('ownerDocument', e.target.value)} placeholder="Documento do proprietário" />
             </div>
           </CardContent>
         </Card>

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { VehicleStatus, VehicleCategory, VehicleWithDetails, AcquisitionStage, PurchaseMode } from '@/types';
-import { fetchVehicles, updateVehicleStatus } from '@/services/vehicles.service';
+import { fetchVehicles, updateVehicleStatus, updateVehicleAcquisitionStage } from '@/services/vehicles.service';
 import { VehicleStatsCards } from '@/components/VehicleStatsCards';
 import { VehicleSearch } from '@/components/VehicleSearch';
 import { VehicleFilters } from '@/components/VehicleFilters';
@@ -58,7 +58,8 @@ export function VehiclesPage() {
         const matches = 
           v.id.toLowerCase().includes(lowerQuery) ||
           v.plate?.toLowerCase().includes(lowerQuery) ||
-          `${v.make} ${v.model}`.toLowerCase().includes(lowerQuery);
+          `${v.make} ${v.model}`.toLowerCase().includes(lowerQuery) ||
+          (v as any).vehicleCode?.toLowerCase().includes(lowerQuery);
         if (!matches) return false;
       }
       if (statusFilter && v.currentStatus !== statusFilter) return false;
@@ -103,12 +104,24 @@ export function VehiclesPage() {
     },
   });
 
+  const stageMutation = useMutation({
+    mutationFn: ({ vehicleId, stage }: { vehicleId: string; stage: AcquisitionStage }) =>
+      updateVehicleAcquisitionStage(vehicleId, stage),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success('Etapa atualizada com sucesso!');
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao mover etapa: ${err.message}`);
+    },
+  });
+
   const handleConfirmStatusChange = (vehicleId: string, newStatus: VehicleStatus, _note: string, _driverId?: string) => {
     statusMutation.mutate({ vehicleId, newStatus });
   };
 
-  const handleConfirmStageMove = (vehicleId: string, stage: AcquisitionStage, purchaseMode: PurchaseMode, expectedDate: string, notes: string) => {
-    console.log('Stage move:', { vehicleId, stage, purchaseMode, expectedDate, notes });
+  const handleConfirmStageMove = (vehicleId: string, stage: AcquisitionStage, _purchaseMode: PurchaseMode, _expectedDate: string, _notes: string) => {
+    stageMutation.mutate({ vehicleId, stage });
   };
 
   const clearAllFilters = () => {
