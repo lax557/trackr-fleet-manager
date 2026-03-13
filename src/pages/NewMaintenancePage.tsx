@@ -55,6 +55,11 @@ export function NewMaintenancePage() {
   const [laborCost, setLaborCost] = useState('0');
   const [items, setItems] = useState<ItemForm[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [executedItemIds, setExecutedItemIds] = useState<string[]>([]);
+  const [executedItemOpen, setExecutedItemOpen] = useState(false);
+  const [showCatalogModal2, setShowCatalogModal2] = useState(false);
+  const [newCatalogName, setNewCatalogName] = useState('');
+  const [newCatalogDesc, setNewCatalogDesc] = useState('');
 
   // Supplier modal
   const [showSupplierModal, setShowSupplierModal] = useState(false);
