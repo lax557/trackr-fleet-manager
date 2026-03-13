@@ -360,7 +360,7 @@ export function NewMaintenancePage() {
 
                 <div className="space-y-2"><Label>Data/Hora *</Label><Input type="datetime-local" value={openedAt} onChange={e => setOpenedAt(e.target.value)} /></div>
                 <div className="space-y-2">
-                  <Label>Odômetro (km)</Label>
+                  <Label>Odômetro (km) *</Label>
                   <Input type="number" placeholder="Ex: 45000" value={odometerKm} onChange={e => setOdometerKm(e.target.value)} />
                   {isOdometerLower && (
                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs mt-1">
