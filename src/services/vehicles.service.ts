@@ -36,6 +36,7 @@ export interface VehicleRow {
   ownerType: string | null;
   ownerName: string | null;
   ownerDocument: string | null;
+  ownerId: string | null;
 }
 
 function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
@@ -78,30 +79,45 @@ function mapRowToVehicle(row: any): VehicleRow & VehicleWithDetails {
     ownerType: row.owner_type || null,
     ownerName: row.owner_name || null,
     ownerDocument: row.owner_document || null,
+    ownerId: row.owner_id || null,
   };
 }
 
 export async function fetchVehicles() {
   const { data, error } = await supabase
     .from('vehicles')
-    .select('*')
+    .select('*, vehicle_owners(id, name, type, document)')
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data || []).map(mapRowToVehicle);
+  return (data || []).map((row: any) => {
+    const v = mapRowToVehicle(row);
+    if (row.vehicle_owners) {
+      v.ownerName = row.vehicle_owners.name;
+      v.ownerType = row.vehicle_owners.type;
+      v.ownerDocument = row.vehicle_owners.document;
+    }
+    return v;
+  });
 }
 
 export async function fetchVehicleById(vehicleId: string) {
   const { data, error } = await supabase
     .from('vehicles')
-    .select('*')
+    .select('*, vehicle_owners(id, name, type, document)')
     .eq('id', vehicleId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
-  return mapRowToVehicle(data);
+  const v = mapRowToVehicle(data);
+  if ((data as any).vehicle_owners) {
+    v.ownerName = (data as any).vehicle_owners.name;
+    v.ownerType = (data as any).vehicle_owners.type;
+    v.ownerDocument = (data as any).vehicle_owners.document;
+  }
+  return v;
 }
 
 export async function fetchVehicleStats(): Promise<VehicleStats> {
@@ -129,9 +145,7 @@ export async function createVehicle(vehicle: {
   vin?: string;
   renavam?: string;
   delivered_at?: string;
-  owner_type?: string;
-  owner_name?: string;
-  owner_document?: string;
+  owner_id?: string;
 }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -156,9 +170,7 @@ export async function createVehicle(vehicle: {
     color: vehicle.color || null,
     vin: vehicle.vin || null,
     renavam: vehicle.renavam || null,
-    owner_type: vehicle.owner_type || null,
-    owner_name: vehicle.owner_name || null,
-    owner_document: vehicle.owner_document || null,
+    owner_id: vehicle.owner_id || null,
   };
 
   // If delivered_at is provided, set it; otherwise vehicle starts as backlog
@@ -194,9 +206,7 @@ export async function updateVehicle(vehicleId: string, fields: {
   vin?: string;
   renavam?: string;
   delivered_at?: string | null;
-  owner_type?: string | null;
-  owner_name?: string | null;
-  owner_document?: string | null;
+  owner_id?: string | null;
 }) {
   const updateData: any = {};
   if (fields.plate !== undefined) updateData.plate = fields.plate || null;
@@ -210,9 +220,7 @@ export async function updateVehicle(vehicleId: string, fields: {
   if (fields.vin !== undefined) updateData.vin = fields.vin || null;
   if (fields.renavam !== undefined) updateData.renavam = fields.renavam || null;
   if (fields.delivered_at !== undefined) updateData.delivered_at = fields.delivered_at;
-  if (fields.owner_type !== undefined) updateData.owner_type = fields.owner_type;
-  if (fields.owner_name !== undefined) updateData.owner_name = fields.owner_name;
-  if (fields.owner_document !== undefined) updateData.owner_document = fields.owner_document;
+  if (fields.owner_id !== undefined) updateData.owner_id = fields.owner_id;
 
   const { error } = await supabase
     .from('vehicles')

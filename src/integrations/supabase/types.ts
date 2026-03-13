@@ -1420,6 +1420,41 @@ export type Database = {
           },
         ]
       }
+      vehicle_owners: {
+        Row: {
+          company_id: string
+          created_at: string
+          document: string | null
+          id: string
+          name: string
+          type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name: string
+          type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_owners_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           acquisition_cost: number | null
@@ -1436,6 +1471,7 @@ export type Database = {
           model: string
           odometer: number | null
           owner_document: string | null
+          owner_id: string | null
           owner_name: string | null
           owner_type: string | null
           plate: string | null
@@ -1464,6 +1500,7 @@ export type Database = {
           model: string
           odometer?: number | null
           owner_document?: string | null
+          owner_id?: string | null
           owner_name?: string | null
           owner_type?: string | null
           plate?: string | null
@@ -1492,6 +1529,7 @@ export type Database = {
           model?: string
           odometer?: number | null
           owner_document?: string | null
+          owner_id?: string | null
           owner_name?: string | null
           owner_type?: string | null
           plate?: string | null
@@ -1511,6 +1549,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_owners"
             referencedColumns: ["id"]
           },
         ]

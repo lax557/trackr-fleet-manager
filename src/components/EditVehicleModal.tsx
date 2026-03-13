@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateVehicle } from '@/services/vehicles.service';
 import { VehicleCategory } from '@/types';
 import { categoryLabels, categoryDescriptions } from '@/data/mockData';
+import { OwnerCombobox } from '@/components/OwnerCombobox';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -38,10 +39,8 @@ export function EditVehicleModal({ vehicle, open, onOpenChange }: EditVehicleMod
     vin: '',
     renavam: '',
     deliveredAt: '',
-    ownerType: '',
-    ownerName: '',
-    ownerDocument: '',
   });
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -58,10 +57,8 @@ export function EditVehicleModal({ vehicle, open, onOpenChange }: EditVehicleMod
         vin: vehicle.vin || '',
         renavam: vehicle.renavam || '',
         deliveredAt: vehicle.deliveredAt ? new Date(vehicle.deliveredAt).toISOString().split('T')[0] : '',
-        ownerType: vehicle.ownerType || '',
-        ownerName: vehicle.ownerName || '',
-        ownerDocument: vehicle.ownerDocument || '',
       });
+      setOwnerId(vehicle.ownerId || null);
       setErrors({});
     }
   }, [vehicle, open]);
@@ -110,9 +107,7 @@ export function EditVehicleModal({ vehicle, open, onOpenChange }: EditVehicleMod
       vin: formData.vin.toUpperCase() || undefined,
       renavam: formData.renavam || undefined,
       delivered_at: formData.deliveredAt || null,
-      owner_type: formData.ownerType || null,
-      owner_name: formData.ownerName || null,
-      owner_document: formData.ownerDocument || null,
+      owner_id: ownerId,
     });
   };
 
@@ -193,27 +188,9 @@ export function EditVehicleModal({ vehicle, open, onOpenChange }: EditVehicleMod
           {/* Owner section */}
           <div className="md:col-span-2 border-t pt-4 mt-2">
             <h3 className="text-sm font-semibold text-foreground mb-3">Proprietário do Veículo</h3>
-          </div>
-          <div>
-            <Label>Tipo</Label>
-            <Select value={formData.ownerType} onValueChange={(v) => handleChange('ownerType', v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TARGA">Targa (Próprio)</SelectItem>
-                <SelectItem value="PF">Pessoa Física</SelectItem>
-                <SelectItem value="PJ">Pessoa Jurídica</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Nome do Proprietário</Label>
-            <Input value={formData.ownerName} onChange={(e) => handleChange('ownerName', e.target.value)} placeholder="Nome completo ou razão social" />
-          </div>
-          <div>
-            <Label>CPF/CNPJ do Proprietário</Label>
-            <Input value={formData.ownerDocument} onChange={(e) => handleChange('ownerDocument', e.target.value)} placeholder="Documento" />
+            <div className="max-w-md">
+              <OwnerCombobox value={ownerId} onValueChange={setOwnerId} />
+            </div>
           </div>
         </div>
 
