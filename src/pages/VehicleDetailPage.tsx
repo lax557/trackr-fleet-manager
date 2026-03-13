@@ -312,12 +312,14 @@ export function VehicleDetailPage() {
       </div>
 
       <EditVehicleModal vehicle={vehicle} open={editOpen} onOpenChange={setEditOpen} />
-      <ChangeStatusModal
-        vehicle={vehicle}
-        open={statusModalOpen}
-        onOpenChange={setStatusModalOpen}
-        onConfirm={handleConfirmStatusChange}
-      />
+      {statusModalOpen && (
+        <ChangeStatusModal
+          vehicle={vehicle}
+          open={statusModalOpen}
+          onOpenChange={setStatusModalOpen}
+          onConfirm={handleConfirmStatusChange}
+        />
+      )}
     </div>
   );
 }
