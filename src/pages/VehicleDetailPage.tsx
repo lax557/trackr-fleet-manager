@@ -29,6 +29,61 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
+function OdometerCard({ vehicle }: { vehicle: any }) {
+  const queryClient = useQueryClient();
+  const { can, role } = usePermissions();
+  const canRecalculate = role === 'manager' || role === 'admin';
+
+  const recalcMut = useMutation({
+    mutationFn: () => recalculateVehicleOdometer(vehicle.id),
+    onSuccess: (newOdo: number) => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle', vehicle.id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      toast.success(`Odômetro recalculado: ${newOdo.toLocaleString()} km`);
+    },
+    onError: (e: any) => toast.error(`Erro: ${e.message}`),
+  });
+
+  const sourceLabels: Record<string, string> = {
+    maintenance: 'Manutenção',
+    recalculated: 'Recalculado',
+    manual: 'Manual',
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Gauge className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Odômetro</CardTitle>
+          </div>
+          {canRecalculate && (
+            <Button variant="ghost" size="sm" onClick={() => recalcMut.mutate()} disabled={recalcMut.isPending} title="Recalcular odômetro a partir das manutenções">
+              <Calculator className="h-4 w-4 mr-1" />
+              {recalcMut.isPending ? 'Calculando...' : 'Recalcular'}
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="text-2xl font-bold text-primary">
+          {(vehicle.odometerCurrent || 0).toLocaleString()} km
+        </div>
+        {vehicle.odometerUpdatedAt && (
+          <p className="text-xs text-muted-foreground">
+            Atualizado em {format(vehicle.odometerUpdatedAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            {vehicle.odometerSource && ` • Fonte: ${sourceLabels[vehicle.odometerSource] || vehicle.odometerSource}`}
+          </p>
+        )}
+        {!vehicle.odometerUpdatedAt && vehicle.odometerCurrent === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhum registro de odômetro ainda.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
