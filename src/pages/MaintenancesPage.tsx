@@ -30,6 +30,7 @@ import {
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MaintenanceAnalytics } from '@/components/MaintenanceAnalytics';
+import { MaintenancePlansPage } from '@/pages/MaintenancePlansPage';
 import { formatCurrencyBRL } from '@/lib/utils';
 
 function StatusBadge({ status }: { status: MaintenanceOrderStatus }) {
