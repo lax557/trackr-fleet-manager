@@ -244,6 +244,9 @@ export function MaintenancesPage() {
                             {can('maintenance:create') && (
                               <Button variant="ghost" size="icon" onClick={() => navigate(`/maintenance/${m.id}/edit`)}><Edit className="h-4 w-4" /></Button>
                             )}
+                            {can('maintenance:delete') && (
+                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget(m.id)}><Trash2 className="h-4 w-4" /></Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
